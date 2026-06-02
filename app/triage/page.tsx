@@ -89,10 +89,12 @@ export default function TriagePage() {
       .finally(() => setLoading(false))
   }, [router])
 
+  function refreshTracking() {
+    fetch('/api/tracking').then((r) => r.json()).then((d) => setTracked(d.improvements ?? []))
+  }
+
   useEffect(() => {
-    if (tab === 'tracking') {
-      fetch('/api/tracking').then((r) => r.json()).then((d) => setTracked(d.improvements ?? []))
-    }
+    if (tab === 'tracking') refreshTracking()
   }, [tab])
 
   async function saveTracking(id: number) {
@@ -131,6 +133,10 @@ export default function TriagePage() {
       submissions: prev.submissions.map((s) => s.id === id ? { ...s, [field]: value } : s),
     } : prev)
     setUpdating(null)
+    // Keep tracking in sync whenever an item is approved or implemented
+    if (field === 'status' && (value === 'approved' || value === 'implemented')) {
+      refreshTracking()
+    }
   }
 
   async function handleLogout() {

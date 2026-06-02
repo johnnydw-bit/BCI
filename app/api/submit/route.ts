@@ -57,15 +57,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, rejected: true, message: moderation.message })
   }
 
-  // Calculate next triage date for confirmation message
-  const configRows = await sql`SELECT value FROM config WHERE key = 'TRIAGE_INTERVAL_DAYS'`
-  const intervalDays = parseInt((configRows[0] as { value: string })?.value ?? '7', 10)
-  const nextTriage = new Date()
-  nextTriage.setDate(nextTriage.getDate() + intervalDays)
-  const nextTriageStr = nextTriage.toLocaleDateString('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  })
-
   await sql`
     INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, member_email, email_opt_out)
     VALUES (
@@ -83,6 +74,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    message: `Thank you — your improvement has been received. It will be reviewed as part of our next assessment on ${nextTriageStr}.`,
+    message: `Thank you — your improvement has been received. It will be assessed overnight and you'll receive an email update within 24 hours.`,
   })
 }

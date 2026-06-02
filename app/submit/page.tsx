@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { CATEGORIES, IMPACT_OPTIONS, RECOGNITION_OPTIONS } from '@/lib/categories'
+import { CATEGORIES, IMPACT_OPTIONS } from '@/lib/categories'
 import BramleyHeader from '@/components/BramleyHeader'
 
 const DESC_MAX = 200
@@ -176,23 +176,17 @@ export default function SubmitPage() {
           </div>
 
           <div>
-            <label className="bramley-label">Recognition preference <span className="text-red-500">*</span></label>
-            <div className="space-y-2">
-              {RECOGNITION_OPTIONS.map((opt) => (
-                <label key={opt.value} className="flex items-start gap-3 cursor-pointer group">
-                  <input
-                    type="radio"
-                    name="recognition"
-                    value={opt.value}
-                    checked={recognition === opt.value}
-                    onChange={() => setRecognition(opt.value)}
-                    className="mt-0.5 accent-[#1a3a5c]"
-                  />
-                  <span className="text-sm text-gray-700 group-hover:text-gray-900">{opt.label}</span>
-                </label>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400 mt-2">Your membership details are always recorded securely for programme administration.</p>
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={recognition === 'named'}
+                onChange={(e) => setRecognition(e.target.checked ? 'named' : 'anonymous')}
+                className="mt-0.5 accent-[#1a3a5c]"
+              />
+              <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                Enter me for programme recognition if my improvement is selected
+              </span>
+            </label>
           </div>
 
           <div>

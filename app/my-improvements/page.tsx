@@ -123,6 +123,10 @@ export default function MyImprovementsPage() {
                       </p>
                     )}
                   </div>
+                ) : s.status === 'rejected' ? (
+                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
+                    <p className="text-xs text-gray-500 italic">Thank you for your submission. We were unable to progress this one through the improvement programme. If you have a concern to raise directly, please contact the Club Manager.</p>
+                  </div>
                 ) : (
                   <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
                     <p className="text-xs text-gray-400 italic">Assessment pending — usually within 24 hours.</p>

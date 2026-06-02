@@ -4,7 +4,7 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 export interface ModerationResult {
   pass: boolean
-  reason?: 'profanity' | 'incoherent' | 'duplicate' | 'political' | 'personal_attack' | 'out_of_scope'
+  reason?: 'profanity' | 'incoherent' | 'duplicate' | 'political' | 'personal_attack' | 'out_of_scope' | 'complaint_only'
   message: string
   silentReject?: boolean  // true = log but don't hint at reason
 }
@@ -39,11 +39,12 @@ Check for ALL of the following:
 4. political — targets specific individuals, committee members, staff, or other members by name or clear implication; constitutes a grievance or complaint rather than an improvement; is motivated by personal agenda rather than club benefit
 5. personal_attack — criticism directed at a named or clearly identifiable individual
 6. out_of_scope — has nothing to do with the golf club or its operations
+7. complaint_only — expresses dissatisfaction but contains no specific actionable improvement. Ask yourself: if the club acted on this, what would they actually do differently? If the answer is unclear or absent, it is complaint_only. A valid improvement must suggest or clearly imply a specific change.
 
 Respond with exactly this JSON:
 {
   "pass": true/false,
-  "reason": null | "profanity" | "incoherent" | "duplicate" | "political" | "personal_attack" | "out_of_scope"
+  "reason": null | "profanity" | "incoherent" | "duplicate" | "political" | "personal_attack" | "out_of_scope" | "complaint_only"
 }`,
     }],
   })
@@ -66,6 +67,7 @@ Respond with exactly this JSON:
     political:       'Thank you for taking the time to submit. We\'re unable to progress this particular submission through the improvement programme. If you have a concern you\'d like to raise directly, please contact the Club Manager.',
     personal_attack: 'Thank you for taking the time to submit. We\'re unable to progress this particular submission through the improvement programme. If you have a concern you\'d like to raise directly, please contact the Club Manager.',
     out_of_scope:    'This submission doesn\'t appear to relate to Bramley Golf Club\'s operations. If you feel this is an error please resubmit with more context.',
+    complaint_only:  'Thank you for your feedback. To progress through the improvement programme, submissions need to suggest a specific change rather than express general dissatisfaction. Please resubmit describing what you would like the club to do differently.',
   }
 
   return {

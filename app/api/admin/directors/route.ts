@@ -39,6 +39,18 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
+export async function PUT(req: NextRequest) {
+  if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { id, name, email, role, pin } = await req.json()
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  await sql`UPDATE director_roles SET name = ${name}, email = ${email}, role = ${role} WHERE id = ${id}`
+  if (pin) {
+    const pinHash = createHash('sha256').update(pin.trim()).digest('hex')
+    await sql`UPDATE director_roles SET pin_hash = ${pinHash} WHERE id = ${id}`
+  }
+  return NextResponse.json({ ok: true })
+}
+
 export async function DELETE(req: NextRequest) {
   if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const { id } = await req.json()

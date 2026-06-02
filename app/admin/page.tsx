@@ -51,6 +51,9 @@ export default function AdminPage() {
   const [newDir, setNewDir] = useState({ pin: '', role: '', name: '', email: '' })
   const [addingDir, setAddingDir] = useState(false)
   const [dirError, setDirError] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', email: '', role: '', pin: '' })
+  const [editError, setEditError] = useState('')
   const [initStatus, setInitStatus] = useState('')
 
   useEffect(() => {
@@ -112,6 +115,27 @@ export default function AdminPage() {
       body: JSON.stringify({ id, active }),
     })
     setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, active } : d))
+  }
+
+  function startEdit(d: Director) {
+    setEditingId(d.id)
+    setEditForm({ name: d.name, email: d.email, role: d.role, pin: '' })
+    setEditError('')
+  }
+
+  async function saveEdit(id: number) {
+    setEditError('')
+    const res = await fetch('/api/admin/directors', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...editForm }),
+    })
+    if (res.ok) {
+      setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, name: editForm.name, email: editForm.email, role: editForm.role } : d))
+      setEditingId(null)
+    } else {
+      setEditError('Failed to save changes')
+    }
   }
 
   async function deleteDirector(id: number) {
@@ -219,18 +243,41 @@ export default function AdminPage() {
         <div className="bramley-card">
           <div className="bramley-body space-y-4">
             {directors.map((d) => (
-              <div key={d.id} className="flex items-center gap-3 border border-gray-200 rounded-[10px] p-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">{d.name}</p>
-                  <p className="text-xs text-gray-500">{d.role} · {d.email}</p>
+              <div key={d.id} className="border border-gray-200 rounded-[10px] overflow-hidden">
+                {/* Summary row */}
+                <div className="flex items-center gap-3 p-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800">{d.name}</p>
+                    <p className="text-xs text-gray-500">{d.role} · {d.email}</p>
+                  </div>
+                  <button
+                    onClick={() => toggleDirector(d.id, !d.active)}
+                    className={`text-xs px-2 py-1 rounded-[6px] font-semibold ${d.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                  >
+                    {d.active ? 'Active' : 'Inactive'}
+                  </button>
+                  <button
+                    onClick={() => editingId === d.id ? setEditingId(null) : startEdit(d)}
+                    className="text-xs text-blue-500 hover:text-blue-700"
+                  >
+                    {editingId === d.id ? 'Cancel' : 'Edit'}
+                  </button>
+                  <button onClick={() => deleteDirector(d.id)} className="text-red-400 hover:text-red-600 text-xs">Remove</button>
                 </div>
-                <button
-                  onClick={() => toggleDirector(d.id, !d.active)}
-                  className={`text-xs px-2 py-1 rounded-[6px] font-semibold ${d.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
-                >
-                  {d.active ? 'Active' : 'Inactive'}
-                </button>
-                <button onClick={() => deleteDirector(d.id)} className="text-red-400 hover:text-red-600 text-xs">Remove</button>
+
+                {/* Inline edit form */}
+                {editingId === d.id && (
+                  <div className="border-t border-gray-100 p-3 bg-gray-50 space-y-2">
+                    <input className="bramley-input text-sm py-2" placeholder="Full name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                    <input className="bramley-input text-sm py-2" placeholder="Email" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                    <select className="bramley-input text-sm py-2" value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}>
+                      {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                    <input className="bramley-input text-sm py-2" placeholder="New PIN (leave blank to keep existing)" type="password" value={editForm.pin} onChange={(e) => setEditForm({ ...editForm, pin: e.target.value })} />
+                    {editError && <p className="bramley-error">{editError}</p>}
+                    <button onClick={() => saveEdit(d.id)} className="bramley-btn py-2 text-sm">Save changes</button>
+                  </div>
+                )}
               </div>
             ))}
 

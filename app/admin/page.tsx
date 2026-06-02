@@ -156,10 +156,7 @@ export default function AdminPage() {
 
   async function initDb() {
     setInitStatus('Initialising…')
-    const res = await fetch('/api/admin/init-db', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET ?? ''}` },
-    })
+    const res = await fetch('/api/admin/init-db', { method: 'POST' })
     setInitStatus(res.ok ? '✓ Database initialised successfully' : '✗ Error — check logs')
   }
 

@@ -1,10 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
+  // Redirect if already logged in
+  useEffect(() => {
+    fetch('/api/session').then((r) => r.json()).then((s) => {
+      if (s.authenticated && s.type === 'member') router.replace('/submit')
+      if (s.authenticated && s.type === 'director') router.replace('/triage')
+    })
+  }, [router])
+
   const [memberId, setMemberId] = useState('')
   const [pin, setPin] = useState('')
   const [showPin, setShowPin] = useState(false)

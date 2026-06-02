@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CATEGORIES, IMPACT_OPTIONS, RECOGNITION_OPTIONS } from '@/lib/categories'
 
@@ -12,6 +12,14 @@ type Step = 'form' | 'submitting' | 'success' | 'rejected'
 export default function SubmitPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>('form')
+
+  // Redirect directors to triage, unauthenticated users to login
+  useEffect(() => {
+    fetch('/api/session').then((r) => r.json()).then((s) => {
+      if (!s.authenticated) router.replace('/')
+      if (s.type === 'director') router.replace('/triage')
+    })
+  }, [router])
   const [description, setDescription] = useState('')
   const [benefit, setBenefit] = useState('')
   const [category, setCategory] = useState('')

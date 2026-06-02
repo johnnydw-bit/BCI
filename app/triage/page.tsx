@@ -110,7 +110,12 @@ export default function TriagePage() {
             <h1 className="text-xl font-bold">⛳ Triage Report</h1>
             <p className="text-sm opacity-80 mt-0.5">{data.directorName} — {data.role}</p>
           </div>
-          <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
+          <div className="flex gap-3 items-center">
+            {data.isManager && (
+              <button onClick={() => router.push('/admin')} className="text-xs opacity-70 hover:opacity-100">Admin</button>
+            )}
+            <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
+          </div>
         </div>
         <div className="bramley-body">
           <p className="text-sm text-gray-600">

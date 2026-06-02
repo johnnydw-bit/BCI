@@ -61,6 +61,8 @@ export default function AdminPage() {
   const [editForm, setEditForm] = useState({ name: '', email: '', role: '', pin: '' })
   const [editError, setEditError] = useState('')
   const [initStatus, setInitStatus] = useState('')
+  const [triageStatus, setTriageStatus] = useState('')
+  const [runningTriage, setRunningTriage] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -158,6 +160,20 @@ export default function AdminPage() {
     setInitStatus('Initialising…')
     const res = await fetch('/api/admin/init-db', { method: 'POST' })
     setInitStatus(res.ok ? '✓ Database initialised successfully' : '✗ Error — check logs')
+  }
+
+  async function runTriage() {
+    if (!confirm('Run the triage batch now? This will score all pending improvements and send email reports.')) return
+    setRunningTriage(true)
+    setTriageStatus('Running triage — this may take 30–60 seconds…')
+    const res = await fetch('/api/admin/run-triage', { method: 'POST' })
+    const json = await res.json().catch(() => ({}))
+    if (res.ok) {
+      setTriageStatus(`✓ Triage complete — ${json.scored ?? 0} improvement${json.scored !== 1 ? 's' : ''} scored`)
+    } else {
+      setTriageStatus(`✗ Error: ${json.error ?? 'check server logs'}`)
+    }
+    setRunningTriage(false)
   }
 
   function configValue(key: string) {
@@ -310,6 +326,21 @@ export default function AdminPage() {
               <p className="text-sm text-gray-500 mb-3">Run once on first deployment to create all tables and seed default configuration values. Safe to run again — existing data is preserved.</p>
               <button onClick={initDb} className="bramley-btn">Initialise database</button>
               {initStatus && <p className="text-sm mt-2 text-gray-700">{initStatus}</p>}
+            </div>
+
+            <hr className="border-gray-200" />
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-1">Run triage now</h3>
+              <p className="text-sm text-gray-500 mb-3">Manually trigger the AI scoring batch. Scores all pending improvements, updates clusters, flags H&amp;S items and sends the weekly email report. Normally runs automatically every Monday at 07:00.</p>
+              <button
+                onClick={runTriage}
+                disabled={runningTriage}
+                className="bramley-btn flex items-center gap-2"
+              >
+                {runningTriage ? <><span className="spinner" /> Running…</> : '▶ Run triage now'}
+              </button>
+              {triageStatus && <p className="text-sm mt-2 text-gray-700">{triageStatus}</p>}
             </div>
           </div>
         </div>

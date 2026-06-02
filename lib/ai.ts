@@ -162,8 +162,12 @@ MULTIPLIERS (applied after weighted score, cap final at 10.0):
 - Spans multiple categories: x${weights.multMultiCategory}
 
 CLUSTER DETECTION:
-Group semantically similar suggestions together. Assign a cluster_theme string for each group.
-Suggestions that are not similar to any other suggestion get cluster_theme: null.
+Cluster suggestions only when they describe the SAME specific problem or improvement area — not merely the same broad theme.
+Examples of valid clusters: two suggestions both asking for better bunker raking; three suggestions about slow food service in the restaurant.
+Examples of invalid clusters: a shower request and a locker room request (both facilities but different problems); a chef complaint and a sauna request (both experience but entirely different issues).
+Assign a cluster_theme string (specific, e.g. "Shower facilities in changing rooms") only when genuinely the same issue.
+Suggestions that are not a strong match with any other suggestion get cluster_theme: null.
+When in doubt, do NOT cluster — false negatives are better than false positives.
 
 ALREADY IN PLAN:
 If a suggestion describes something that any well-run golf club would already have in its standard strategic plan, set already_in_plan: true.`,

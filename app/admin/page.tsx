@@ -234,8 +234,8 @@ export default function AdminPage() {
                         <label className="text-sm text-gray-600 flex-1">{row?.label ?? key}</label>
                         <input
                           type="number"
-                          step="0.01"
-                          className="bramley-input w-24 text-right py-1.5 text-sm"
+                          step="any"
+                          className="bramley-input w-32 text-right py-1.5 text-sm"
                           value={configValue(key)}
                           onChange={(e) => handleEdit(key, e.target.value)}
                         />

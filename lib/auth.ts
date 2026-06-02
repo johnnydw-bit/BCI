@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose'
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!)
-const BRAMLEY_BASE = 'https://www.bramshotgolfclub.co.uk'
+const BRAMLEY_BASE = 'https://www.bramleygolfclub.co.uk'
 
 export type SessionPayload =
   | { type: 'member'; memberId: string; memberName: string }

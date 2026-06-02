@@ -15,7 +15,10 @@ export async function GET() {
   const rows = await sql`
     SELECT
       id, description, category, status, score, score_band,
-      ai_summary, cost_band, actual_cost, estimated_cost_value,
+      ai_summary, cost_band, actual_cost,
+      cost_estimate_low, cost_estimate_high,
+      impl_complexity, impl_weeks_low, impl_weeks_high, suggested_target_date,
+      quick_win_flag, cost_threshold_flag,
       target_date, responsible_person, budget_year, tracking_notes,
       recognition, member_name, created_at, scored_at,
       cluster_theme, cluster_size, h_and_s_flag, moderation_reason

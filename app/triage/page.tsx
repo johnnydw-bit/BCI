@@ -155,14 +155,14 @@ export default function TriagePage() {
 
   if (!data) return null
 
-  const activeSubmissions = data.submissions.filter((s) => s.status !== 'rejected' || s.moderation_reason)
-  const moderated = data.submissions.filter((s) => s.status === 'rejected' && s.moderation_reason)
-  const triageItems = data.submissions.filter((s) => !(s.status === 'rejected' && s.moderation_reason))
+  // Only hide silently moderated items (political/personal) from main triage view
+  const moderated = data.submissions.filter((s) => s.moderation_reason)
+  const triageItems = data.submissions.filter((s) => !s.moderation_reason)
   const urgent = triageItems.filter((s) => s.h_and_s_flag)
   const normal = triageItems.filter((s) => !s.h_and_s_flag)
 
   const byCategory = CATEGORIES.reduce<Record<string, Submission[]>>((acc, cat) => {
-    const subs = normal.filter((s) => s.category === cat.value && s.status !== 'rejected')
+    const subs = normal.filter((s) => s.category === cat.value)
     if (subs.length > 0) acc[cat.value] = subs
     return acc
   }, {})

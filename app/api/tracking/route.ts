@@ -94,4 +94,3 @@ export async function POST(req: NextRequest) {
     memberName: current.member_name,
   })
 }
-}

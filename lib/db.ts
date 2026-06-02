@@ -43,6 +43,14 @@ export async function initDb() {
     )
   `
 
+  // Tracking fields on submissions (added after initial create)
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS target_date DATE`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS responsible_person TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS budget_year INTEGER`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS actual_cost NUMERIC(10,2)`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS tracking_notes TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS moderation_reason TEXT`
+
   await sql`
     CREATE TABLE IF NOT EXISTS clusters (
       id          SERIAL PRIMARY KEY,

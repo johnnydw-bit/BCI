@@ -4,8 +4,9 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 export interface ModerationResult {
   pass: boolean
-  reason?: 'profanity' | 'incoherent' | 'duplicate'
+  reason?: 'profanity' | 'incoherent' | 'duplicate' | 'political' | 'personal_attack' | 'out_of_scope'
   message: string
+  silentReject?: boolean  // true = log but don't hint at reason
 }
 
 export async function moderateSubmission(
@@ -20,26 +21,29 @@ export async function moderateSubmission(
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 256,
-    system: `You are a moderation gate for a golf club suggestion system.
-Evaluate submissions against three criteria only. Respond with JSON only.`,
+    system: `You are a moderation gate for a private members golf club continuous improvement programme.
+Your job is to protect the integrity of the programme. Evaluate submissions honestly and respond with JSON only.`,
     messages: [{
       role: 'user',
-      content: `Evaluate this suggestion submission.
+      content: `Evaluate this improvement submission from a club member.
 
-SUGGESTION: ${description}
-BENEFIT: ${benefit}
+IMPROVEMENT: ${description}
+RATIONALE: ${benefit}
 
 ${duplicateContext}
 
-Check for:
-1. profanity - any offensive, abusive, or inappropriate language
-2. incoherent - no actionable suggestion can be identified
-3. duplicate - substantively the same as one of this member's previous submissions
+Check for ALL of the following:
+1. profanity — offensive, abusive, or inappropriate language
+2. incoherent — no actionable improvement can be identified
+3. duplicate — substantively the same as one of this member's previous submissions
+4. political — targets specific individuals, committee members, staff, or other members by name or clear implication; constitutes a grievance or complaint rather than an improvement; is motivated by personal agenda rather than club benefit
+5. personal_attack — criticism directed at a named or clearly identifiable individual
+6. out_of_scope — has nothing to do with the golf club or its operations
 
 Respond with exactly this JSON:
 {
   "pass": true/false,
-  "reason": null | "profanity" | "incoherent" | "duplicate"
+  "reason": null | "profanity" | "incoherent" | "duplicate" | "political" | "personal_attack" | "out_of_scope"
 }`,
     }],
   })
@@ -51,15 +55,23 @@ Respond with exactly this JSON:
     return { pass: true, message: '' }
   }
 
+  // Political and personal attacks get a neutral message — don't signal the detection
+  const silentReasons = ['political', 'personal_attack']
+  const isSilent = silentReasons.includes(result.reason)
+
   const messages: Record<string, string> = {
-    profanity:  'We were unable to process your submission as it contains language that does not meet our community standards. Please resubmit.',
-    incoherent: 'We were unable to identify a specific actionable suggestion. Please try again with a clearer description of what you\'d like to see improved.',
-    duplicate:  'It looks like you\'ve already submitted a very similar suggestion. We\'ve recorded your original submission and it will be reviewed in our next assessment.',
+    profanity:       'We were unable to process your submission as it contains language that does not meet our community standards. Please resubmit.',
+    incoherent:      'We were unable to identify a specific actionable improvement. Please try again with a clearer description of what you\'d like to see improved.',
+    duplicate:       'It looks like you\'ve already submitted a very similar improvement. We\'ve recorded your original submission and it will be reviewed at our next assessment.',
+    political:       'Thank you for taking the time to submit. We\'re unable to progress this particular submission through the improvement programme. If you have a concern you\'d like to raise directly, please contact the Club Manager.',
+    personal_attack: 'Thank you for taking the time to submit. We\'re unable to progress this particular submission through the improvement programme. If you have a concern you\'d like to raise directly, please contact the Club Manager.',
+    out_of_scope:    'This submission doesn\'t appear to relate to Bramley Golf Club\'s operations. If you feel this is an error please resubmit with more context.',
   }
 
   return {
     pass: false,
     reason: result.reason,
+    silentReject: isSilent,
     message: messages[result.reason] ?? 'We were unable to process your submission. Please try again.',
   }
 }

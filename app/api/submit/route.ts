@@ -42,6 +42,18 @@ export async function POST(req: NextRequest) {
   const moderation = await moderateSubmission(description.trim(), benefit.trim(), existingDescriptions)
 
   if (!moderation.pass) {
+    // Log silent rejects to DB so Manager can review them
+    if (moderation.silentReject) {
+      await sql`
+        INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, status, moderation_reason)
+        VALUES (
+          ${session.memberId}, ${session.memberName},
+          ${description.trim()}, ${benefit.trim()},
+          ${category}, ${Number(impact)}, ${recognition},
+          'rejected', ${moderation.reason ?? 'silent_reject'}
+        )
+      `
+    }
     return NextResponse.json({ ok: false, rejected: true, message: moderation.message })
   }
 
@@ -69,6 +81,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    message: `Thank you — your suggestion has been received. It will be reviewed as part of our next assessment on ${nextTriageStr}.`,
+    message: `Thank you — your improvement has been received. It will be reviewed as part of our next assessment on ${nextTriageStr}.`,
   })
 }

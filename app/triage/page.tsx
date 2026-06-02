@@ -22,6 +22,24 @@ interface Submission {
   cluster_theme: string | null
   cluster_size: number | null
   created_at: string
+  moderation_reason: string | null
+}
+
+interface TrackedImprovement {
+  id: number
+  description: string
+  ai_summary: string | null
+  category: string
+  status: string
+  score: number | null
+  cost_band: string | null
+  target_date: string | null
+  responsible_person: string | null
+  budget_year: number | null
+  actual_cost: number | null
+  tracking_notes: string | null
+  member_name: string | null
+  recognition: string
 }
 
 interface TriageData {
@@ -37,6 +55,10 @@ export default function TriagePage() {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [updating, setUpdating] = useState<number | null>(null)
+  const [tab, setTab] = useState<'triage' | 'tracking' | 'moderated'>('triage')
+  const [tracked, setTracked] = useState<TrackedImprovement[]>([])
+  const [trackingEdit, setTrackingEdit] = useState<Record<number, Partial<TrackedImprovement>>>({})
+  const [savingTracking, setSavingTracking] = useState<number | null>(null)
 
   useEffect(() => {
     fetch('/api/triage')
@@ -47,6 +69,28 @@ export default function TriagePage() {
       .then((d) => { if (d) setData(d) })
       .finally(() => setLoading(false))
   }, [router])
+
+  useEffect(() => {
+    if (tab === 'tracking') {
+      fetch('/api/tracking').then((r) => r.json()).then((d) => setTracked(d.improvements ?? []))
+    }
+  }, [tab])
+
+  async function saveTracking(id: number) {
+    setSavingTracking(id)
+    await fetch('/api/tracking', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...trackingEdit[id] }),
+    })
+    setTracked((prev) => prev.map((t) => t.id === id ? { ...t, ...trackingEdit[id] } : t))
+    setTrackingEdit((prev) => { const n = { ...prev }; delete n[id]; return n })
+    setSavingTracking(null)
+  }
+
+  function editTracking(id: number, field: string, value: string | number | null) {
+    setTrackingEdit((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
+  }
 
   function toggleExpand(id: number) {
     setExpanded((prev) => {
@@ -92,14 +136,23 @@ export default function TriagePage() {
 
   if (!data) return null
 
-  const urgent = data.submissions.filter((s) => s.h_and_s_flag)
-  const normal = data.submissions.filter((s) => !s.h_and_s_flag)
+  const activeSubmissions = data.submissions.filter((s) => s.status !== 'rejected' || s.moderation_reason)
+  const moderated = data.submissions.filter((s) => s.status === 'rejected' && s.moderation_reason)
+  const triageItems = data.submissions.filter((s) => !(s.status === 'rejected' && s.moderation_reason))
+  const urgent = triageItems.filter((s) => s.h_and_s_flag)
+  const normal = triageItems.filter((s) => !s.h_and_s_flag)
 
   const byCategory = CATEGORIES.reduce<Record<string, Submission[]>>((acc, cat) => {
-    const subs = normal.filter((s) => s.category === cat.value)
+    const subs = normal.filter((s) => s.category === cat.value && s.status !== 'rejected')
     if (subs.length > 0) acc[cat.value] = subs
     return acc
   }, {})
+
+  const tabCount = {
+    triage: triageItems.filter(s => s.status === 'new' || s.status === 'under_consideration').length,
+    tracking: 0,
+    moderated: moderated.length,
+  }
 
   return (
     <div className="w-full max-w-3xl lg:max-w-5xl mx-auto space-y-4">
@@ -117,16 +170,158 @@ export default function TriagePage() {
             <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
           </div>
         </div>
-        <div className="bramley-body">
-          <p className="text-sm text-gray-600">
-            {data.submissions.length} improvement{data.submissions.length !== 1 ? 's' : ''} in this view
+        <div className="bramley-body pb-0">
+          <p className="text-sm text-gray-600 mb-3">
+            {triageItems.filter(s => s.status === 'new' || s.status === 'under_consideration').length} pending · {triageItems.length} total in this view
             {urgent.length > 0 && <span className="ml-2 text-red-600 font-semibold">· {urgent.length} urgent H&amp;S</span>}
           </p>
+          <div className="flex gap-2">
+            {(['triage', 'tracking', 'moderated'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`px-4 py-2 rounded-t-[8px] text-sm font-semibold transition-all capitalize relative ${tab === t ? 'text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                style={tab === t ? { background: 'var(--bramley-navy)' } : {}}
+              >
+                {t === 'triage' ? 'Improvements' : t === 'tracking' ? 'Tracking' : 'Moderated'}
+                {t === 'moderated' && tabCount.moderated > 0 && (
+                  <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">{tabCount.moderated}</span>
+                )}
+                {t === 'triage' && tabCount.triage > 0 && (
+                  <span className="ml-1.5 bg-bramley-blue text-white text-xs rounded-full px-1.5 py-0.5" style={{background:'#2471a3'}}>{tabCount.triage}</span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Urgent H&S */}
-      {urgent.length > 0 && (
+      {/* Tracking tab */}
+      {tab === 'tracking' && (
+        <div className="bramley-card">
+          <div className="bramley-body">
+            {tracked.length === 0 ? (
+              <p className="text-gray-500 text-sm text-center py-8">No approved or implemented improvements yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {tracked.map((t) => (
+                  <div key={t.id} className="border border-gray-200 rounded-[10px] overflow-hidden">
+                    <div className="p-4 space-y-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-gray-800">{t.ai_summary ?? t.description}</p>
+                        <span className={`bramley-badge shrink-0 ${t.status === 'implemented' ? 'status-implemented' : 'status-approved'}`}>
+                          {STATUS_LABELS[t.status]}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === t.category)?.label} {t.score != null ? `· Score ${t.score.toFixed(1)}` : ''}</p>
+                      {t.recognition !== 'anonymous' && t.member_name && (
+                        <p className="text-xs text-gray-400">Submitted by {t.member_name}</p>
+                      )}
+                    </div>
+
+                    {data.isManager && (
+                      <div className="border-t border-gray-100 p-4 bg-gray-50 grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">Target date</label>
+                          <input
+                            type="date"
+                            className="bramley-input text-sm py-1.5"
+                            value={trackingEdit[t.id]?.target_date ?? t.target_date ?? ''}
+                            onChange={(e) => editTracking(t.id, 'target_date', e.target.value || null)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">Responsible person</label>
+                          <input
+                            type="text"
+                            className="bramley-input text-sm py-1.5"
+                            placeholder="Name or role"
+                            value={trackingEdit[t.id]?.responsible_person ?? t.responsible_person ?? ''}
+                            onChange={(e) => editTracking(t.id, 'responsible_person', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">Budget year</label>
+                          <input
+                            type="number"
+                            className="bramley-input text-sm py-1.5"
+                            placeholder={new Date().getFullYear().toString()}
+                            value={trackingEdit[t.id]?.budget_year ?? t.budget_year ?? ''}
+                            onChange={(e) => editTracking(t.id, 'budget_year', parseInt(e.target.value) || null)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">Actual cost (£)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="bramley-input text-sm py-1.5"
+                            placeholder="0.00"
+                            value={trackingEdit[t.id]?.actual_cost ?? t.actual_cost ?? ''}
+                            onChange={(e) => editTracking(t.id, 'actual_cost', parseFloat(e.target.value) || null)}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="text-xs text-gray-500 block mb-1">Notes</label>
+                          <textarea
+                            className="bramley-input resize-none text-sm"
+                            rows={2}
+                            placeholder="Progress notes, blockers, decisions…"
+                            value={trackingEdit[t.id]?.tracking_notes ?? t.tracking_notes ?? ''}
+                            onChange={(e) => editTracking(t.id, 'tracking_notes', e.target.value)}
+                          />
+                        </div>
+                        {trackingEdit[t.id] && (
+                          <div className="col-span-2">
+                            <button
+                              onClick={() => saveTracking(t.id)}
+                              className="bramley-btn py-2 text-sm"
+                              disabled={savingTracking === t.id}
+                            >
+                              {savingTracking === t.id ? <span className="spinner" /> : 'Save'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Moderated tab — Club Manager only */}
+      {tab === 'moderated' && data.isManager && (
+        <div className="bramley-card">
+          <div className="bramley-body">
+            {moderated.length === 0 ? (
+              <p className="text-gray-500 text-sm text-center py-8">No moderated submissions.</p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500">These submissions were silently rejected by the AI moderation gate. Members received a neutral response.</p>
+                {moderated.map((s) => (
+                  <div key={s.id} className="border border-amber-200 bg-amber-50 rounded-[10px] p-4 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+                        {s.moderation_reason?.replace('_', ' ')}
+                      </span>
+                      <span className="text-xs text-gray-400">{formatDate(s.created_at)}</span>
+                    </div>
+                    <p className="text-sm text-gray-800">{s.description}</p>
+                    {s.benefit && <p className="text-xs text-gray-600 italic">"{s.benefit}"</p>}
+                    <p className="text-xs text-gray-400">{CATEGORIES.find(c => c.value === s.category)?.label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Triage tab */}
+      {tab === 'triage' && urgent.length > 0 && (
         <section>
           <h2 className="text-sm font-bold text-red-600 uppercase tracking-wide px-1 mb-2">
             ⚠️ Urgent — Health &amp; Safety
@@ -148,7 +343,7 @@ export default function TriagePage() {
       )}
 
       {/* By category */}
-      {CATEGORIES.filter((c) => byCategory[c.value]).map((cat) => (
+      {tab === 'triage' && CATEGORIES.filter((c) => byCategory[c.value]).map((cat) => (
         <section key={cat.value}>
           <h2 className="text-sm font-bold uppercase tracking-wide px-1 mb-2" style={{ color: 'var(--bramley-navy)' }}>
             {cat.label} <span className="font-normal text-gray-400">({byCategory[cat.value].length})</span>

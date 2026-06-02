@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import BramleyHeader from '@/components/BramleyHeader'
 
 export default function SetupPage() {
   const [cronSecret, setCronSecret] = useState('')
@@ -55,7 +56,7 @@ export default function SetupPage() {
   if (step === 'done') {
     return (
       <div className="bramley-card">
-        <div className="bramley-header">⛳ Bramley GC — Setup</div>
+        <BramleyHeader subtitle="First-time Setup" />
         <div className="bramley-body space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-[10px] p-4">
             <p className="text-green-800 font-semibold">✓ Setup complete</p>

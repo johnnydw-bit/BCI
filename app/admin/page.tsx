@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import BramleyHeader from '@/components/BramleyHeader'
 
 const ROLES = ['Club Manager', 'Chair', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
 
@@ -169,7 +170,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="bramley-card">
-        <div className="bramley-header">⛳ Admin</div>
+        <BramleyHeader subtitle="Admin" />
         <div className="bramley-body flex justify-center py-12">
           <span className="spinner" style={{ borderColor: 'var(--bramley-navy)', borderTopColor: 'transparent' }} />
         </div>
@@ -181,11 +182,10 @@ export default function AdminPage() {
     <div className="w-full max-w-2xl mx-auto space-y-4">
       <div className="bramley-card">
         <div className="bramley-header flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">⛳ Bramley GC — Admin</h1>
-            <p className="text-sm opacity-80 mt-0.5">Club Manager settings</p>
-          </div>
-          <button onClick={() => router.push('/triage')} className="text-xs opacity-70 hover:opacity-100">← Triage</button>
+          <BramleyHeader
+            subtitle="Club Manager — Admin"
+            right={<button onClick={() => router.push('/triage')} className="text-xs opacity-70 hover:opacity-100">← Triage</button>}
+          />
         </div>
 
         {/* Tabs */}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CATEGORIES, STATUS_LABELS } from '@/lib/categories'
+import BramleyHeader from '@/components/BramleyHeader'
 
 interface Submission {
   id: number
@@ -144,7 +145,7 @@ export default function TriagePage() {
   if (loading) {
     return (
       <div className="bramley-card">
-        <div className="bramley-header">⛳ Bramley Golf Club — Triage</div>
+        <BramleyHeader subtitle="Triage Report" />
         <div className="bramley-body flex justify-center py-12">
           <span className="spinner" style={{ borderColor: 'var(--bramley-navy)', borderTopColor: 'transparent' }} />
         </div>
@@ -177,16 +178,17 @@ export default function TriagePage() {
       {/* Header */}
       <div className="bramley-card">
         <div className="bramley-header flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">⛳ Triage Report</h1>
-            <p className="text-sm opacity-80 mt-0.5">{data.directorName} — {data.role}</p>
-          </div>
-          <div className="flex gap-3 items-center">
-            {data.isManager && (
-              <button onClick={() => router.push('/admin')} className="text-xs opacity-70 hover:opacity-100">Admin</button>
-            )}
-            <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
-          </div>
+          <BramleyHeader
+            subtitle={`${data.directorName} — ${data.role}`}
+            right={
+              <div className="flex gap-3 items-center">
+                {data.isManager && (
+                  <button onClick={() => router.push('/admin')} className="text-xs opacity-70 hover:opacity-100">Admin</button>
+                )}
+                <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
+              </div>
+            }
+          />
         </div>
         <div className="bramley-body pb-0">
           <p className="text-sm text-gray-600 mb-3">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import BramleyHeader from '@/components/BramleyHeader'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -63,10 +64,7 @@ export default function LoginPage() {
 
   return (
     <div className="bramley-card">
-      <div className="bramley-header">
-        <h1 className="text-xl font-bold">⛳ Bramley GC</h1>
-        <p className="text-sm opacity-80 mt-0.5">Continuous Improvement Programme</p>
-      </div>
+      <BramleyHeader subtitle="Continuous Improvement Programme" />
 
       <div className="bramley-body">
         {/* Tab switcher */}

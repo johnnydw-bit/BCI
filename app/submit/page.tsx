@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CATEGORIES, IMPACT_OPTIONS, RECOGNITION_OPTIONS } from '@/lib/categories'
+import BramleyHeader from '@/components/BramleyHeader'
 
 const DESC_MAX = 200
 const BENEFIT_MAX = 500
@@ -54,10 +55,7 @@ export default function SubmitPage() {
   if (step === 'submitting') {
     return (
       <div className="bramley-card">
-        <div className="bramley-header">
-          <h1 className="text-xl font-bold">⛳ Bramley GC</h1>
-          <p className="text-sm opacity-80 mt-0.5">Continuous Improvement Programme</p>
-        </div>
+        <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body flex flex-col items-center py-12 gap-4">
           <span className="spinner" style={{ borderColor: 'var(--bramley-navy)', borderTopColor: 'transparent' }} />
           <p className="text-gray-600">Reviewing your improvement…</p>
@@ -69,10 +67,7 @@ export default function SubmitPage() {
   if (step === 'success') {
     return (
       <div className="bramley-card">
-        <div className="bramley-header">
-          <h1 className="text-xl font-bold">⛳ Bramley GC</h1>
-          <p className="text-sm opacity-80 mt-0.5">Continuous Improvement Programme</p>
-        </div>
+        <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-[10px] p-4">
             <p className="text-green-800 font-semibold text-sm">✓ Improvement received</p>
@@ -93,10 +88,7 @@ export default function SubmitPage() {
   if (step === 'rejected') {
     return (
       <div className="bramley-card">
-        <div className="bramley-header">
-          <h1 className="text-xl font-bold">⛳ Bramley GC</h1>
-          <p className="text-sm opacity-80 mt-0.5">Continuous Improvement Programme</p>
-        </div>
+        <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body space-y-4">
           <div className="bg-amber-50 border border-amber-200 rounded-[10px] p-4">
             <p className="text-amber-800 text-sm">{message}</p>

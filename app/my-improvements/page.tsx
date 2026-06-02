@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CATEGORIES, STATUS_LABELS } from '@/lib/categories'
+import BramleyHeader from '@/components/BramleyHeader'
 
 interface Improvement {
   id: number
@@ -48,10 +49,7 @@ export default function MyImprovementsPage() {
 
   return (
     <div className="bramley-card">
-      <div className="bramley-header">
-        <h1 className="text-xl font-bold">⛳ Bramley GC</h1>
-        <p className="text-sm opacity-80 mt-0.5">Continuous Improvement Programme</p>
-      </div>
+      <BramleyHeader subtitle="My improvements" />
 
       <div className="bramley-body space-y-4">
         {loading ? (

@@ -27,7 +27,11 @@ export async function GET() {
       scored_at,
       created_at
     FROM submissions
-    WHERE (member_id = ${session.memberId} OR member_id = ${session.memberEmail})
+    WHERE (
+        member_id = ${session.memberId}
+        OR member_id = ${session.memberEmail}
+        OR member_name = ${session.memberName}
+      )
       AND deleted_at IS NULL
     ORDER BY created_at DESC
   `

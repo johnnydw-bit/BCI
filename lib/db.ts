@@ -43,13 +43,29 @@ export async function initDb() {
     )
   `
 
-  // Tracking fields on submissions (added after initial create)
+  // Tracking fields
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS target_date DATE`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS responsible_person TEXT`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS budget_year INTEGER`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS actual_cost NUMERIC(10,2)`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS tracking_notes TEXT`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS moderation_reason TEXT`
+
+  // Cost estimation fields
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS cost_estimate_low NUMERIC(10,2)`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS cost_estimate_high NUMERIC(10,2)`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS cost_confidence TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS cost_rationale TEXT`
+
+  // Implementation time fields
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS impl_weeks_low INTEGER`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS impl_weeks_high INTEGER`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS impl_complexity TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS suggested_target_date DATE`
+
+  // Flags
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS cost_threshold_flag BOOLEAN NOT NULL DEFAULT FALSE`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS quick_win_flag BOOLEAN NOT NULL DEFAULT FALSE`
 
   await sql`
     CREATE TABLE IF NOT EXISTS clusters (
@@ -130,7 +146,10 @@ export async function initDb() {
     ['CLUSTER_BONUS_2',           '0.5',  'Consensus bonus: cluster of 2'],
     ['CLUSTER_BONUS_3',           '1.0',  'Consensus bonus: cluster of 3'],
     ['CLUSTER_BONUS_4',           '1.5',  'Consensus bonus: cluster of 4'],
-    ['CLUSTER_BONUS_5',           '2.0',  'Consensus bonus: cluster of 5+'],
+    ['CLUSTER_BONUS_5',           '2.0',   'Consensus bonus: cluster of 5+'],
+    ['COST_THRESHOLD_COMMITTEE',  '5000',  'Cost threshold (£): above this, escalate to full committee review'],
+    ['COST_THRESHOLD_QUICKWIN',   '500',   'Cost threshold (£): below this, flag as quick win'],
+    ['IMPL_QUICKWIN_WEEKS',       '4',     'Implementation weeks: at or below this = quick win'],
   ]
 
   for (const [key, value, _label] of defaults) {

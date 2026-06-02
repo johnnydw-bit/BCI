@@ -109,6 +109,24 @@ export async function GET(req: NextRequest) {
       finalScore = Math.min(10, finalScore + bonus)
     }
 
+    // Derive threshold flags
+    const costThresholdCommittee = parseFloat(config['COST_THRESHOLD_COMMITTEE'] ?? '5000')
+    const costThresholdQuickwin = parseFloat(config['COST_THRESHOLD_QUICKWIN'] ?? '500')
+    const implQuickwinWeeks = parseFloat(config['IMPL_QUICKWIN_WEEKS'] ?? '4')
+
+    const costMidpoint = r.costEstimateHigh != null && r.costEstimateLow != null
+      ? (r.costEstimateLow + r.costEstimateHigh) / 2 : null
+
+    const costThresholdFlag = costMidpoint != null && costMidpoint > costThresholdCommittee
+    const quickWinFlag = (costMidpoint == null || costMidpoint <= costThresholdQuickwin)
+      && (r.implWeeksHigh == null || r.implWeeksHigh <= implQuickwinWeeks)
+      && r.implComplexity === 'quick_win'
+
+    // Suggested target date based on implementation time estimate
+    const suggestedTargetDate = r.implWeeksHigh != null
+      ? new Date(Date.now() + r.implWeeksHigh * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      : null
+
     await sql`
       UPDATE submissions SET
         score = ${finalScore},
@@ -119,6 +137,16 @@ export async function GET(req: NextRequest) {
         ai_summary = ${r.aiSummary},
         ai_narrative = ${r.aiNarrative},
         cost_band = ${r.costBand},
+        cost_estimate_low = ${r.costEstimateLow},
+        cost_estimate_high = ${r.costEstimateHigh},
+        cost_confidence = ${r.costConfidence},
+        cost_rationale = ${r.costRationale},
+        impl_weeks_low = ${r.implWeeksLow},
+        impl_weeks_high = ${r.implWeeksHigh},
+        impl_complexity = ${r.implComplexity},
+        suggested_target_date = ${suggestedTargetDate},
+        cost_threshold_flag = ${costThresholdFlag},
+        quick_win_flag = ${quickWinFlag},
         strategic_note = ${r.strategicNote},
         scored_at = NOW(),
         status = CASE WHEN ${r.alreadyInPlan} THEN 'rejected' ELSE status END

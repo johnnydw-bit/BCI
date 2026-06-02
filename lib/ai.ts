@@ -89,6 +89,15 @@ export interface ScoringResult {
   costBand: string
   strategicNote: string
   alreadyInPlan: boolean
+  // Cost estimation
+  costEstimateLow: number | null
+  costEstimateHigh: number | null
+  costConfidence: 'high' | 'medium' | 'low'
+  costRationale: string
+  // Implementation time
+  implWeeksLow: number | null
+  implWeeksHigh: number | null
+  implComplexity: 'quick_win' | 'project' | 'programme'
 }
 
 export interface ScoringWeights {
@@ -160,11 +169,26 @@ ALREADY IN PLAN:
 If a suggestion describes something that any well-run golf club would already have in its standard strategic plan, set already_in_plan: true.`,
     messages: [{
       role: 'user',
-      content: `Score these ${submissions.length} suggestion(s) and detect clusters among them.
+      content: `Score these ${submissions.length} improvement(s), estimate costs and implementation time, and detect clusters.
 
 ${submissionsText}
 
-Return a JSON array with one object per submission in the same order:
+COST ESTIMATION GUIDANCE (Bramley Golf Club scale — private members club, ~500-800 members):
+- Estimate realistic £ costs for a UK private members golf club
+- negligible: under £100 (staff time only, no materials)
+- low: £100–£2,000
+- medium: £2,000–£10,000
+- high: £10,000–£50,000
+- very_high: over £50,000
+- Provide a low and high estimate as a realistic range
+- confidence: high = well-defined, clearly scoped; medium = reasonable inference; low = very vague or dependent on unknowns
+
+IMPLEMENTATION TIME GUIDANCE:
+- quick_win: 1–4 weeks (minimal planning, existing resources)
+- project: 1–6 months (planning required, possible procurement)
+- programme: 6+ months (major works, planning permission, significant capital)
+
+Return a JSON array with one object per improvement in the same order:
 [
   {
     "submission_id": <id>,
@@ -172,9 +196,16 @@ Return a JSON array with one object per submission in the same order:
     "h_and_s_flag": true/false,
     "already_in_plan": true/false,
     "cluster_theme": "<shared theme string or null>",
-    "ai_summary": "<one sentence summary of the suggestion>",
+    "ai_summary": "<one sentence summary>",
     "ai_narrative": "<2-3 sentence assessment for committee>",
     "cost_band": "negligible|low|medium|high|very_high",
+    "cost_estimate_low": <number in £ or null if cannot estimate>,
+    "cost_estimate_high": <number in £ or null if cannot estimate>,
+    "cost_confidence": "high|medium|low",
+    "cost_rationale": "<one sentence explaining the cost estimate>",
+    "impl_weeks_low": <number or null>,
+    "impl_weeks_high": <number or null>,
+    "impl_complexity": "quick_win|project|programme",
     "strategic_note": "<one sentence on strategic alignment>"
   }
 ]`,
@@ -191,6 +222,13 @@ Return a JSON array with one object per submission in the same order:
     ai_summary: string
     ai_narrative: string
     cost_band: string
+    cost_estimate_low: number | null
+    cost_estimate_high: number | null
+    cost_confidence: 'high' | 'medium' | 'low'
+    cost_rationale: string
+    impl_weeks_low: number | null
+    impl_weeks_high: number | null
+    impl_complexity: 'quick_win' | 'project' | 'programme'
     strategic_note: string
   }> = JSON.parse(text.replace(/```json|```/g, '').trim())
 
@@ -204,13 +242,13 @@ Return a JSON array with one object per submission in the same order:
       memberMsg = 'Great minds think alike — this area is already part of our plans. Thank you for the confirmation that it matters to you.'
     } else if (score >= weights.bandPriority) {
       band = 'priority'
-      memberMsg = 'Your suggestion has been passed to the relevant director for consideration.'
+      memberMsg = 'Your improvement has been passed to the relevant director for consideration.'
     } else if (score >= weights.bandActive) {
       band = 'active'
-      memberMsg = 'Your suggestion has been noted and will be reviewed at the next committee cycle.'
+      memberMsg = 'Your improvement has been noted and will be reviewed at the next committee cycle.'
     } else if (score >= weights.bandHolding) {
       band = 'holding'
-      memberMsg = 'Thank you — your suggestion has been recorded.'
+      memberMsg = 'Thank you — your improvement has been recorded.'
     } else if (score >= weights.bandLow) {
       band = 'low_priority'
       memberMsg = 'Thank you for taking the time to share your thoughts.'
@@ -228,6 +266,13 @@ Return a JSON array with one object per submission in the same order:
       costBand: r.cost_band,
       strategicNote: r.strategic_note,
       alreadyInPlan: r.already_in_plan,
+      costEstimateLow: r.cost_estimate_low ?? null,
+      costEstimateHigh: r.cost_estimate_high ?? null,
+      costConfidence: r.cost_confidence ?? 'low',
+      costRationale: r.cost_rationale ?? '',
+      implWeeksLow: r.impl_weeks_low ?? null,
+      implWeeksHigh: r.impl_weeks_high ?? null,
+      implComplexity: r.impl_complexity ?? 'project',
     }
   })
 }

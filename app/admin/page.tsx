@@ -34,6 +34,11 @@ const CONFIG_GROUPS = [
     note: 'Additive bonus applied when submissions form a cluster',
     keys: ['CLUSTER_BONUS_2', 'CLUSTER_BONUS_3', 'CLUSTER_BONUS_4', 'CLUSTER_BONUS_5'],
   },
+  {
+    title: 'Cost & Implementation Thresholds',
+    note: 'Used to flag quick wins and escalate high-cost items',
+    keys: ['COST_THRESHOLD_QUICKWIN', 'COST_THRESHOLD_COMMITTEE', 'IMPL_QUICKWIN_WEEKS'],
+  },
 ]
 
 interface ConfigRow { key: string; value: string; label: string }

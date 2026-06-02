@@ -16,6 +16,16 @@ interface Submission {
   ai_summary: string | null
   ai_narrative: string | null
   cost_band: string | null
+  cost_estimate_low: number | null
+  cost_estimate_high: number | null
+  cost_confidence: string | null
+  cost_rationale: string | null
+  impl_weeks_low: number | null
+  impl_weeks_high: number | null
+  impl_complexity: string | null
+  suggested_target_date: string | null
+  cost_threshold_flag: boolean
+  quick_win_flag: boolean
   strategic_note: string | null
   recognition: string
   member_name: string | null
@@ -33,6 +43,14 @@ interface TrackedImprovement {
   status: string
   score: number | null
   cost_band: string | null
+  cost_estimate_low: number | null
+  cost_estimate_high: number | null
+  impl_complexity: string | null
+  impl_weeks_low: number | null
+  impl_weeks_high: number | null
+  suggested_target_date: string | null
+  quick_win_flag: boolean
+  cost_threshold_flag: boolean
   target_date: string | null
   responsible_person: string | null
   budget_year: number | null
@@ -222,7 +240,17 @@ export default function TriagePage() {
                     {data.isManager && (
                       <div className="border-t border-gray-100 p-4 bg-gray-50 grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs text-gray-500 block mb-1">Target date</label>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            Target date
+                            {t.suggested_target_date && !t.target_date && (
+                              <button
+                                onClick={() => editTracking(t.id, 'target_date', t.suggested_target_date)}
+                                className="ml-2 text-blue-500 hover:text-blue-700 underline normal-case font-normal"
+                              >
+                                Use AI suggestion ({new Date(t.suggested_target_date).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})})
+                              </button>
+                            )}
+                          </label>
                           <input
                             type="date"
                             className="bramley-input text-sm py-1.5"
@@ -398,6 +426,12 @@ function SubmissionRow({
           </p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="text-xs text-gray-500">{formatDate(s.created_at)}</span>
+            {s.quick_win_flag && (
+              <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>
+            )}
+            {s.cost_threshold_flag && (
+              <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Committee review</span>
+            )}
             {s.cluster_theme && (
               <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>
                 Cluster ({s.cluster_size})
@@ -428,12 +462,46 @@ function SubmissionRow({
             </div>
           )}
           <div className="grid grid-cols-2 gap-3 text-xs">
-            {s.cost_band && (
-              <div className="bg-gray-50 rounded-[8px] px-3 py-2">
-                <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Cost band</span>
-                <span className="text-gray-800 capitalize">{s.cost_band.replace('_', ' ')}</span>
+            {/* Cost estimate */}
+            {(s.cost_estimate_low != null || s.cost_band) && (
+              <div className={`rounded-[8px] px-3 py-2 col-span-2 ${s.cost_threshold_flag ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'}`}>
+                <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+                  Cost estimate {s.cost_confidence && <span className="normal-case font-normal text-gray-400">({s.cost_confidence} confidence)</span>}
+                </span>
+                <div className="flex items-baseline gap-2">
+                  {s.cost_estimate_low != null && s.cost_estimate_high != null ? (
+                    <span className="text-gray-900 font-semibold text-sm">
+                      £{s.cost_estimate_low.toLocaleString()} – £{s.cost_estimate_high.toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="text-gray-800 capitalize">{s.cost_band?.replace('_', ' ')}</span>
+                  )}
+                  {s.cost_threshold_flag && <span className="text-orange-600 font-semibold">⚠ Exceeds committee threshold</span>}
+                </div>
+                {s.cost_rationale && <p className="text-gray-500 mt-0.5">{s.cost_rationale}</p>}
               </div>
             )}
+
+            {/* Implementation time */}
+            {s.impl_complexity && (
+              <div className={`rounded-[8px] px-3 py-2 ${s.quick_win_flag ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
+                <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">Implementation</span>
+                <span className={`font-semibold capitalize ${s.quick_win_flag ? 'text-green-700' : 'text-gray-800'}`}>
+                  {s.impl_complexity.replace('_', ' ')}
+                </span>
+                {s.impl_weeks_low != null && s.impl_weeks_high != null && (
+                  <p className="text-gray-500 mt-0.5">
+                    {s.impl_weeks_low === s.impl_weeks_high
+                      ? `~${s.impl_weeks_low} week${s.impl_weeks_low !== 1 ? 's' : ''}`
+                      : `${s.impl_weeks_low}–${s.impl_weeks_high} weeks`}
+                  </p>
+                )}
+                {s.suggested_target_date && (
+                  <p className="text-gray-400 mt-0.5">Suggested target: {new Date(s.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                )}
+              </div>
+            )}
+
             {s.strategic_note && (
               <div className="bg-gray-50 rounded-[8px] px-3 py-2 col-span-2">
                 <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Strategic alignment</span>

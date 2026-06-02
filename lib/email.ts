@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
-const FROM = process.env.EMAIL_FROM ?? 'noreply@bramleygc.co.uk'
+const FROM = process.env.EMAIL_FROM ?? 'noreply@bramleygolfclub.co.uk'
 const MANAGER_EMAIL = process.env.MANAGER_EMAIL!
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bramley-bci.vercel.app'
 

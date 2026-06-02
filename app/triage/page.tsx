@@ -113,6 +113,40 @@ export default function TriagePage() {
     setTrackingEdit((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
   }
 
+  const [deleting, setDeleting] = useState<number | null>(null)
+  const [completing, setCompleting] = useState<number | null>(null)
+  const [recognitionAlert, setRecognitionAlert] = useState<string | null>(null)
+
+  async function deleteImprovement(id: number) {
+    if (!confirm('Remove this improvement? This cannot be undone.')) return
+    setDeleting(id)
+    await fetch('/api/triage', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    setData((prev) => prev ? {
+      ...prev,
+      submissions: prev.submissions.filter((s) => s.id !== id),
+    } : prev)
+    setDeleting(null)
+  }
+
+  async function markComplete(id: number) {
+    setCompleting(id)
+    const res = await fetch('/api/tracking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    const data = await res.json()
+    setTracked((prev) => prev.map((t) => t.id === id ? { ...t, status: 'implemented' } : t))
+    if (data.recognitionRequired && data.memberName) {
+      setRecognitionAlert(`${data.memberName} is eligible for recognition. Please follow up via the recognition workflow.`)
+    }
+    setCompleting(null)
+  }
+
   function toggleExpand(id: number) {
     setExpanded((prev) => {
       const next = new Set(prev)
@@ -222,6 +256,19 @@ export default function TriagePage() {
         </div>
       </div>
 
+      {/* Recognition alert */}
+      {recognitionAlert && (
+        <div className="bramley-card border-2 border-amber-400 bg-amber-50">
+          <div className="bramley-body flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-800">🏆 Recognition required</p>
+              <p className="text-sm text-amber-700 mt-1">{recognitionAlert}</p>
+            </div>
+            <button onClick={() => setRecognitionAlert(null)} className="text-amber-500 hover:text-amber-700 text-lg leading-none shrink-0">✕</button>
+          </div>
+        </div>
+      )}
+
       {/* Tracking tab */}
       {tab === 'tracking' && (
         <div className="bramley-card">
@@ -318,6 +365,18 @@ export default function TriagePage() {
                             </button>
                           </div>
                         )}
+                        {t.status === 'approved' && (
+                          <div className="col-span-2 pt-1 border-t border-gray-200">
+                            <button
+                              onClick={() => markComplete(t.id)}
+                              disabled={completing === t.id}
+                              className="bramley-btn py-2 text-sm"
+                              style={{ background: '#1e8449' }}
+                            >
+                              {completing === t.id ? <span className="spinner" /> : '✓ Mark as implemented'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -370,7 +429,9 @@ export default function TriagePage() {
               onToggle={() => toggleExpand(s.id)}
               isManager={data.isManager}
               onUpdate={updateField}
+              onDelete={deleteImprovement}
               updating={updating === s.id}
+              deleting={deleting === s.id}
               urgent
               formatDate={formatDate}
             />
@@ -392,7 +453,9 @@ export default function TriagePage() {
               onToggle={() => toggleExpand(s.id)}
               isManager={data.isManager}
               onUpdate={updateField}
+              onDelete={deleteImprovement}
               updating={updating === s.id}
+              deleting={deleting === s.id}
               formatDate={formatDate}
             />
           ))}
@@ -403,14 +466,16 @@ export default function TriagePage() {
 }
 
 function SubmissionRow({
-  s, expanded, onToggle, isManager, onUpdate, updating, urgent, formatDate,
+  s, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, urgent, formatDate,
 }: {
   s: Submission
   expanded: boolean
   onToggle: () => void
   isManager: boolean
   onUpdate: (id: number, field: 'status' | 'category', value: string) => void
+  onDelete: (id: number) => void
   updating: boolean
+  deleting: boolean
   urgent?: boolean
   formatDate: (iso: string) => string
 }) {
@@ -561,6 +626,17 @@ function SubmissionRow({
                   ))}
                 </select>
               </div>
+              {s.status !== 'approved' && s.status !== 'implemented' && (
+                <div className="w-full pt-1">
+                  <button
+                    onClick={() => onDelete(s.id)}
+                    disabled={deleting}
+                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                  >
+                    {deleting ? 'Removing…' : 'Remove improvement'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

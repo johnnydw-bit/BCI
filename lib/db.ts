@@ -67,6 +67,11 @@ export async function initDb() {
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS cost_threshold_flag BOOLEAN NOT NULL DEFAULT FALSE`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS quick_win_flag BOOLEAN NOT NULL DEFAULT FALSE`
 
+  // Soft delete + completion
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS recognition_flagged BOOLEAN NOT NULL DEFAULT FALSE`
+
   await sql`
     CREATE TABLE IF NOT EXISTS clusters (
       id          SERIAL PRIMARY KEY,

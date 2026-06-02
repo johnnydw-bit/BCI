@@ -56,3 +56,42 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ ok: true })
 }
+
+export async function POST(req: NextRequest) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('bci_session')?.value
+  const session = token ? await verifySession(token) : null
+  if (!session || session.type !== 'director' || session.role !== 'Club Manager') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { id } = await req.json()
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+  const row = await sql`SELECT status, recognition, member_name FROM submissions WHERE id = ${id}`
+  const current = row[0] as { status: string; recognition: string; member_name: string }
+
+  if (current.status !== 'approved') {
+    return NextResponse.json({ error: 'Only approved improvements can be marked complete' }, { status: 409 })
+  }
+
+  await sql`
+    UPDATE submissions SET
+      status = 'implemented',
+      completed_at = NOW(),
+      recognition_flagged = CASE WHEN recognition != 'anonymous' THEN TRUE ELSE FALSE END
+    WHERE id = ${id}
+  `
+
+  await sql`
+    INSERT INTO status_log (submission_id, old_status, new_status, changed_by, note)
+    VALUES (${id}, 'approved', 'implemented', ${session.directorName}, 'Marked complete via tracking')
+  `
+
+  return NextResponse.json({
+    ok: true,
+    recognitionRequired: current.recognition !== 'anonymous',
+    memberName: current.member_name,
+  })
+}
+}

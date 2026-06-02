@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Bramley GC — Member Suggestions',
-  description: 'Share your ideas to help improve Bramley Golf Club',
+  title: 'Bramley GC — Continuous Improvement Programme',
+  description: 'Share your improvement ideas as part of the Bramley GC Continuous Improvement Programme',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CATEGORIES, STATUS_LABELS } from '@/lib/categories'
 
-interface Suggestion {
+interface Improvement {
   id: number
   description: string
   category: string
@@ -14,9 +14,9 @@ interface Suggestion {
   created_at: string
 }
 
-export default function MySuggestionsPage() {
+export default function MyImprovementsPage() {
   const router = useRouter()
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [improvements, setImprovements] = useState<Improvement[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function MySuggestionsPage() {
         return r.json()
       })
       .then((data) => {
-        if (data) setSuggestions(data.suggestions)
+        if (data) setImprovements(data.suggestions)
       })
       .finally(() => setLoading(false))
   }, [router])
@@ -49,8 +49,8 @@ export default function MySuggestionsPage() {
   return (
     <div className="bramley-card">
       <div className="bramley-header">
-        <h1 className="text-xl font-bold">⛳ Bramley Golf Club</h1>
-        <p className="text-sm opacity-80 mt-0.5">My suggestions</p>
+        <h1 className="text-xl font-bold">⛳ Bramley GC</h1>
+        <p className="text-sm opacity-80 mt-0.5">Continuous Improvement Programme</p>
       </div>
 
       <div className="bramley-body space-y-4">
@@ -58,12 +58,12 @@ export default function MySuggestionsPage() {
           <div className="flex justify-center py-8">
             <span className="spinner" style={{ borderColor: 'var(--bramley-navy)', borderTopColor: 'transparent' }} />
           </div>
-        ) : suggestions.length === 0 ? (
+        ) : improvements.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p>You haven&apos;t submitted any suggestions yet.</p>
+            <p>You haven&apos;t submitted any improvements yet.</p>
           </div>
         ) : (
-          suggestions.map((s) => (
+          improvements.map((s) => (
             <div key={s.id} className="border border-gray-200 rounded-[10px] p-4 space-y-2">
               <div className="flex items-start justify-between gap-2">
                 <span className={`bramley-badge ${statusClass(s.status)}`}>
@@ -83,7 +83,7 @@ export default function MySuggestionsPage() {
         )}
 
         <button onClick={() => router.push('/submit')} className="bramley-btn">
-          Submit a suggestion
+          Submit an improvement
         </button>
         <button onClick={handleLogout} className="text-sm text-gray-400 w-full py-2 hover:text-gray-600">
           Sign out

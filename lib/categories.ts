@@ -7,6 +7,7 @@ export const CATEGORIES = [
   { value: 'restaurant',       label: 'Restaurant / Catering',     director: 'F&B Director',               ceiling: 5  },
   { value: 'bar',              label: 'Bar',                       director: 'F&B Director',               ceiling: 6  },
   { value: 'pro_shop',         label: 'Pro Shop',                  director: 'Commercial Director',        ceiling: 3  },
+  { value: 'other',            label: 'Other',                     director: 'Club Manager',               ceiling: 5  },
 ] as const
 
 export type CategoryValue = typeof CATEGORIES[number]['value']
@@ -19,9 +20,8 @@ export const IMPACT_OPTIONS = [
 ] as const
 
 export const RECOGNITION_OPTIONS = [
-  { value: 'public',    label: 'Public — happy for my name to be associated with this suggestion' },
-  { value: 'private',   label: 'Private — share my name with the committee only' },
-  { value: 'anonymous', label: 'Anonymous — do not share my name' },
+  { value: 'named',     label: 'Yes — record my name (required for award eligibility)' },
+  { value: 'anonymous', label: 'No — I prefer not to be identified (not eligible for recognition awards)' },
 ] as const
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -37,6 +37,6 @@ export const DIRECTOR_CATEGORIES: Record<string, string[]> = {
   'Estate Director':     ['clubhouse', 'grounds', 'refreshments'],
   'F&B Director':        ['restaurant', 'bar', 'refreshments'],
   'Commercial Director': ['pro_shop'],
-  'Club Manager':        ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop'],
-  'Chair':               ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop'],
+  'Club Manager':        ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
+  'Chair':               ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
 }

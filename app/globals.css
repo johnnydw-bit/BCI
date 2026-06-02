@@ -19,6 +19,15 @@ body {
     @apply bg-white rounded-[10px] shadow-sm overflow-hidden w-full max-w-xl mx-auto;
   }
 
+  @media (min-width: 1024px) {
+    .bramley-card {
+      max-width: 680px;
+    }
+    .bramley-wide {
+      max-width: 960px;
+    }
+  }
+
   .bramley-header {
     @apply px-5 py-4 text-white text-lg font-bold;
     background-color: var(--bramley-navy);

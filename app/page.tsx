@@ -56,8 +56,8 @@ export default function LoginPage() {
   return (
     <div className="bramley-card">
       <div className="bramley-header">
-        <h1 className="text-xl font-bold">⛳ Bramley Golf Club</h1>
-        <p className="text-sm opacity-80 mt-0.5">Member Suggestions</p>
+        <h1 className="text-xl font-bold">⛳ Bramley GC</h1>
+        <p className="text-sm opacity-80 mt-0.5">Continuous Improvement Programme</p>
       </div>
 
       <div className="bramley-body">

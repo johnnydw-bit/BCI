@@ -102,7 +102,7 @@ export default function TriagePage() {
   }, {})
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-4">
+    <div className="w-full max-w-3xl lg:max-w-5xl mx-auto space-y-4">
       {/* Header */}
       <div className="bramley-card">
         <div className="bramley-header flex justify-between items-center">
@@ -114,7 +114,7 @@ export default function TriagePage() {
         </div>
         <div className="bramley-body">
           <p className="text-sm text-gray-600">
-            {data.submissions.length} suggestion{data.submissions.length !== 1 ? 's' : ''} in this view
+            {data.submissions.length} improvement{data.submissions.length !== 1 ? 's' : ''} in this view
             {urgent.length > 0 && <span className="ml-2 text-red-600 font-semibold">· {urgent.length} urgent H&amp;S</span>}
           </p>
         </div>
@@ -214,7 +214,7 @@ function SubmissionRow({
       {expanded && (
         <div className="px-4 pb-4 border-t border-gray-100 space-y-3 pt-3">
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Suggestion</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Improvement</p>
             <p className="text-sm text-gray-800">{s.description}</p>
           </div>
           <div>

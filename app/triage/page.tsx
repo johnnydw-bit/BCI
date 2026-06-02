@@ -286,7 +286,7 @@ export default function TriagePage() {
                           {STATUS_LABELS[t.status]}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === t.category)?.label} {t.score != null ? `· Score ${t.score.toFixed(1)}` : ''}</p>
+                      <p className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === t.category)?.label} {t.score != null ? `· Score ${Number(t.score).toFixed(1)}` : ''}</p>
                       {t.recognition !== 'anonymous' && t.member_name && (
                         <p className="text-xs text-gray-400">Submitted by {t.member_name}</p>
                       )}
@@ -490,7 +490,7 @@ function SubmissionRow({
             className="bramley-badge shrink-0 mt-0.5"
             style={{ background: scoreBandColor(s.score_band) }}
           >
-            {s.score.toFixed(1)}
+            {Number(s.score).toFixed(1)}
           </span>
         )}
         <div className="flex-1 min-w-0">
@@ -544,7 +544,7 @@ function SubmissionRow({
                 <div className="flex items-baseline gap-2">
                   {s.cost_estimate_low != null && s.cost_estimate_high != null ? (
                     <span className="text-gray-900 font-semibold text-sm">
-                      £{s.cost_estimate_low.toLocaleString()} – £{s.cost_estimate_high.toLocaleString()}
+                      £{Number(s.cost_estimate_low).toLocaleString()} – £{Number(s.cost_estimate_high).toLocaleString()}
                     </span>
                   ) : (
                     <span className="text-gray-800 capitalize">{s.cost_band?.replace('_', ' ')}</span>

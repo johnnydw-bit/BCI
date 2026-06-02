@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  const { description, benefit, category, impact, recognition } = await req.json()
+  const { description, benefit, category, impact, recognition, emailOptOut } = await req.json()
 
   if (!description?.trim() || !benefit?.trim() || !category || !impact || !recognition) {
     return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   })
 
   await sql`
-    INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, member_email)
+    INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, member_email, email_opt_out)
     VALUES (
       ${session.memberId},
       ${session.memberName},
@@ -76,7 +76,8 @@ export async function POST(req: NextRequest) {
       ${category},
       ${Number(impact)},
       ${recognition},
-      ${session.memberEmail ?? null}
+      ${session.memberEmail ?? null},
+      ${emailOptOut ? true : false}
     )
   `
 

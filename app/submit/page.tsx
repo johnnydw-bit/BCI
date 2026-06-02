@@ -26,6 +26,7 @@ export default function SubmitPage() {
   const [category, setCategory] = useState('')
   const [impact, setImpact] = useState<number | ''>('')
   const [recognition, setRecognition] = useState('named')
+  const [emailOptOut, setEmailOptOut] = useState(false)
   const [message, setMessage] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
@@ -35,7 +36,7 @@ export default function SubmitPage() {
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description, benefit, category, impact: Number(impact), recognition }),
+        body: JSON.stringify({ description, benefit, category, impact: Number(impact), recognition, emailOptOut }),
       })
       if (res.status === 401) { router.push('/'); return }
       const data = await res.json()
@@ -192,6 +193,20 @@ export default function SubmitPage() {
               ))}
             </div>
             <p className="text-xs text-gray-400 mt-2">Your membership details are always recorded securely for programme administration.</p>
+          </div>
+
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={emailOptOut}
+                onChange={(e) => setEmailOptOut(e.target.checked)}
+                className="mt-0.5 accent-[#1a3a5c]"
+              />
+              <span className="text-sm text-gray-600 group-hover:text-gray-900">
+                Don&apos;t email me when this improvement is assessed — I&apos;ll check back here instead
+              </span>
+            </label>
           </div>
 
           <div className="pt-2 space-y-3">

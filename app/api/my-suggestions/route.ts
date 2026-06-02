@@ -20,9 +20,15 @@ export async function GET() {
       status,
       member_msg,
       score_band,
+      cost_band,
+      impl_complexity,
+      suggested_target_date,
+      quick_win_flag,
+      scored_at,
       created_at
     FROM submissions
     WHERE member_id = ${session.memberId}
+      AND deleted_at IS NULL
     ORDER BY created_at DESC
   `
 

@@ -72,6 +72,19 @@ export async function initDb() {
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS recognition_flagged BOOLEAN NOT NULL DEFAULT FALSE`
 
+  // Member email stored at submission time (from login session)
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS member_email TEXT`
+
+  // Member preferences — stores verified email against member ID
+  await sql`
+    CREATE TABLE IF NOT EXISTS member_preferences (
+      member_id   TEXT PRIMARY KEY,
+      email       TEXT NOT NULL,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+
   await sql`
     CREATE TABLE IF NOT EXISTS clusters (
       id          SERIAL PRIMARY KEY,

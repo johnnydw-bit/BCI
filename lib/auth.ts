@@ -4,7 +4,7 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET!)
 const BRAMLEY_BASE = 'https://www.bramleygolfclub.co.uk'
 
 export type SessionPayload =
-  | { type: 'member'; memberId: string; memberName: string }
+  | { type: 'member'; memberId: string; memberName: string; memberEmail: string }
   | { type: 'director'; role: string; directorName: string; email: string }
 
 export async function signSession(payload: SessionPayload): Promise<string> {

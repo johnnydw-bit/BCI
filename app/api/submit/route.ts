@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   })
 
   await sql`
-    INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition)
+    INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, member_email)
     VALUES (
       ${session.memberId},
       ${session.memberName},
@@ -75,7 +75,8 @@ export async function POST(req: NextRequest) {
       ${benefit.trim()},
       ${category},
       ${Number(impact)},
-      ${recognition}
+      ${recognition},
+      ${session.memberEmail ?? null}
     )
   `
 

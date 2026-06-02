@@ -12,7 +12,21 @@ interface Improvement {
   status: string
   member_msg: string | null
   score_band: string | null
+  cost_band: string | null
+  impl_complexity: string | null
+  suggested_target_date: string | null
+  quick_win_flag: boolean
+  scored_at: string | null
   created_at: string
+}
+
+const BAND_LABELS: Record<string, { label: string; color: string }> = {
+  priority:       { label: 'Priority — high likelihood of implementation', color: '#0d5d3d' },
+  active:         { label: 'Active queue — under consideration',           color: '#1e8449' },
+  holding:        { label: 'Holding — good idea, longer timeframe',        color: '#b7770d' },
+  low_priority:   { label: 'Low priority at this time',                    color: '#888'    },
+  not_progressed: { label: 'Not progressed',                               color: '#aaa'    },
+  in_plan:        { label: 'Already in our improvement plan',              color: '#2471a3' },
 }
 
 export default function MyImprovementsPage() {
@@ -61,23 +75,62 @@ export default function MyImprovementsPage() {
             <p>You haven&apos;t submitted any improvements yet.</p>
           </div>
         ) : (
-          improvements.map((s) => (
-            <div key={s.id} className="border border-gray-200 rounded-[10px] p-4 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <span className={`bramley-badge ${statusClass(s.status)}`}>
-                  {STATUS_LABELS[s.status] ?? s.status}
-                </span>
-                <span className="text-xs text-gray-400">{formatDate(s.created_at)}</span>
-              </div>
-              <p className="text-sm font-medium text-gray-800 line-clamp-2">{s.description}</p>
-              <p className="text-xs text-gray-500">{categoryLabel(s.category)}</p>
-              {s.member_msg && (
-                <div className="bg-gray-50 rounded-[8px] px-3 py-2">
-                  <p className="text-xs text-gray-600 italic">{s.member_msg}</p>
+          improvements.map((s) => {
+            const band = s.score_band ? BAND_LABELS[s.score_band] : null
+            const assessed = !!s.scored_at
+
+            return (
+              <div key={s.id} className="border border-gray-200 rounded-[10px] overflow-hidden">
+                {/* Header row */}
+                <div className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className={`bramley-badge ${statusClass(s.status)}`}>
+                      {STATUS_LABELS[s.status] ?? s.status}
+                    </span>
+                    <span className="text-xs text-gray-400">{formatDate(s.created_at)}</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-800">{s.description}</p>
+                  <p className="text-xs text-gray-500">{categoryLabel(s.category)}</p>
+
+                  {s.quick_win_flag && (
+                    <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>
+                  )}
                 </div>
-              )}
-            </div>
-          ))
+
+                {/* Assessment panel */}
+                {assessed ? (
+                  <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-3">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Assessment {s.scored_at ? `· ${formatDate(s.scored_at)}` : ''}</p>
+
+                    {band && (
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="bramley-badge text-xs shrink-0"
+                          style={{ background: band.color }}
+                        >
+                          {band.label}
+                        </span>
+                      </div>
+                    )}
+
+                    {s.member_msg && (
+                      <p className="text-sm text-gray-700 leading-relaxed">{s.member_msg}</p>
+                    )}
+
+                    {s.suggested_target_date && (
+                      <p className="text-xs text-gray-500">
+                        Indicative timeline: <strong>{formatDate(s.suggested_target_date)}</strong>
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
+                    <p className="text-xs text-gray-400 italic">Assessment pending — usually within 24 hours.</p>
+                  </div>
+                )}
+              </div>
+            )
+          })
         )}
 
         <button onClick={() => router.push('/submit')} className="bramley-btn">

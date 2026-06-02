@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { scoreBatch, ScoringResult, ScoringWeights, DEFAULT_WEIGHTS } from '@/lib/ai'
-import { sendHAndSAlert, sendTriageReport } from '@/lib/email'
+import { sendHAndSAlert, sendTriageReport, sendSubmitterUpdate } from '@/lib/email'
 import { CATEGORIES, DIRECTOR_CATEGORIES } from '@/lib/categories'
 
 export async function GET(req: NextRequest) {
@@ -58,7 +58,8 @@ export async function GET(req: NextRequest) {
 
   // Fetch unscored submissions
   const unscoredRows = await sql`
-    SELECT s.id, s.description, s.benefit, s.category, s.impact, s.member_id
+    SELECT s.id, s.description, s.benefit, s.category, s.impact, s.member_id,
+           s.member_email, s.email_opt_out
     FROM submissions s
     WHERE s.scored_at IS NULL
     ORDER BY s.created_at ASC
@@ -67,6 +68,7 @@ export async function GET(req: NextRequest) {
   const unscored = unscoredRows as Array<{
     id: number; description: string; benefit: string
     category: string; impact: number; member_id: string
+    member_email: string | null; email_opt_out: boolean
   }>
 
   // Build scoring input with category ceilings
@@ -173,6 +175,25 @@ export async function GET(req: NextRequest) {
           category: sub.category,
           aiSummary: r.aiSummary,
         })
+      }
+    }
+
+    // Email the submitter their assessment result
+    const sub = unscored.find((s) => s.id === r.submissionId)
+    if (sub?.member_email && !sub.email_opt_out) {
+      try {
+        await sendSubmitterUpdate(sub.member_email, {
+          description: sub.description,
+          scoreBand: r.scoreBand,
+          memberMsg: r.memberMsg,
+          costBand: r.costBand,
+          implComplexity: r.implComplexity,
+          suggestedTargetDate: r.implWeeksHigh != null
+            ? new Date(Date.now() + r.implWeeksHigh * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            : null,
+        })
+      } catch (e) {
+        console.error(`Failed to send submitter email for submission ${r.submissionId}:`, e)
       }
     }
   }

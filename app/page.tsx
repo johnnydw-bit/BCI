@@ -15,6 +15,7 @@ export default function LoginPage() {
   }, [router])
 
   const [memberId, setMemberId] = useState('')
+  const [memberEmail, setMemberEmail] = useState('')
   const [pin, setPin] = useState('')
   const [showPin, setShowPin] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -30,7 +31,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, pin }),
+        body: JSON.stringify({ memberId, pin, email: memberEmail }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
@@ -88,14 +89,26 @@ export default function LoginPage() {
         {mode === 'member' ? (
           <form onSubmit={handleMemberLogin} className="space-y-4">
             <div>
-              <label className="bramley-label">Member ID or Email</label>
+              <label className="bramley-label">Member ID</label>
               <input
                 className="bramley-input"
                 type="text"
                 value={memberId}
                 onChange={(e) => setMemberId(e.target.value)}
                 autoComplete="username"
-                placeholder="Your membership number or email"
+                placeholder="Your membership number"
+                required
+              />
+            </div>
+            <div>
+              <label className="bramley-label">Email address</label>
+              <input
+                className="bramley-input"
+                type="email"
+                value={memberEmail}
+                onChange={(e) => setMemberEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="Your email address"
                 required
               />
             </div>
@@ -129,7 +142,7 @@ export default function LoginPage() {
             </button>
 
             <p className="text-xs text-gray-500 text-center">
-              Use the same credentials as the Bramley GC website.
+              Use your Bramley GC membership number, registered email address and website PIN.
             </p>
           </form>
         ) : (

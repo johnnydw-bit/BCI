@@ -41,8 +41,12 @@ export async function sendHAndSAlert(submission: {
     subject: `⚠️ URGENT — Health & Safety suggestion flagged`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-        <div style="background:#1a3a5c;padding:20px;color:white;border-radius:10px 10px 0 0">
-          <h2 style="margin:0">⛳ Bramley GC — Urgent H&amp;S Flag</h2>
+        <div style="background:#c0392b;padding:20px;color:white;border-radius:10px 10px 0 0;display:flex;align-items:center;gap:16px">
+          <img src="${APP_URL}/bramley-logo.jpg" alt="Bramley Golf Club" style="height:56px;width:56px;object-fit:cover;border-radius:8px;flex-shrink:0" />
+          <div>
+            <h2 style="margin:0;font-size:20px">⚠️ Bramley Golf Club — Urgent H&amp;S Flag</h2>
+            <p style="margin:4px 0 0;opacity:0.85;font-size:14px">Requires immediate attention</p>
+          </div>
         </div>
         <div style="padding:20px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
           <p>A member suggestion has been flagged as having a <strong>Health &amp; Safety</strong> dimension and requires your immediate attention.</p>
@@ -84,9 +88,12 @@ export async function sendSubmitterUpdate(to: string, submission: {
     subject: `Your Bramley GC improvement has been assessed`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-        <div style="background:#1a3a5c;padding:20px;color:white;border-radius:10px 10px 0 0">
-          <h2 style="margin:0">⛳ Bramley Golf Club</h2>
-          <p style="margin:6px 0 0;opacity:0.85">Continuous Improvement Programme</p>
+        <div style="background:#1a3a5c;padding:20px;color:white;border-radius:10px 10px 0 0;display:flex;align-items:center;gap:16px">
+          <img src="${APP_URL}/bramley-logo.jpg" alt="Bramley Golf Club" style="height:56px;width:56px;object-fit:cover;border-radius:8px;flex-shrink:0" />
+          <div>
+            <h2 style="margin:0;font-size:20px">Bramley Golf Club</h2>
+            <p style="margin:4px 0 0;opacity:0.85;font-size:14px">Continuous Improvement Programme</p>
+          </div>
         </div>
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
           <p style="color:#333">Thank you for taking the time to submit an improvement idea. Our committee has now assessed it.</p>
@@ -123,15 +130,18 @@ export async function sendTriageReport(to: string[], periodStart: Date, periodEn
   await send({
     from: FROM,
     to,
-    subject: `Bramley GC — Suggestion Triage Report (${fmt(periodStart)} – ${fmt(periodEnd)})`,
+    subject: `Bramley GC — Triage Report (${fmt(periodStart)} – ${fmt(periodEnd)})`,
     html: `
       <div style="font-family:sans-serif;max-width:800px;margin:0 auto">
-        <div style="background:#1a3a5c;padding:20px;color:white;border-radius:10px 10px 0 0">
-          <h2 style="margin:0">⛳ Bramley GC — Triage Report</h2>
-          <p style="margin:8px 0 0;opacity:0.85">${fmt(periodStart)} – ${fmt(periodEnd)}</p>
+        <div style="background:#1a3a5c;padding:20px;color:white;border-radius:10px 10px 0 0;display:flex;align-items:center;gap:16px">
+          <img src="${APP_URL}/bramley-logo.jpg" alt="Bramley Golf Club" style="height:56px;width:56px;object-fit:cover;border-radius:8px;flex-shrink:0" />
+          <div>
+            <h2 style="margin:0;font-size:20px">Bramley Golf Club — Triage Report</h2>
+            <p style="margin:4px 0 0;opacity:0.85;font-size:14px">${fmt(periodStart)} – ${fmt(periodEnd)}</p>
+          </div>
         </div>
-        <div style="padding:20px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
-          <p>Next scheduled report: <strong>${fmt(nextRunAt)}</strong></p>
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="margin:0 0 16px;color:#555;font-size:14px">Next scheduled report: <strong>${fmt(nextRunAt)}</strong></p>
           <a href="${APP_URL}/triage" style="display:inline-block;background:#1a3a5c;color:white;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:700;margin-bottom:24px">Open Full Interactive Report →</a>
           ${htmlReport}
         </div>

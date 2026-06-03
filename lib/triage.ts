@@ -1,7 +1,14 @@
 import { sql } from '@/lib/db'
 import { scoreBatch, ScoringResult, ScoringWeights, DEFAULT_WEIGHTS } from '@/lib/ai'
 import { sendHAndSAlert, sendTriageReport, sendSubmitterUpdate } from '@/lib/email'
-import { CATEGORIES, DIRECTOR_CATEGORIES } from '@/lib/categories'
+import { CATEGORIES, DIRECTOR_CATEGORIES, STATUS_LABELS } from '@/lib/categories'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bramley-bci.vercel.app'
+const LOGO_URL = `${APP_URL}/bramley-logo.jpg`
+
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  CATEGORIES.map((c) => [c.value, c.label])
+)
 
 export async function runTriage(): Promise<{ scored: number; runId: number }> {
   const configRows = await sql`SELECT key, value FROM config`
@@ -216,20 +223,30 @@ function buildEmailReport(submissions: Array<Record<string, unknown>>): string {
   const normal  = submissions.filter((s) => !s.h_and_s_flag)
   let html = ''
   if (urgent.length > 0) {
-    html += `<h3 style="color:#c0392b">⚠️ URGENT — Health &amp; Safety Items</h3>`
-    html += urgent.map(rowHtml).join('')
+    html += `<h3 style="color:#c0392b;margin:24px 0 8px">⚠️ Health &amp; Safety — Requires Immediate Attention (${urgent.length})</h3>`
+    html += urgent.map((s) => rowHtml(s, true)).join('')
   }
-  html += `<h3>Improvements (${normal.length})</h3>`
-  html += normal.map(rowHtml).join('')
+  html += `<h3 style="margin:24px 0 8px">Improvements (${normal.length})</h3>`
+  html += normal.map((s) => rowHtml(s, false)).join('')
   return html
 }
 
-function rowHtml(s: Record<string, unknown>): string {
+function rowHtml(s: Record<string, unknown>, isUrgent: boolean): string {
+  const categoryLabel = CATEGORY_LABELS[s.category as string] ?? String(s.category)
+  const statusLabel   = STATUS_LABELS[s.status as string]     ?? String(s.status ?? 'Received')
+  const border        = isUrgent ? 'border:2px solid #c0392b' : 'border:1px solid #ddd'
+  const statusColour  = isUrgent ? '#c0392b' : '#1a3a5c'
+
   return `
-    <div style="border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:8px">
-      <strong>[${s.score ?? 'Pending'}]</strong> ${s.category} — ${s.ai_summary ?? s.description}
-      ${s.cluster_theme ? `<span style="background:#2471a3;color:white;padding:2px 8px;border-radius:20px;font-size:11px;margin-left:8px">Cluster: ${s.cluster_theme}</span>` : ''}
-      <p style="color:#555;font-size:13px;margin:6px 0 0">${s.ai_narrative ?? ''}</p>
+    <div style="${border};border-radius:8px;padding:14px;margin-bottom:10px;background:${isUrgent ? '#fff8f8' : '#fff'}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+        <span style="background:${statusColour};color:white;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">${statusLabel}</span>
+        <span style="color:#666;font-size:12px">${categoryLabel}</span>
+        ${s.cluster_theme ? `<span style="background:#2471a3;color:white;padding:2px 8px;border-radius:20px;font-size:11px">Cluster: ${s.cluster_theme}</span>` : ''}
+        ${isUrgent ? `<span style="background:#c0392b;color:white;padding:2px 8px;border-radius:20px;font-size:11px">⚠️ H&amp;S</span>` : ''}
+      </div>
+      <p style="margin:0 0 6px;font-weight:600;color:#222">${s.ai_summary ?? s.description}</p>
+      <p style="margin:0;color:#555;font-size:13px;line-height:1.5">${s.ai_narrative ?? ''}</p>
     </div>
   `
 }

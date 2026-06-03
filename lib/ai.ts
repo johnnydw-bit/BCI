@@ -81,7 +81,7 @@ Respond with exactly this JSON:
     pass: false,
     reason: result.reason,
     silentReject: isSilent,
-    message: messages[result.reason] ?? 'We were unable to process your submission. Please try again.',
+    message: messages[result.reason ?? ''] ?? 'We were unable to process your submission. Please try again.',
   }
 }
 

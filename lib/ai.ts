@@ -226,7 +226,7 @@ Return a JSON array with one object per improvement in the same order:
   })
 
   const text = (response.content[0] as { text: string }).text
-  const raw: Array<{
+  let raw: Array<{
     submission_id: number
     weighted_score: number
     h_and_s_flag: boolean

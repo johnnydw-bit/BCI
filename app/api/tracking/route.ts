@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
-import { DIRECTOR_CATEGORIES } from '@/lib/categories'
+import { DIRECTOR_CATEGORIES, isManager } from '@/lib/categories'
 
 export async function GET() {
   const cookieStore = await cookies()
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest) {
   const cookieStore = await cookies()
   const token = cookieStore.get('bci_session')?.value
   const session = token ? await verifySession(token) : null
-  if (!session || session.type !== 'director' || session.role !== 'Club Manager') {
+  if (!session || session.type !== 'director' || !isManager(session.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   const token = cookieStore.get('bci_session')?.value
   const session = token ? await verifySession(token) : null
-  if (!session || session.type !== 'director' || session.role !== 'Club Manager') {
+  if (!session || session.type !== 'director' || !isManager(session.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

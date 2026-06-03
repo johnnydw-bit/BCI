@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BramleyHeader from '@/components/BramleyHeader'
 
-const ROLES = ['Club Manager', 'Chairman', 'Chair', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
+const ROLES = ['Club Manager', 'Super Admin', 'Chairman', 'Chair', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
 
 const CONFIG_GROUPS = [
   {

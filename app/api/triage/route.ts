@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
-import { DIRECTOR_CATEGORIES } from '@/lib/categories'
+import { DIRECTOR_CATEGORIES, isManager } from '@/lib/categories'
 
 export async function GET() {
   const cookieStore = await cookies()
@@ -38,7 +38,7 @@ export async function GET() {
     role: session.role,
     directorName: session.directorName,
     submissions: rows,
-    isManager: session.role === 'Club Manager',
+    isManager: isManager(session.role),
   })
 }
 
@@ -47,7 +47,7 @@ export async function PATCH(req: NextRequest) {
   const token = cookieStore.get('bci_session')?.value
   const session = token ? await verifySession(token) : null
 
-  if (!session || session.type !== 'director' || session.role !== 'Club Manager') {
+  if (!session || session.type !== 'director' || !isManager(session.role)) {
     return NextResponse.json({ error: 'Not authorised' }, { status: 403 })
   }
 
@@ -83,7 +83,7 @@ export async function DELETE(req: NextRequest) {
   const token = cookieStore.get('bci_session')?.value
   const session = token ? await verifySession(token) : null
 
-  if (!session || session.type !== 'director' || session.role !== 'Club Manager') {
+  if (!session || session.type !== 'director' || !isManager(session.role)) {
     return NextResponse.json({ error: 'Not authorised' }, { status: 403 })
   }
 

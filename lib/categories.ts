@@ -38,6 +38,12 @@ export const DIRECTOR_CATEGORIES: Record<string, string[]> = {
   'F&B Director':        ['restaurant', 'bar', 'refreshments'],
   'Commercial Director': ['pro_shop'],
   'Club Manager':        ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
+  'Super Admin':         ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
   'Chairman':            ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
   'Chair':               ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
+}
+
+/** Returns true for roles that have full management permissions */
+export function isManager(role: string): boolean {
+  return role === 'Club Manager' || role === 'Super Admin'
 }

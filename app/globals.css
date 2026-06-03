@@ -22,9 +22,21 @@ body {
 /* ── Layout helpers ───────────────────────────────────────────────── */
 @layer components {
 
-  /* Narrow centred layout — login, submit, my-improvements, setup */
+  /* Centred layout — login, submit, my-improvements, setup */
   .bramley-page {
     @apply w-full max-w-lg mx-auto px-4 py-8;
+  }
+
+  @media (min-width: 768px) {
+    .bramley-page {
+      max-width: 680px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .bramley-page {
+      max-width: 860px;
+    }
   }
 
   /* Wide layout — triage, admin — full width on desktop */

@@ -64,7 +64,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bramley-page">
+    <div className="bramley-wide-page">
     <div className="bramley-card">
       <BramleyHeader subtitle="Continuous Improvement Programme" />
 

@@ -5,13 +5,37 @@ const FROM = process.env.EMAIL_FROM ?? 'noreply@bramleygolfclub.co.uk'
 const MANAGER_EMAIL = process.env.MANAGER_EMAIL!
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bramley-bci.vercel.app'
 
+// If DEBUG_EMAIL is set, all emails are redirected there regardless of recipient.
+// Use this while Resend domain verification is pending.
+const DEBUG_EMAIL = process.env.DEBUG_EMAIL
+
+function resolveRecipient(to: string | string[]): string | string[] {
+  if (DEBUG_EMAIL) {
+    console.log(`[email] DEBUG_EMAIL active — redirecting to ${DEBUG_EMAIL} (was: ${JSON.stringify(to)})`)
+    return DEBUG_EMAIL
+  }
+  return to
+}
+
+async function send(payload: { from: string; to: string | string[]; subject: string; html: string }) {
+  const resolvedTo = resolveRecipient(payload.to)
+  console.log(`[email] Sending "${payload.subject}" from ${payload.from} to ${JSON.stringify(resolvedTo)}`)
+  const result = await resend.emails.send({ ...payload, to: resolvedTo as string | string[] })
+  if (result.error) {
+    console.error(`[email] Resend error:`, JSON.stringify(result.error))
+  } else {
+    console.log(`[email] Sent OK — id: ${result.data?.id}`)
+  }
+  return result
+}
+
 export async function sendHAndSAlert(submission: {
   id: number
   description: string
   category: string
   aiSummary: string
 }) {
-  await resend.emails.send({
+  await send({
     from: FROM,
     to: MANAGER_EMAIL,
     subject: `⚠️ URGENT — Health & Safety suggestion flagged`,
@@ -54,7 +78,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
 
   const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
-  await resend.emails.send({
+  await send({
     from: FROM,
     to,
     subject: `Your Bramley GC improvement has been assessed`,
@@ -96,7 +120,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
 export async function sendTriageReport(to: string[], periodStart: Date, periodEnd: Date, nextRunAt: Date, htmlReport: string) {
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
-  await resend.emails.send({
+  await send({
     from: FROM,
     to,
     subject: `Bramley GC — Suggestion Triage Report (${fmt(periodStart)} – ${fmt(periodEnd)})`,

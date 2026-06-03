@@ -14,7 +14,7 @@ async function requireManager() {
 
 export async function GET() {
   if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const rows = await sql`SELECT id, role, name, email, active FROM director_roles ORDER BY name`
+  const rows = await sql`SELECT id, role, name, email, active, email_reports FROM director_roles ORDER BY name`
   return NextResponse.json({ directors: rows })
 }
 
@@ -42,8 +42,9 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const { id, active } = await req.json()
-  await sql`UPDATE director_roles SET active = ${active} WHERE id = ${id}`
+  const { id, active, email_reports } = await req.json()
+  if (active !== undefined) await sql`UPDATE director_roles SET active = ${active} WHERE id = ${id}`
+  if (email_reports !== undefined) await sql`UPDATE director_roles SET email_reports = ${email_reports} WHERE id = ${id}`
   return NextResponse.json({ ok: true })
 }
 

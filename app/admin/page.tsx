@@ -43,7 +43,7 @@ const CONFIG_GROUPS = [
 ]
 
 interface ConfigRow { key: string; value: string; label: string }
-interface Director { id: number; role: string; name: string; email: string; active: boolean }
+interface Director { id: number; role: string; name: string; email: string; active: boolean; email_reports: boolean }
 
 export default function AdminPage() {
   const router = useRouter()
@@ -127,6 +127,15 @@ export default function AdminPage() {
       body: JSON.stringify({ id, active }),
     })
     setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, active } : d))
+  }
+
+  async function toggleEmailReports(id: number, email_reports: boolean) {
+    await fetch('/api/admin/directors', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, email_reports }),
+    })
+    setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, email_reports } : d))
   }
 
   function startEdit(d: Director) {
@@ -277,6 +286,13 @@ export default function AdminPage() {
                     className={`text-xs px-2 py-1 rounded-[6px] font-semibold ${d.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
                   >
                     {d.active ? 'Active' : 'Inactive'}
+                  </button>
+                  <button
+                    onClick={() => toggleEmailReports(d.id, !d.email_reports)}
+                    className={`text-xs px-2 py-1 rounded-[6px] font-semibold ${d.email_reports ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}
+                    title="Toggle triage report emails"
+                  >
+                    {d.email_reports ? '✉ Emails on' : '✉ Emails off'}
                   </button>
                   <button
                     onClick={() => editingId === d.id ? setEditingId(null) : startEdit(d)}

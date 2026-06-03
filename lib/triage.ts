@@ -190,7 +190,7 @@ export async function runTriage(): Promise<{ scored: number; runId: number }> {
     ORDER BY s.h_and_s_flag DESC, s.score DESC NULLS LAST
   `
 
-  const directorEmails = await sql`SELECT role, email FROM director_roles WHERE active = TRUE`
+  const directorEmails = await sql`SELECT role, email FROM director_roles WHERE active = TRUE AND email_reports = TRUE`
 
   for (const director of directorEmails as Array<{ role: string; email: string }>) {
     const allowedCats = DIRECTOR_CATEGORIES[director.role] ?? []

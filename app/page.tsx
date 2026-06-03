@@ -64,6 +64,7 @@ export default function LoginPage() {
   }
 
   return (
+    <div className="bramley-page">
     <div className="bramley-card">
       <BramleyHeader subtitle="Continuous Improvement Programme" />
 
@@ -177,6 +178,7 @@ export default function LoginPage() {
           </form>
         )}
       </div>
+    </div>
     </div>
   )
 }

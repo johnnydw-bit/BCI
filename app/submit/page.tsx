@@ -55,19 +55,19 @@ export default function SubmitPage() {
 
   if (step === 'submitting') {
     return (
-      <div className="bramley-card">
+      <div className="bramley-page"><div className="bramley-card">
         <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body flex flex-col items-center py-12 gap-4">
           <span className="spinner" style={{ borderColor: 'var(--bramley-navy)', borderTopColor: 'transparent' }} />
           <p className="text-gray-600">Reviewing your improvement…</p>
         </div>
-      </div>
+      </div></div>
     )
   }
 
   if (step === 'success') {
     return (
-      <div className="bramley-card">
+      <div className="bramley-page"><div className="bramley-card">
         <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-[10px] p-4">
@@ -82,13 +82,13 @@ export default function SubmitPage() {
           </button>
           <button onClick={handleLogout} className="text-sm text-gray-400 w-full py-2 hover:text-gray-600">Sign out</button>
         </div>
-      </div>
+      </div></div>
     )
   }
 
   if (step === 'rejected') {
     return (
-      <div className="bramley-card">
+      <div className="bramley-page"><div className="bramley-card">
         <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body space-y-4">
           <div className="bg-amber-50 border border-amber-200 rounded-[10px] p-4">
@@ -96,12 +96,12 @@ export default function SubmitPage() {
           </div>
           <button onClick={() => setStep('form')} className="bramley-btn">Try again</button>
         </div>
-      </div>
+      </div></div>
     )
   }
 
   return (
-    <div className="bramley-card">
+    <div className="bramley-page"><div className="bramley-card">
       <div className="bramley-header">
         <h1 className="text-xl font-bold">⛳ Bramley GC</h1>
         <p className="text-sm opacity-80 mt-0.5">Continuous Improvement Programme</p>
@@ -166,7 +166,7 @@ export default function SubmitPage() {
                     value={opt.value}
                     checked={impact === opt.value}
                     onChange={() => setImpact(opt.value)}
-                    className="mt-0.5 accent-[#1a3a5c]"
+                    className="mt-0.5 accent-[#231d45]"
                     required
                   />
                   <span className="text-sm text-gray-700 group-hover:text-gray-900">{opt.label}</span>
@@ -181,7 +181,7 @@ export default function SubmitPage() {
                 type="checkbox"
                 checked={recognition === 'named'}
                 onChange={(e) => setRecognition(e.target.checked ? 'named' : 'anonymous')}
-                className="mt-0.5 accent-[#1a3a5c]"
+                className="mt-0.5 accent-[#231d45]"
               />
               <span className="text-sm text-gray-700 group-hover:text-gray-900">
                 Enter me for programme recognition if my improvement is selected
@@ -195,7 +195,7 @@ export default function SubmitPage() {
                 type="checkbox"
                 checked={emailOptOut}
                 onChange={(e) => setEmailOptOut(e.target.checked)}
-                className="mt-0.5 accent-[#1a3a5c]"
+                className="mt-0.5 accent-[#231d45]"
               />
               <span className="text-sm text-gray-600 group-hover:text-gray-900">
                 Don&apos;t email me when this improvement is assessed — I&apos;ll check back here instead
@@ -216,6 +216,6 @@ export default function SubmitPage() {
           </div>
         </form>
       </div>
-    </div>
+    </div></div>
   )
 }

@@ -228,7 +228,7 @@ export default function TriagePage() {
   }
 
   return (
-    <div className="w-full max-w-3xl lg:max-w-5xl mx-auto space-y-4">
+    <div className="bramley-wide-page space-y-4">
       {/* Header */}
       <div className="bramley-card">
         <div className="bramley-header flex justify-between items-center">

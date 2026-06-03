@@ -9,13 +9,16 @@ const config: Config = {
     extend: {
       colors: {
         bramley: {
-          navy: '#1a3a5c',
-          blue: '#2471a3',
-          bg: '#f0f2f5',
+          primary:   '#231d45',
+          secondary: '#27276d',
+          gold:      '#ffcc00',
+          navy:      '#231d45',   // alias
+          blue:      '#27276d',   // alias
+          bg:        '#f0f2f5',
         },
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        sans: ['var(--font-montserrat)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
       },
       borderRadius: {
         card: '10px',

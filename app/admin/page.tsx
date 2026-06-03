@@ -210,7 +210,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4">
+    <div className="bramley-wide-page space-y-4">
       <div className="bramley-card">
         <div className="bramley-header flex justify-between items-center">
           <BramleyHeader

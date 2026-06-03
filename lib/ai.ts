@@ -65,7 +65,7 @@ Respond with exactly this JSON:
 
   // Political and personal attacks get a neutral message — don't signal the detection
   const silentReasons = ['political', 'personal_attack']
-  const isSilent = silentReasons.includes(result.reason)
+  const isSilent = silentReasons.includes(result.reason ?? '')
 
   const messages: Record<string, string> = {
     profanity:       'We were unable to process your submission as it contains language that does not meet our community standards. Please resubmit.',

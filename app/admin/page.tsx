@@ -98,8 +98,9 @@ export default function AdminPage() {
 
   async function addDirector() {
     setDirError('')
-    if (!newDir.pin || !newDir.role || !newDir.name || !newDir.email) {
-      setDirError('All fields are required')
+    const missing = ['name', 'email', 'role', 'pin'].filter((f) => !newDir[f as keyof typeof newDir])
+    if (missing.length > 0) {
+      setDirError(`Missing: ${missing.join(', ')}`)
       return
     }
     setAddingDir(true)

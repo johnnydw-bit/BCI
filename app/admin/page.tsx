@@ -48,6 +48,11 @@ interface Director { id: number; role: string; name: string; email: string; acti
 export default function AdminPage() {
   const router = useRouter()
   const [tab, setTab] = useState<'config' | 'directors' | 'setup'>('config')
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/')
+  }
   const [config, setConfig] = useState<ConfigRow[]>([])
   const [edits, setEdits] = useState<Record<string, string>>({})
   const [directors, setDirectors] = useState<Director[]>([])
@@ -210,7 +215,12 @@ export default function AdminPage() {
         <div className="bramley-header flex justify-between items-center">
           <BramleyHeader
             subtitle="Club Manager — Admin"
-            right={<button onClick={() => router.push('/triage')} className="text-xs opacity-70 hover:opacity-100">← Triage</button>}
+            right={
+              <div className="flex gap-3">
+                <button onClick={() => router.push('/triage')} className="text-xs opacity-70 hover:opacity-100">← Triage</button>
+                <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
+              </div>
+            }
           />
         </div>
 

@@ -116,6 +116,8 @@ export default function TriagePage() {
   const [deleting, setDeleting] = useState<number | null>(null)
   const [completing, setCompleting] = useState<number | null>(null)
   const [recognitionAlert, setRecognitionAlert] = useState<string | null>(null)
+  const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<'score' | 'date'>('score')
 
   async function deleteImprovement(id: number) {
     if (!confirm('Remove this improvement? This cannot be undone.')) return
@@ -195,17 +197,29 @@ export default function TriagePage() {
 
   if (!data) return null
 
+  function applySort<T extends { score?: number | null; created_at?: string; scored_at?: string | null }>(items: T[]): T[] {
+    return [...items].sort((a, b) => {
+      if (sortBy === 'score') return (Number(b.score) || 0) - (Number(a.score) || 0)
+      return new Date(b.created_at ?? b.scored_at ?? 0).getTime() - new Date(a.created_at ?? a.scored_at ?? 0).getTime()
+    })
+  }
+
   // Only hide silently moderated items (political/personal) from main triage view
   const moderated = data.submissions.filter((s) => s.moderation_reason)
+    .filter((s) => filterCategory === 'all' || s.category === filterCategory)
   const triageItems = data.submissions.filter((s) => !s.moderation_reason)
-  const urgent = triageItems.filter((s) => s.h_and_s_flag)
-  const normal = triageItems.filter((s) => !s.h_and_s_flag)
+  const urgent = applySort(triageItems.filter((s) => s.h_and_s_flag && (filterCategory === 'all' || s.category === filterCategory)))
+  const normal = applySort(triageItems.filter((s) => !s.h_and_s_flag && (filterCategory === 'all' || s.category === filterCategory)))
 
   const byCategory = CATEGORIES.reduce<Record<string, Submission[]>>((acc, cat) => {
     const subs = normal.filter((s) => s.category === cat.value)
     if (subs.length > 0) acc[cat.value] = subs
     return acc
   }, {})
+
+  const filteredTracked = applySort(
+    filterCategory === 'all' ? tracked : tracked.filter((t) => t.category === filterCategory)
+  )
 
   const tabCount = {
     triage: triageItems.filter(s => s.status === 'new' || s.status === 'under_consideration').length,
@@ -256,6 +270,41 @@ export default function TriagePage() {
         </div>
       </div>
 
+      {/* Filter & sort bar */}
+      <div className="bramley-card">
+        <div className="bramley-body py-3 flex flex-wrap gap-3 items-center">
+          <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+            <label className="text-xs text-gray-500 shrink-0">Area</label>
+            <select
+              className="bramley-input text-sm py-1.5 flex-1"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+            >
+              <option value="all">All areas</option>
+              {CATEGORIES.filter((c) => c.value !== 'other').map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 shrink-0">Sort by</label>
+            <div className="flex rounded-[8px] overflow-hidden border border-gray-200">
+              <button
+                onClick={() => setSortBy('score')}
+                className={`px-3 py-1.5 text-sm transition-colors ${sortBy === 'score' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                style={sortBy === 'score' ? { background: 'var(--bramley-navy)' } : {}}
+              >Score</button>
+              <button
+                onClick={() => setSortBy('date')}
+                className={`px-3 py-1.5 text-sm transition-colors border-l border-gray-200 ${sortBy === 'date' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                style={sortBy === 'date' ? { background: 'var(--bramley-navy)' } : {}}
+              >Date</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Recognition alert */}
       {recognitionAlert && (
         <div className="bramley-card border-2 border-amber-400 bg-amber-50">
@@ -273,11 +322,11 @@ export default function TriagePage() {
       {tab === 'tracking' && (
         <div className="bramley-card">
           <div className="bramley-body">
-            {tracked.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-8">No approved or implemented improvements yet.</p>
+            {filteredTracked.length === 0 ? (
+              <p className="text-gray-500 text-sm text-center py-8">{filterCategory === 'all' ? 'No approved or implemented improvements yet.' : 'No items in this area.'}</p>
             ) : (
               <div className="space-y-4">
-                {tracked.map((t) => (
+                {filteredTracked.map((t) => (
                   <div key={t.id} className="border border-gray-200 rounded-[10px] overflow-hidden">
                     <div className="p-4 space-y-1">
                       <div className="flex items-start justify-between gap-2">

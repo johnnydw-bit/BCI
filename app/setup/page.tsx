@@ -69,7 +69,7 @@ export default function SetupPage() {
 
   if (step === 'done') {
     return (
-      <div className="bramley-page"><div className="bramley-card">
+      <div className="bramley-wide-page"><div className="bramley-card">
         <BramleyHeader subtitle="First-time Setup" />
         <div className="bramley-body space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-[10px] p-4">
@@ -86,7 +86,7 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="bramley-page"><div className="bramley-card">
+    <div className="bramley-wide-page"><div className="bramley-card">
       <div className="bramley-header">
         <h1 className="text-xl font-bold">⛳ Bramley GC — First-time Setup</h1>
         <p className="text-sm opacity-80 mt-0.5">Run once to initialise the database and create the Club Manager account</p>

@@ -62,7 +62,7 @@ export default function MyImprovementsPage() {
   }
 
   return (
-    <div className="bramley-page"><div className="bramley-card">
+    <div className="bramley-wide-page"><div className="bramley-card">
       <BramleyHeader subtitle="My improvements" />
 
       <div className="bramley-body space-y-4">

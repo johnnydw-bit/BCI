@@ -55,7 +55,7 @@ export default function SubmitPage() {
 
   if (step === 'submitting') {
     return (
-      <div className="bramley-page"><div className="bramley-card">
+      <div className="bramley-wide-page"><div className="bramley-card">
         <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body flex flex-col items-center py-12 gap-4">
           <span className="spinner" style={{ borderColor: 'var(--bramley-navy)', borderTopColor: 'transparent' }} />
@@ -67,7 +67,7 @@ export default function SubmitPage() {
 
   if (step === 'success') {
     return (
-      <div className="bramley-page"><div className="bramley-card">
+      <div className="bramley-wide-page"><div className="bramley-card">
         <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-[10px] p-4">
@@ -88,7 +88,7 @@ export default function SubmitPage() {
 
   if (step === 'rejected') {
     return (
-      <div className="bramley-page"><div className="bramley-card">
+      <div className="bramley-wide-page"><div className="bramley-card">
         <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body space-y-4">
           <div className="bg-amber-50 border border-amber-200 rounded-[10px] p-4">
@@ -101,7 +101,7 @@ export default function SubmitPage() {
   }
 
   return (
-    <div className="bramley-page"><div className="bramley-card">
+    <div className="bramley-wide-page"><div className="bramley-card">
       <BramleyHeader subtitle="Continuous Improvement Programme" />
       <div className="bramley-body">
         <form onSubmit={handleSubmit} className="space-y-5">

@@ -102,10 +102,7 @@ export default function SubmitPage() {
 
   return (
     <div className="bramley-page"><div className="bramley-card">
-      <div className="bramley-header">
-        <h1 className="text-xl font-bold">⛳ Bramley GC</h1>
-        <p className="text-sm opacity-80 mt-0.5">Continuous Improvement Programme</p>
-      </div>
+      <BramleyHeader subtitle="Continuous Improvement Programme" />
       <div className="bramley-body">
         <form onSubmit={handleSubmit} className="space-y-5">
 

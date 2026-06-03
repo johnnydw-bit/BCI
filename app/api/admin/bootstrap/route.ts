@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { createHash } from 'crypto'
 
+export async function GET() {
+  const existing = await sql`
+    SELECT id FROM director_roles WHERE role = 'Club Manager' AND active = TRUE LIMIT 1
+  `
+  return NextResponse.json({ exists: existing.length > 0 })
+}
+
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

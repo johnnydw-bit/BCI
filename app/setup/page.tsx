@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import BramleyHeader from '@/components/BramleyHeader'
 
 export default function SetupPage() {
+  const router = useRouter()
   const [cronSecret, setCronSecret] = useState('')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -12,6 +14,18 @@ export default function SetupPage() {
   const [step, setStep] = useState<'form' | 'loading' | 'done' | 'error'>('form')
   const [message, setMessage] = useState('')
   const [dbStatus, setDbStatus] = useState('')
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/admin/bootstrap')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.exists) router.replace('/')
+      })
+      .finally(() => setChecking(false))
+  }, [router])
+
+  if (checking) return null
 
   async function handleSetup(e: React.FormEvent) {
     e.preventDefault()

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BramleyHeader from '@/components/BramleyHeader'
 
-const ROLES = ['Club Manager', 'Chair', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
+const ROLES = ['Club Manager', 'Chairman', 'Chair', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
 
 const CONFIG_GROUPS = [
   {
@@ -54,7 +54,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [newDir, setNewDir] = useState({ pin: '', role: '', name: '', email: '' })
+  const [newDir, setNewDir] = useState({ pin: '', role: ROLES[0], name: '', email: '' })
   const [addingDir, setAddingDir] = useState(false)
   const [dirError, setDirError] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -112,7 +112,7 @@ export default function AdminPage() {
     if (res.ok) {
       const updated = await fetch('/api/admin/directors').then((r) => r.json())
       setDirectors(updated.directors)
-      setNewDir({ pin: '', role: '', name: '', email: '' })
+      setNewDir({ pin: '', role: ROLES[0], name: '', email: '' })
     } else {
       const json = await res.json().catch(() => ({}))
       setDirError(json.error ?? 'Failed to add director')
@@ -311,7 +311,6 @@ export default function AdminPage() {
               <input className="bramley-input" placeholder="Full name" value={newDir.name} onChange={(e) => setNewDir({ ...newDir, name: e.target.value })} />
               <input className="bramley-input" placeholder="Email address" type="email" value={newDir.email} onChange={(e) => setNewDir({ ...newDir, email: e.target.value })} />
               <select className="bramley-input" value={newDir.role} onChange={(e) => setNewDir({ ...newDir, role: e.target.value })}>
-                <option value="">Select role…</option>
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
               <div className="relative">

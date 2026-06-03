@@ -38,5 +38,6 @@ export const DIRECTOR_CATEGORIES: Record<string, string[]> = {
   'F&B Director':        ['restaurant', 'bar', 'refreshments'],
   'Commercial Director': ['pro_shop'],
   'Club Manager':        ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
+  'Chairman':            ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
   'Chair':               ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
 }

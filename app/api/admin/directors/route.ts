@@ -15,7 +15,7 @@ async function requireManager() {
 
 export async function GET() {
   if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const rows = await sql`SELECT id, role, name, email, active, email_reports FROM director_roles ORDER BY name`
+  const rows = await sql`SELECT id, role, name, email, active, email_reports, pin FROM director_roles ORDER BY name`
   return NextResponse.json({ directors: rows })
 }
 
@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
   const pinHash = createHash('sha256').update(pin.trim()).digest('hex')
   try {
     await sql`
-      INSERT INTO director_roles (pin_hash, role, name, email)
-      VALUES (${pinHash}, ${role}, ${name}, ${email})
+      INSERT INTO director_roles (pin_hash, pin, role, name, email)
+      VALUES (${pinHash}, ${pin.trim()}, ${role}, ${name}, ${email})
     `
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -56,7 +56,7 @@ export async function PUT(req: NextRequest) {
   await sql`UPDATE director_roles SET name = ${name}, email = ${email}, role = ${role} WHERE id = ${id}`
   if (pin) {
     const pinHash = createHash('sha256').update(pin.trim()).digest('hex')
-    await sql`UPDATE director_roles SET pin_hash = ${pinHash} WHERE id = ${id}`
+    await sql`UPDATE director_roles SET pin_hash = ${pinHash}, pin = ${pin.trim()} WHERE id = ${id}`
   }
   return NextResponse.json({ ok: true })
 }

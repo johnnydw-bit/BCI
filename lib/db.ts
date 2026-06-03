@@ -132,6 +132,7 @@ export async function initDb() {
     )
   `
   await sql`ALTER TABLE director_roles ADD COLUMN IF NOT EXISTS email_reports BOOLEAN NOT NULL DEFAULT TRUE`
+  await sql`ALTER TABLE director_roles ADD COLUMN IF NOT EXISTS pin TEXT`
 
   await sql`
     CREATE TABLE IF NOT EXISTS config (

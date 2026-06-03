@@ -43,7 +43,7 @@ const CONFIG_GROUPS = [
 ]
 
 interface ConfigRow { key: string; value: string; label: string }
-interface Director { id: number; role: string; name: string; email: string; active: boolean; email_reports: boolean }
+interface Director { id: number; role: string; name: string; email: string; active: boolean; email_reports: boolean; pin?: string }
 
 export default function AdminPage() {
   const router = useRouter()
@@ -140,7 +140,7 @@ export default function AdminPage() {
 
   function startEdit(d: Director) {
     setEditingId(d.id)
-    setEditForm({ name: d.name, email: d.email, role: d.role, pin: '' })
+    setEditForm({ name: d.name, email: d.email, role: d.role, pin: d.pin ?? '' })
     setEditError('')
   }
 
@@ -279,7 +279,7 @@ export default function AdminPage() {
                 <div className="flex items-center gap-3 p-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800">{d.name}</p>
-                    <p className="text-xs text-gray-500">{d.role} · {d.email}</p>
+                    <p className="text-xs text-gray-500">{d.role} · {d.email} · PIN: {d.pin ?? '—'}</p>
                   </div>
                   <button
                     onClick={() => toggleDirector(d.id, !d.active)}
@@ -312,7 +312,7 @@ export default function AdminPage() {
                       {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                     </select>
                     <div className="relative">
-                      <input className="bramley-input text-sm py-2 pr-12" placeholder="New PIN (leave blank to keep existing)" type={showEditPin ? 'text' : 'password'} value={editForm.pin} onChange={(e) => setEditForm({ ...editForm, pin: e.target.value })} />
+                      <input className="bramley-input text-sm py-2 pr-12" placeholder="PIN" type={showEditPin ? 'text' : 'password'} value={editForm.pin} onChange={(e) => setEditForm({ ...editForm, pin: e.target.value })} />
                       <button type="button" onClick={() => setShowEditPin(!showEditPin)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm hover:text-gray-600" tabIndex={-1}>{showEditPin ? 'Hide' : 'Show'}</button>
                     </div>
                     {editError && <p className="bramley-error">{editError}</p>}

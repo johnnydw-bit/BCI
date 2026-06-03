@@ -173,6 +173,7 @@ export async function runTriage(): Promise<{ scored: number; runId: number }> {
           costBand: r.costBand,
           implComplexity: r.implComplexity,
           suggestedTargetDate,
+          quickWinFlag,
         })
       } catch (e) {
         console.error(`Submitter email failed for submission ${r.submissionId}:`, e)

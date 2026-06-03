@@ -34,12 +34,13 @@ function emailHeader(bgColour: string, title: string, subtitle: string) {
   return `
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${bgColour};border-radius:10px 10px 0 0">
       <tr>
-        <td width="72" style="padding:16px 8px 16px 16px;vertical-align:middle">
-          <img src="${APP_URL}/bramley-logo.jpg" alt="Bramley Golf Club" width="56" height="56" style="display:block;border-radius:8px;object-fit:cover" />
+        <td width="72" style="padding:16px 8px 16px 16px;vertical-align:middle;width:72px">
+          <img src="${APP_URL}/bramley-logo.jpg" alt="BGC" width="56" height="56" border="0"
+            style="display:block;border-radius:8px;width:56px;height:56px" />
         </td>
         <td style="padding:16px 16px 16px 8px;vertical-align:middle">
-          <h2 style="margin:0;font-size:20px;color:white;font-family:sans-serif">${title}</h2>
-          <p style="margin:4px 0 0;font-size:14px;color:rgba(255,255,255,0.85);font-family:sans-serif">${subtitle}</p>
+          <h2 style="margin:0;font-size:20px;color:#ffffff;font-family:Arial,sans-serif;font-weight:bold">${title}</h2>
+          <p style="margin:4px 0 0;font-size:14px;color:#ccddee;font-family:Arial,sans-serif">${subtitle}</p>
         </td>
       </tr>
     </table>
@@ -93,6 +94,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
   costBand: string | null
   implComplexity: string | null
   suggestedTargetDate: string | null
+  quickWinFlag: boolean
 }) {
   const bandLabels: Record<string, string> = {
     priority:       'Priority — high likelihood of implementation',
@@ -128,8 +130,8 @@ export async function sendSubmitterUpdate(to: string, submission: {
 
           <p style="color:#333;line-height:1.6;font-family:sans-serif">${submission.memberMsg}</p>
 
-          ${submission.suggestedTargetDate ? `
-          <p style="color:#555;font-size:14px;font-family:sans-serif">Indicative timeline: <strong>${fmt(submission.suggestedTargetDate)}</strong></p>
+          ${(submission.suggestedTargetDate && ['priority', 'active'].includes(submission.scoreBand) || submission.quickWinFlag) ? `
+          <p style="color:#555;font-size:14px;font-family:sans-serif">Indicative timeline: <strong>${submission.suggestedTargetDate ? fmt(submission.suggestedTargetDate) : 'To be confirmed'}</strong></p>
           ` : ''}
 
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0">

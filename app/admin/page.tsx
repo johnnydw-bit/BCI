@@ -60,6 +60,8 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState({ name: '', email: '', role: '', pin: '' })
   const [editError, setEditError] = useState('')
+  const [showNewPin, setShowNewPin] = useState(false)
+  const [showEditPin, setShowEditPin] = useState(false)
   const [initStatus, setInitStatus] = useState('')
   const [triageStatus, setTriageStatus] = useState('')
   const [runningTriage, setRunningTriage] = useState(false)
@@ -292,7 +294,10 @@ export default function AdminPage() {
                     <select className="bramley-input text-sm py-2" value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}>
                       {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                     </select>
-                    <input className="bramley-input text-sm py-2" placeholder="New PIN (leave blank to keep existing)" type="password" value={editForm.pin} onChange={(e) => setEditForm({ ...editForm, pin: e.target.value })} />
+                    <div className="relative">
+                      <input className="bramley-input text-sm py-2 pr-12" placeholder="New PIN (leave blank to keep existing)" type={showEditPin ? 'text' : 'password'} value={editForm.pin} onChange={(e) => setEditForm({ ...editForm, pin: e.target.value })} />
+                      <button type="button" onClick={() => setShowEditPin(!showEditPin)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm hover:text-gray-600" tabIndex={-1}>{showEditPin ? 'Hide' : 'Show'}</button>
+                    </div>
                     {editError && <p className="bramley-error">{editError}</p>}
                     <button onClick={() => saveEdit(d.id)} className="bramley-btn py-2 text-sm">Save changes</button>
                   </div>
@@ -308,7 +313,10 @@ export default function AdminPage() {
                 <option value="">Select role…</option>
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
-              <input className="bramley-input" placeholder="Set their PIN (they can change it by contacting you)" type="password" value={newDir.pin} onChange={(e) => setNewDir({ ...newDir, pin: e.target.value })} />
+              <div className="relative">
+                <input className="bramley-input pr-12" placeholder="Set their PIN" type={showNewPin ? 'text' : 'password'} value={newDir.pin} onChange={(e) => setNewDir({ ...newDir, pin: e.target.value })} />
+                <button type="button" onClick={() => setShowNewPin(!showNewPin)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm hover:text-gray-600" tabIndex={-1}>{showNewPin ? 'Hide' : 'Show'}</button>
+              </div>
               {dirError && <p className="bramley-error">{dirError}</p>}
               <button onClick={addDirector} className="bramley-btn" disabled={addingDir}>
                 {addingDir ? <span className="spinner" /> : 'Add director'}

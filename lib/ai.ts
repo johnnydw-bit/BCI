@@ -50,7 +50,14 @@ Respond with exactly this JSON:
   })
 
   const text = (response.content[0] as { text: string }).text.trim()
-  const result = JSON.parse(text.replace(/```json|```/g, '').trim())
+  let result: { pass: boolean; reason?: string }
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    result = JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, '').trim())
+  } catch (e) {
+    console.error('[moderation] JSON parse failed, passing submission through. Raw text:', text, e)
+    return { pass: true, message: '' }
+  }
 
   if (result.pass) {
     return { pass: true, message: '' }
@@ -236,7 +243,14 @@ Return a JSON array with one object per improvement in the same order:
     impl_weeks_high: number | null
     impl_complexity: 'quick_win' | 'project' | 'programme'
     strategic_note: string
-  }> = JSON.parse(text.replace(/```json|```/g, '').trim())
+  }>
+  try {
+    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    raw = JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, '').trim())
+  } catch (e) {
+    console.error('[scoring] JSON parse failed. Raw text:', text, e)
+    throw new Error('AI scoring response could not be parsed')
+  }
 
   return raw.map((r) => {
     const score = Math.min(10, Math.max(0, r.weighted_score))

@@ -50,7 +50,7 @@ Respond with exactly this JSON:
   })
 
   const text = (response.content[0] as { text: string }).text.trim()
-  let result: { pass: boolean; reason?: string }
+  let result: { pass: boolean; reason?: ModerationResult['reason'] }
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     result = JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, '').trim())

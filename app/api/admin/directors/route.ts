@@ -25,10 +25,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'All fields required' }, { status: 400 })
   }
   const pinHash = createHash('sha256').update(pin.trim()).digest('hex')
-  await sql`
-    INSERT INTO director_roles (pin_hash, role, name, email)
-    VALUES (${pinHash}, ${role}, ${name}, ${email})
-  `
+  try {
+    await sql`
+      INSERT INTO director_roles (pin_hash, role, name, email)
+      VALUES (${pinHash}, ${role}, ${name}, ${email})
+    `
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg.includes('unique') || msg.includes('duplicate')) {
+      return NextResponse.json({ error: 'That PIN is already in use by another director. Each director must have a unique PIN.' }, { status: 409 })
+    }
+    throw e
+  }
   return NextResponse.json({ ok: true })
 }
 

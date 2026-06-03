@@ -111,7 +111,8 @@ export default function AdminPage() {
       setDirectors(updated.directors)
       setNewDir({ pin: '', role: '', name: '', email: '' })
     } else {
-      setDirError('Failed to add director')
+      const json = await res.json().catch(() => ({}))
+      setDirError(json.error ?? 'Failed to add director')
     }
     setAddingDir(false)
   }

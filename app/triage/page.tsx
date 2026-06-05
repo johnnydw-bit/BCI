@@ -922,9 +922,10 @@ function SpreadsheetDetailPanel({
           </div>
         )}
 
-        {s.recognition !== 'anonymous' && s.member_name && (
-          <p className="text-xs text-gray-400">Submitted by {s.member_name}</p>
-        )}
+        <p className="text-xs text-gray-400">
+          {s.recognition !== 'anonymous' && s.member_name && <>Submitted by {s.member_name} · </>}
+          {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </p>
       </div>
     </div>
   )

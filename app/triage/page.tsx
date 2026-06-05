@@ -690,7 +690,7 @@ function SpreadsheetTable({
                       value={s.suggested_owner ?? ''}
                       onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
                     >
-                      <option value=–>"” Unassigned "”</option>
+                      <option value="">— Unassigned —</option>
                       {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
@@ -877,7 +877,7 @@ function SpreadsheetDetailPanel({
                 onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
                 disabled={updating}
               >
-                <option value=–>"” Unassigned "”</option>
+                <option value="">— Unassigned —</option>
                 {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>

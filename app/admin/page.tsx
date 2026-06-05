@@ -684,7 +684,8 @@ export default function AdminPage() {
       {/* Setup tab */}
       {tab === 'setup' && (
         <div className="bramley-card">
-          <div className="bramley-body space-y-4">
+          <div className="bramley-body">
+          <div className="max-w-3xl space-y-4">
             <div>
               <h3 className="font-semibold text-gray-800 mb-1">Database initialisation</h3>
               <p className="text-sm text-gray-500 mb-3">Run once on first deployment to create all tables and seed default configuration values. Safe to run again — existing data is preserved.</p>
@@ -720,21 +721,21 @@ export default function AdminPage() {
                 <button
                   onClick={exportCsv}
                   disabled={exportingCsv}
-                  className="bramley-btn"
-                  style={{ background: '#1e8449' }}
+                  className="bramley-btn px-6 py-2.5 text-sm"
+                  style={{ width: 'auto', background: '#1e8449' }}
                 >
                   {exportingCsv ? <><span className="spinner" /> Exporting…</> : '⬇ Export CSV'}
                 </button>
                 <button
                   onClick={exportFull}
                   disabled={exportingFull}
-                  className="bramley-btn"
-                  style={{ background: '#1a5276' }}
+                  className="bramley-btn px-6 py-2.5 text-sm"
+                  style={{ width: 'auto', background: '#1a5276' }}
                   title="Exports all tables (submissions, clusters, config, directors, audit log) as JSON"
                 >
                   {exportingFull ? <><span className="spinner" /> Exporting…</> : '⬇ Full backup (JSON)'}
                 </button>
-                <label className={`bramley-btn text-center cursor-pointer ${importingCsv ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ background: '#2471a3' }}>
+                <label className={`bramley-btn px-6 py-2.5 text-sm text-center cursor-pointer ${importingCsv ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ width: 'auto', background: '#2471a3' }}>
                   {importingCsv ? 'Restoring…' : '⬆ Restore from CSV'}
                   <input type="file" accept=".csv" className="hidden" onChange={importCsv} disabled={importingCsv} />
                 </label>
@@ -755,16 +756,16 @@ export default function AdminPage() {
                 <button
                   onClick={seedTestData}
                   disabled={seedingData || clearingData}
-                  className="bramley-btn"
-                  style={{ background: '#2471a3' }}
+                  className="bramley-btn px-6 py-2.5 text-sm"
+                  style={{ width: 'auto', background: '#2471a3' }}
                 >
                   {seedingData ? <><span className="spinner" /> Seeding…</> : '⬇ Seed test data'}
                 </button>
                 <button
                   onClick={clearTestData}
                   disabled={seedingData || clearingData}
-                  className="bramley-btn"
-                  style={{ background: '#c0392b' }}
+                  className="bramley-btn px-6 py-2.5 text-sm"
+                  style={{ width: 'auto', background: '#c0392b' }}
                 >
                   {clearingData ? <><span className="spinner" /> Clearing…</> : '✕ Clear test data'}
                 </button>
@@ -813,22 +814,23 @@ export default function AdminPage() {
                 <button
                   onClick={() => resetScores('test')}
                   disabled={resettingScores}
-                  className="bramley-btn"
-                  style={{ background: '#7d3c98' }}
+                  className="bramley-btn px-6 py-2.5 text-sm"
+                  style={{ width: 'auto', background: '#7d3c98' }}
                 >
                   {resettingScores ? <><span className="spinner" /> Resetting…</> : '↺ Reset test data only'}
                 </button>
                 <button
                   onClick={() => resetScores('all')}
                   disabled={resettingScores}
-                  className="bramley-btn"
-                  style={{ background: '#922b21' }}
+                  className="bramley-btn px-6 py-2.5 text-sm"
+                  style={{ width: 'auto', background: '#922b21' }}
                 >
                   {resettingScores ? <><span className="spinner" /> Resetting…</> : '↺ Reset all submissions'}
                 </button>
               </div>
               {resetStatus && <p className="text-sm mt-2 text-gray-700">{resetStatus}</p>}
             </div>
+          </div>
           </div>
         </div>
       )}

@@ -63,7 +63,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (status) {
-    const validStatuses = ['new', 'under_consideration', 'approved', 'implemented', 'rejected']
+    const validStatuses = ['new', 'under_consideration', 'approved', 'implemented', 'rejected', 'in_plan']
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }

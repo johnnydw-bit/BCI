@@ -25,11 +25,12 @@ export const RECOGNITION_OPTIONS = [
 ] as const
 
 export const STATUS_LABELS: Record<string, string> = {
-  new:                 'Received',
+  new:                 'Awaiting Decision',
   under_consideration: 'Under Consideration',
   approved:            'Approved',
   implemented:         'Implemented',
   rejected:            'Not Progressed',
+  in_plan:             'In Plan',
 }
 
 export const DIRECTOR_CATEGORIES: Record<string, string[]> = {

@@ -3,44 +3,45 @@ import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { isManager } from '@/lib/categories'
 import { sql } from '@/lib/db'
+import { moderateSubmission } from '@/lib/ai'
 
-// Moderated submissions — inserted directly with moderation_reason set,
-// simulating what the real gate would write. These appear in the Moderated tab.
-const MODERATED_SUBMISSIONS = [
+// Submissions designed to trigger each moderation reason.
+// They go through the real AI gate — results may surprise you.
+const MODERATED_CANDIDATES = [
   {
     member_id: 'TEST_M1', member_name: 'Test Member', recognition: 'anonymous',
     description: 'The bloody bar staff are useless and the manager should be sacked.',
     benefit: 'Better service.',
     category: 'bar', impact: 4,
-    moderation_reason: 'personal_attack',
+    expectedReason: 'personal_attack',
   },
   {
     member_id: 'TEST_M2', member_name: 'Test Member', recognition: 'anonymous',
     description: 'John Smith on the committee has been making decisions that benefit his own company and this needs to stop immediately.',
     benefit: 'Better governance for the club.',
     category: 'clubhouse', impact: 6,
-    moderation_reason: 'political',
+    expectedReason: 'political',
   },
   {
     member_id: 'TEST_M3', member_name: 'Test Member', recognition: 'anonymous',
     description: 'Everything about this club is terrible and getting worse every year.',
     benefit: 'Just fix everything.',
     category: 'course', impact: 4,
-    moderation_reason: 'complaint_only',
+    expectedReason: 'complaint_only',
   },
   {
     member_id: 'TEST_M4', member_name: 'Test Member', recognition: 'anonymous',
     description: 'The government should lower taxes on golf club memberships and the council should give us a grant.',
     benefit: 'We would save money.',
     category: 'other', impact: 2,
-    moderation_reason: 'out_of_scope',
+    expectedReason: 'out_of_scope',
   },
   {
     member_id: 'TEST_M5', member_name: 'Test Member', recognition: 'anonymous',
     description: 'asdfjkl qwerty golf better yes please improve things more good.',
     benefit: 'yes',
     category: 'course', impact: 2,
-    moderation_reason: 'incoherent',
+    expectedReason: 'incoherent',
   },
 ]
 
@@ -175,19 +176,53 @@ export async function POST() {
     inserted++
   }
 
-  // Moderated submissions — written as the real gate would write them
-  for (const s of MODERATED_SUBMISSIONS) {
-    await sql`
-      INSERT INTO submissions
-        (member_id, member_name, recognition, description, benefit, category, impact,
-         status, moderation_reason, scored_at, test_data)
-      VALUES
-        (${s.member_id}, ${s.member_name}, ${s.recognition}, ${s.description}, ${s.benefit},
-         ${s.category}, ${s.impact},
-         'rejected', ${s.moderation_reason}, NOW(), TRUE)
-    `
-    inserted++
+  // Moderated candidates — run through the real AI gate
+  const moderationResults: Array<{ description: string; expected: string; actual: string; passed: boolean }> = []
+  for (const s of MODERATED_CANDIDATES) {
+    const result = await moderateSubmission(s.description, s.benefit, [])
+    moderationResults.push({
+      description: s.description.slice(0, 60),
+      expected: s.expectedReason,
+      actual: result.reason ?? (result.pass ? 'passed' : 'rejected_no_reason'),
+      passed: result.pass,
+    })
+    if (!result.pass && result.silentReject) {
+      // political / personal_attack — store silently as the real gate does
+      await sql`
+        INSERT INTO submissions
+          (member_id, member_name, recognition, description, benefit, category, impact,
+           status, moderation_reason, scored_at, test_data)
+        VALUES
+          (${s.member_id}, ${s.member_name}, ${s.recognition}, ${s.description}, ${s.benefit},
+           ${s.category}, ${s.impact},
+           'rejected', ${result.reason ?? 'silent_reject'}, NOW(), TRUE)
+      `
+      inserted++
+    } else if (!result.pass) {
+      // Visible rejection — store so it shows in moderated tab
+      await sql`
+        INSERT INTO submissions
+          (member_id, member_name, recognition, description, benefit, category, impact,
+           status, moderation_reason, scored_at, test_data)
+        VALUES
+          (${s.member_id}, ${s.member_name}, ${s.recognition}, ${s.description}, ${s.benefit},
+           ${s.category}, ${s.impact},
+           'rejected', ${result.reason ?? 'rejected'}, NOW(), TRUE)
+      `
+      inserted++
+    } else {
+      // AI let it through — insert as normal unscored submission so you can see it passed
+      console.warn(`[seed] Moderation MISSED: expected=${s.expectedReason} — "${s.description.slice(0, 60)}"`)
+      await sql`
+        INSERT INTO submissions
+          (member_id, member_name, recognition, description, benefit, category, impact, test_data)
+        VALUES
+          (${s.member_id}, ${s.member_name}, ${s.recognition}, ${s.description}, ${s.benefit},
+           ${s.category}, ${s.impact}, TRUE)
+      `
+      inserted++
+    }
   }
 
-  return NextResponse.json({ ok: true, inserted })
+  return NextResponse.json({ ok: true, inserted, moderationResults })
 }

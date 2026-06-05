@@ -73,6 +73,7 @@ export default function AdminPage() {
   const [seedStatus, setSeedStatus] = useState('')
   const [seedingData, setSeedingData] = useState(false)
   const [clearingData, setClearingData] = useState(false)
+  const [moderationResults, setModerationResults] = useState<Array<{ description: string; expected: string; actual: string; passed: boolean }> | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -189,7 +190,8 @@ export default function AdminPage() {
     setSeedStatus('Inserting test data…')
     const res = await fetch('/api/admin/seed-test-data', { method: 'POST' })
     const json = await res.json().catch(() => ({}))
-    setSeedStatus(res.ok ? `✓ ${json.inserted} test submissions inserted — run triage to score them` : `✗ Error: ${json.error ?? 'check logs'}`)
+    setSeedStatus(res.ok ? `✓ ${json.inserted} submissions inserted — run triage to score them` : `✗ Error: ${json.error ?? 'check logs'}`)
+    if (json.moderationResults) setModerationResults(json.moderationResults)
     setSeedingData(false)
   }
 
@@ -429,6 +431,35 @@ export default function AdminPage() {
                 </button>
               </div>
               {seedStatus && <p className="text-sm mt-2 text-gray-700">{seedStatus}</p>}
+              {moderationResults && (
+                <div className="mt-3 border border-gray-200 rounded-[8px] overflow-hidden">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-2 bg-gray-50 border-b border-gray-200">Moderation gate results</p>
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="text-left px-3 py-1.5 text-gray-500 font-semibold">Submission</th>
+                        <th className="text-left px-3 py-1.5 text-gray-500 font-semibold w-28">Expected</th>
+                        <th className="text-left px-3 py-1.5 text-gray-500 font-semibold w-28">Actual</th>
+                        <th className="w-16 px-3 py-1.5"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {moderationResults.map((r, i) => (
+                        <tr key={i} className="border-b border-gray-100 last:border-0">
+                          <td className="px-3 py-1.5 text-gray-700 truncate max-w-0" style={{ maxWidth: '260px' }}>{r.description}…</td>
+                          <td className="px-3 py-1.5 text-gray-500">{r.expected}</td>
+                          <td className="px-3 py-1.5 text-gray-700">{r.actual}</td>
+                          <td className="px-3 py-1.5 text-center">
+                            {r.passed
+                              ? <span className="text-red-500 font-bold" title="AI missed this">✗ Slipped through</span>
+                              : <span className="text-green-600 font-bold">✓ Caught</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>

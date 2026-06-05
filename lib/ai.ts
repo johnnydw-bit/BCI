@@ -191,7 +191,7 @@ ALREADY IN PLAN:
 If a suggestion describes something that any well-run golf club would already have in its standard strategic plan, set already_in_plan: true.
 
 SUGGESTED OWNER:
-Return the single most appropriate role to own this improvement:
+Always return the single most appropriate role to own this improvement (never null):
 - "Golf Director" — course conditions, competition formats, handicaps, tee times
 - "Estate Director" — buildings, grounds, car park, maintenance, capital works
 - "F&B Director" — bar, restaurant, halfway house, on-course refreshments

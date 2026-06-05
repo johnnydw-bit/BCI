@@ -127,6 +127,7 @@ export default function TriagePage() {
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterFlag, setFilterFlag] = useState<string>('all')
+  const [filterOwner, setFilterOwner] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
 
   async function deleteImprovement(id: number) {
@@ -232,9 +233,18 @@ export default function TriagePage() {
       if (filterFlag === 'recurring' && !s.recurring_flag) return false
       if (filterFlag === 'in_plan' && s.status !== 'in_plan') return false
       if (filterFlag === 'cost_threshold' && !s.cost_threshold_flag) return false
+      if (filterOwner !== 'all' && s.suggested_owner !== filterOwner) return false
       return true
     })
   }
+
+  const ownerOptions = Array.from(
+    new Set(
+      data.submissions
+        .filter((s) => !s.moderation_reason && s.suggested_owner)
+        .map((s) => s.suggested_owner as string)
+    )
+  ).sort()
 
   const urgent = applySort(applyFilters(triageItems.filter((s) => s.h_and_s_flag)))
   const normal = applySort(applyFilters(triageItems.filter((s) => !s.h_and_s_flag)))
@@ -326,6 +336,17 @@ export default function TriagePage() {
               <option value="cost_threshold">£ Committee approval</option>
             </select>
           </div>
+          {ownerOptions.length > 0 && (
+            <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+              <label className="text-xs text-gray-500 shrink-0">Owner</label>
+              <select className="bramley-input text-sm py-1.5 flex-1" value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)}>
+                <option value="all">All owners</option>
+                {ownerOptions.map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <label className="text-xs text-gray-500 shrink-0">Sort</label>
             <div className="flex rounded-[8px] overflow-hidden border border-gray-200">
@@ -647,6 +668,7 @@ function SubmissionTableRow({
             {s.revenue_opportunity && <span className="bramley-badge text-xs" style={{ background: '#6c3483' }}>💰 Revenue</span>}
             {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Committee</span>}
             {s.needs_external_approval && <span className="bramley-badge text-xs" style={{ background: '#7d6608' }}>⚖ Approval</span>}
+            {s.suggested_owner && <span className="bramley-badge text-xs" style={{ background: '#117a65' }}>👤 {s.suggested_owner}</span>}
             {s.seasonal_window && <span className="bramley-badge text-xs" style={{ background: '#1a5276' }}>📅 Seasonal</span>}
             {s.recurring_flag && <span className="bramley-badge text-xs" style={{ background: '#922b21' }}>🔁 Recurring ×{s.recurring_run_count + 1}</span>}
             {s.cluster_theme && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>Cluster ({s.cluster_size})</span>}

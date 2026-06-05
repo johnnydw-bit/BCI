@@ -231,26 +231,11 @@ export default function TriagePage() {
   const TARGET_DATE_STATUSES = new Set(['under_consideration', 'approved', 'in_plan'])
 
   async function updateField(id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override' | 'confirmed_target_date', value: string, extra?: Record<string, string>) {
-    let confirmed_target_date: string | undefined
-
-    // Prompt for target date when moving to an active status
-    if (field === 'status' && TARGET_DATE_STATUSES.has(value)) {
-      const sub = data?.submissions.find((s) => s.id === id)
-      const prefill = sub?.confirmed_target_date ?? sub?.suggested_target_date ?? ''
-      const input = prompt(
-        `Set a target date for this improvement (optional):\nStatus → ${STATUS_LABELS[value] ?? value}`,
-        prefill
-      )
-      if (input !== null && input.trim()) {
-        confirmed_target_date = input.trim()
-      }
-    }
-
     setUpdating(id)
     await fetch('/api/triage', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, [field]: value, ...extra, ...(confirmed_target_date ? { confirmed_target_date } : {}) }),
+      body: JSON.stringify({ id, [field]: value, ...extra }),
     })
     setData((prev) => prev ? {
       ...prev,
@@ -258,7 +243,6 @@ export default function TriagePage() {
         ...s,
         [field]: value,
         ...extra,
-        ...(confirmed_target_date ? { confirmed_target_date } : {}),
       } : s),
     } : prev)
     // Refresh audit log after status or score override changes
@@ -994,6 +978,7 @@ function SpreadsheetDetailPanel({
                 {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
+            <TargetDateField s={s} onUpdate={onUpdate} updating={updating} />
             <button
               onClick={() => onDelete(s.id)}
               disabled={deleting}
@@ -1319,6 +1304,7 @@ function SubmissionTableRow({
                         ))}
                       </select>
                     </div>
+                    <TargetDateField s={s} onUpdate={onUpdate} updating={updating} />
                     {s.status !== 'approved' && s.status !== 'implemented' && (
                       <button
                         onClick={() => onDelete(s.id)}
@@ -1359,6 +1345,61 @@ function SubmissionTableRow({
 }
 
 // ── Shared sub-components ───────────────────────────────────────────────────
+
+function TargetDateField({ s, onUpdate, updating }: {
+  s: Submission
+  onUpdate: (id: number, field: 'confirmed_target_date', value: string) => void
+  updating: boolean
+}) {
+  const aiDate = s.suggested_target_date ? s.suggested_target_date.substring(0, 10) : ''
+  const currentDate = s.confirmed_target_date ? s.confirmed_target_date.substring(0, 10) : ''
+  const [val, setVal] = useState(currentDate)
+  const dirty = val !== currentDate
+
+  // Keep in sync if parent state updates
+  useEffect(() => { setVal(s.confirmed_target_date ? s.confirmed_target_date.substring(0, 10) : '') }, [s.confirmed_target_date])
+
+  return (
+    <div className="min-w-[180px]">
+      <label className="text-xs text-gray-600 block mb-1">
+        Target date
+        {s.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
+      </label>
+      <div className="flex gap-1 items-center flex-wrap">
+        <input
+          type="date"
+          className="bramley-input text-sm py-1.5 w-36"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          disabled={updating}
+        />
+        {dirty && (
+          <button
+            onClick={() => onUpdate(s.id, 'confirmed_target_date', val)}
+            disabled={updating}
+            className="bramley-btn py-1 text-xs px-2"
+          >Save</button>
+        )}
+        {!dirty && val && (
+          <button
+            onClick={() => { setVal(''); onUpdate(s.id, 'confirmed_target_date', '') }}
+            disabled={updating}
+            className="text-xs text-gray-400 hover:text-red-500"
+            title="Clear date"
+          >✕</button>
+        )}
+      </div>
+      {aiDate && !s.confirmed_target_date && (
+        <button
+          onClick={() => setVal(aiDate)}
+          className="text-xs text-blue-500 hover:text-blue-700 mt-1"
+        >
+          Use AI estimate ({new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
+        </button>
+      )}
+    </div>
+  )
+}
 
 function ScoreOverridePanel({ s, onUpdate, updating }: {
   s: Submission

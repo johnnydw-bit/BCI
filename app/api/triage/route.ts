@@ -42,6 +42,7 @@ export async function GET() {
       s.recurring_flag, s.recurring_run_count,
       s.seasonal_window, s.revenue_opportunity, s.revenue_note,
       s.notes, s.score_override, s.score_override_reason, s.score_override_by,
+      s.confirmed_cost,
       c.theme AS cluster_theme, c.size AS cluster_size
     FROM submissions s
     LEFT JOIN clusters c ON c.id = s.cluster_id
@@ -71,7 +72,7 @@ export async function PATCH(req: NextRequest) {
   const {
     id, status, category, suggested_owner, notes,
     score_override, score_override_reason,
-    confirmed_target_date,
+    confirmed_target_date, confirmed_cost,
   } = await req.json()
 
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
@@ -86,6 +87,11 @@ export async function PATCH(req: NextRequest) {
 
   if (confirmed_target_date !== undefined) {
     await sql`UPDATE submissions SET confirmed_target_date = ${confirmed_target_date || null} WHERE id = ${id}`
+  }
+
+  if (confirmed_cost !== undefined) {
+    const costVal = confirmed_cost !== '' && confirmed_cost !== null ? Math.round(Number(confirmed_cost)) : null
+    await sql`UPDATE submissions SET confirmed_cost = ${costVal} WHERE id = ${id}`
   }
 
   if (score_override !== undefined) {

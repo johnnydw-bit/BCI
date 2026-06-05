@@ -47,6 +47,7 @@ interface Submission {
   score_override_reason: string | null
   score_override_by: string | null
   confirmed_target_date: string | null
+  confirmed_cost: number | null
 }
 
 interface AuditEntry {
@@ -216,7 +217,7 @@ export default function TriagePage() {
 
   const TARGET_DATE_STATUSES = new Set(['under_consideration', 'approved', 'in_plan'])
 
-  async function updateField(id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override' | 'confirmed_target_date', value: string, extra?: Record<string, string>) {
+  async function updateField(id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override' | 'confirmed_target_date' | 'confirmed_cost', value: string, extra?: Record<string, string>) {
     setUpdating(id)
     await fetch('/api/triage', {
       method: 'PATCH',
@@ -646,11 +647,11 @@ function SpreadsheetTable({
             <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-12">Score</th>
             <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide">Improvement</th>
             <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-28 hidden md:table-cell">Area</th>
-            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-36 hidden lg:table-cell">Owner</th>
-            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-44 hidden lg:table-cell">Cost</th>
             <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-24 hidden lg:table-cell">Impl</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-44 hidden lg:table-cell">Cost</th>
             <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-24 hidden md:table-cell">Date</th>
             <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-36">Decision</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-36 hidden lg:table-cell">Owner</th>
             <th className="w-16 py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide text-center hidden sm:table-cell">Flags</th>
           </tr>
         </thead>
@@ -685,36 +686,24 @@ function SpreadsheetTable({
                   {CATEGORIES.find(c => c.value === s.category)?.label ?? s.category}
                 </td>
 
-                {/* Owner */}
-                <td className="py-1.5 px-2 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
-                  {isManager ? (
-                    <select
-                      className="bramley-input text-xs py-0.5 px-1.5 w-full"
-                      value={s.suggested_owner ?? ''}
-                      onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
-                    >
-                      <option value="">— Unassigned —</option>
-                      {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  ) : (
-                    <span className="text-gray-600">{s.suggested_owner ?? <span className="text-gray-300">—</span>}</span>
-                  )}
-                </td>
-
-                {/* Cost */}
-                <td className="py-1.5 px-2 text-gray-600 hidden lg:table-cell whitespace-nowrap">
-                  {s.cost_estimate_low != null && s.cost_estimate_high != null
-                    ? `£${Number(s.cost_estimate_low).toLocaleString()} – £${Number(s.cost_estimate_high).toLocaleString()}`
-                    : s.cost_band
-                      ? <span className="capitalize">{s.cost_band.replace('_', ' ')}</span>
-                      : <span className="text-gray-300">—</span>}
-                </td>
-
                 {/* Impl */}
                 <td className="py-1.5 px-2 text-gray-600 hidden lg:table-cell whitespace-nowrap">
                   {s.impl_complexity
                     ? <span className={`capitalize ${s.quick_win_flag ? 'text-green-700 font-semibold' : ''}`}>{s.impl_complexity.replace('_', ' ')}</span>
                     : <span className="text-gray-300">—</span>}
+                </td>
+
+                {/* Cost */}
+                <td className="py-1.5 px-2 hidden lg:table-cell whitespace-nowrap">
+                  {s.confirmed_cost != null ? (
+                    <span className="text-green-700 font-semibold text-xs" title="Confirmed cost target">🎯 £{Number(s.confirmed_cost).toLocaleString()}</span>
+                  ) : s.cost_estimate_low != null && s.cost_estimate_high != null ? (
+                    <span className="text-gray-400 text-xs" title="AI estimated cost">❓ £{Number(s.cost_estimate_low).toLocaleString()} – £{Number(s.cost_estimate_high).toLocaleString()}</span>
+                  ) : s.cost_band ? (
+                    <span className="text-gray-400 text-xs" title="AI estimated cost">❓ <span className="capitalize">{s.cost_band.replace('_', ' ')}</span></span>
+                  ) : (
+                    <span className="text-gray-300">—</span>
+                  )}
                 </td>
 
                 {/* Date */}
@@ -745,6 +734,22 @@ function SpreadsheetTable({
                   )}
                 </td>
 
+                {/* Owner */}
+                <td className="py-1.5 px-2 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
+                  {isManager ? (
+                    <select
+                      className="bramley-input text-xs py-0.5 px-1.5 w-full"
+                      value={s.suggested_owner ?? ''}
+                      onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
+                    >
+                      <option value="">— Unassigned —</option>
+                      {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <span className="text-gray-600">{s.suggested_owner ?? <span className="text-gray-300">—</span>}</span>
+                  )}
+                </td>
+
                 {/* Flags */}
                 <td className="py-1.5 px-2 text-center hidden sm:table-cell">
                   <div className="flex gap-0.5 justify-center flex-wrap">
@@ -772,7 +777,7 @@ function SpreadsheetDetailPanel({
 }: {
   s: Submission
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override' | 'confirmed_target_date', value: string, extra?: Record<string, string>) => void
+  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override' | 'confirmed_target_date' | 'confirmed_cost', value: string, extra?: Record<string, string>) => void
   onDelete: (id: number) => void
   onClose: () => void
   updating: boolean
@@ -896,6 +901,7 @@ function SpreadsheetDetailPanel({
               </select>
             </div>
             <TargetDateField s={s} onUpdate={onUpdate} updating={updating} />
+            <ConfirmedCostField s={s} onUpdate={onUpdate} updating={updating} />
             <button
               onClick={() => onDelete(s.id)}
               disabled={deleting}
@@ -982,6 +988,65 @@ function TargetDateField({ s, onUpdate, updating }: {
           className="text-xs text-blue-500 hover:text-blue-700 mt-1"
         >
           Use AI estimate ({new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
+        </button>
+      )}
+    </div>
+  )
+}
+
+function ConfirmedCostField({ s, onUpdate, updating }: {
+  s: Submission
+  onUpdate: (id: number, field: 'confirmed_cost', value: string) => void
+  updating: boolean
+}) {
+  const aiLow = s.cost_estimate_low != null ? Number(s.cost_estimate_low) : null
+  const aiHigh = s.cost_estimate_high != null ? Number(s.cost_estimate_high) : null
+  const aiMid = aiLow != null && aiHigh != null ? Math.round((aiLow + aiHigh) / 2) : null
+  const current = s.confirmed_cost != null ? String(s.confirmed_cost) : ''
+  const [val, setVal] = useState(current)
+  const dirty = val !== current
+
+  useEffect(() => { setVal(s.confirmed_cost != null ? String(s.confirmed_cost) : '') }, [s.confirmed_cost])
+
+  return (
+    <div className="min-w-[180px]">
+      <label className="text-xs text-gray-600 block mb-1">
+        Cost target (£)
+        {s.confirmed_cost != null && <span className="ml-1 text-green-600">✓ confirmed</span>}
+      </label>
+      <div className="flex gap-1 items-center flex-wrap">
+        <input
+          type="number"
+          min="0"
+          step="1"
+          className="bramley-input text-sm py-1.5 w-32"
+          placeholder="e.g. 2500"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          disabled={updating}
+        />
+        {dirty && (
+          <button
+            onClick={() => onUpdate(s.id, 'confirmed_cost', val)}
+            disabled={updating}
+            className="bramley-btn py-1 text-xs px-2"
+          >Save</button>
+        )}
+        {!dirty && val && (
+          <button
+            onClick={() => { setVal(''); onUpdate(s.id, 'confirmed_cost', '') }}
+            disabled={updating}
+            className="text-xs text-gray-400 hover:text-red-500"
+            title="Clear cost"
+          >✕</button>
+        )}
+      </div>
+      {aiMid != null && !s.confirmed_cost && (
+        <button
+          onClick={() => setVal(String(aiMid))}
+          className="text-xs text-blue-500 hover:text-blue-700 mt-1"
+        >
+          Use AI midpoint (£{aiMid.toLocaleString()})
         </button>
       )}
     </div>

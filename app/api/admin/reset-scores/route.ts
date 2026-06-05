@@ -59,5 +59,5 @@ export async function POST(req: NextRequest) {
   // Clean up orphaned clusters
   await sql`DELETE FROM clusters WHERE id NOT IN (SELECT DISTINCT cluster_id FROM submissions WHERE cluster_id IS NOT NULL)`
 
-  return NextResponse.json({ ok: true, reset: result.count ?? 0 })
+  return NextResponse.json({ ok: true, reset: result.length })
 }

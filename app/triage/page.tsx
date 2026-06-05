@@ -126,6 +126,7 @@ export default function TriagePage() {
   const [recognitionAlert, setRecognitionAlert] = useState<string | null>(null)
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [filterFlag, setFilterFlag] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
 
   async function deleteImprovement(id: number) {
@@ -222,10 +223,17 @@ export default function TriagePage() {
   const triageItems = data.submissions.filter((s) => !s.moderation_reason)
 
   function applyFilters(items: Submission[]) {
-    return items.filter((s) =>
-      (filterCategory === 'all' || s.category === filterCategory) &&
-      (filterStatus === 'all' || s.status === filterStatus)
-    )
+    return items.filter((s) => {
+      if (filterCategory !== 'all' && s.category !== filterCategory) return false
+      if (filterStatus !== 'all' && s.status !== filterStatus) return false
+      if (filterFlag === 'quick_win' && !s.quick_win_flag) return false
+      if (filterFlag === 'h_and_s' && !s.h_and_s_flag) return false
+      if (filterFlag === 'revenue' && !s.revenue_opportunity) return false
+      if (filterFlag === 'recurring' && !s.recurring_flag) return false
+      if (filterFlag === 'in_plan' && s.status !== 'in_plan') return false
+      if (filterFlag === 'cost_threshold' && !s.cost_threshold_flag) return false
+      return true
+    })
   }
 
   const urgent = applySort(applyFilters(triageItems.filter((s) => s.h_and_s_flag)))
@@ -304,6 +312,18 @@ export default function TriagePage() {
               {Object.entries(STATUS_LABELS).map(([val, label]) => (
                 <option key={val} value={val}>{label}</option>
               ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+            <label className="text-xs text-gray-500 shrink-0">Flag</label>
+            <select className="bramley-input text-sm py-1.5 flex-1" value={filterFlag} onChange={(e) => setFilterFlag(e.target.value)}>
+              <option value="all">All flags</option>
+              <option value="quick_win">⚡ Quick wins</option>
+              <option value="h_and_s">⚠️ Health &amp; Safety</option>
+              <option value="revenue">💰 Revenue opportunity</option>
+              <option value="recurring">🔁 Recurring theme</option>
+              <option value="in_plan">📋 In plan</option>
+              <option value="cost_threshold">£ Committee approval</option>
             </select>
           </div>
           <div className="flex items-center gap-2">

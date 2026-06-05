@@ -4,6 +4,46 @@ import { verifySession } from '@/lib/auth'
 import { isManager } from '@/lib/categories'
 import { sql } from '@/lib/db'
 
+// Moderated submissions — inserted directly with moderation_reason set,
+// simulating what the real gate would write. These appear in the Moderated tab.
+const MODERATED_SUBMISSIONS = [
+  {
+    member_id: 'TEST_M1', member_name: 'Test Member', recognition: 'anonymous',
+    description: 'The bloody bar staff are useless and the manager should be sacked.',
+    benefit: 'Better service.',
+    category: 'bar', impact: 4,
+    moderation_reason: 'personal_attack',
+  },
+  {
+    member_id: 'TEST_M2', member_name: 'Test Member', recognition: 'anonymous',
+    description: 'John Smith on the committee has been making decisions that benefit his own company and this needs to stop immediately.',
+    benefit: 'Better governance for the club.',
+    category: 'clubhouse', impact: 6,
+    moderation_reason: 'political',
+  },
+  {
+    member_id: 'TEST_M3', member_name: 'Test Member', recognition: 'anonymous',
+    description: 'Everything about this club is terrible and getting worse every year.',
+    benefit: 'Just fix everything.',
+    category: 'course', impact: 4,
+    moderation_reason: 'complaint_only',
+  },
+  {
+    member_id: 'TEST_M4', member_name: 'Test Member', recognition: 'anonymous',
+    description: 'The government should lower taxes on golf club memberships and the council should give us a grant.',
+    benefit: 'We would save money.',
+    category: 'other', impact: 2,
+    moderation_reason: 'out_of_scope',
+  },
+  {
+    member_id: 'TEST_M5', member_name: 'Test Member', recognition: 'anonymous',
+    description: 'asdfjkl qwerty golf better yes please improve things more good.',
+    benefit: 'yes',
+    category: 'course', impact: 2,
+    moderation_reason: 'incoherent',
+  },
+]
+
 // 12 varied test submissions covering all the key scenarios
 const TEST_SUBMISSIONS = [
   // --- High-scoring / Priority ---
@@ -122,6 +162,8 @@ export async function POST() {
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS test_data BOOLEAN NOT NULL DEFAULT FALSE`
 
   let inserted = 0
+
+  // Normal submissions — unscored, picked up by triage run
   for (const s of TEST_SUBMISSIONS) {
     await sql`
       INSERT INTO submissions
@@ -129,6 +171,20 @@ export async function POST() {
       VALUES
         (${s.member_id}, ${s.member_name}, ${s.recognition}, ${s.description}, ${s.benefit},
          ${s.category}, ${s.impact}, ${s.member_email}, TRUE)
+    `
+    inserted++
+  }
+
+  // Moderated submissions — written as the real gate would write them
+  for (const s of MODERATED_SUBMISSIONS) {
+    await sql`
+      INSERT INTO submissions
+        (member_id, member_name, recognition, description, benefit, category, impact,
+         status, moderation_reason, scored_at, test_data)
+      VALUES
+        (${s.member_id}, ${s.member_name}, ${s.recognition}, ${s.description}, ${s.benefit},
+         ${s.category}, ${s.impact},
+         'rejected', ${s.moderation_reason}, NOW(), TRUE)
     `
     inserted++
   }

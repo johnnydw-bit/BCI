@@ -76,6 +76,8 @@ export default function AdminPage() {
   const [seedStatus, setSeedStatus] = useState('')
   const [seedingData, setSeedingData] = useState(false)
   const [clearingData, setClearingData] = useState(false)
+  const [resettingScores, setResettingScores] = useState(false)
+  const [resetStatus, setResetStatus] = useState('')
   const [moderationResults, setModerationResults] = useState<Array<{ description: string; expected: string; actual: string; passed: boolean }> | null>(null)
   const [directorName, setDirectorName] = useState('')
   const [directorRole, setDirectorRole] = useState('')
@@ -244,6 +246,23 @@ export default function AdminPage() {
     const json = await res.json().catch(() => ({}))
     setSeedStatus(res.ok ? `✓ ${json.deleted} test submissions removed` : `✗ Error: ${json.error ?? 'check logs'}`)
     setClearingData(false)
+  }
+
+  async function resetScores(scope: 'test' | 'all') {
+    const msg = scope === 'test'
+      ? 'Reset scores for all test submissions? They will be re-queued for the next triage run.'
+      : 'Reset scores for ALL submissions? Every record will be re-queued for triage. This cannot be undone.'
+    if (!confirm(msg)) return
+    setResettingScores(true)
+    setResetStatus('Resetting scores…')
+    const res = await fetch('/api/admin/reset-scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scope }),
+    })
+    const json = await res.json().catch(() => ({}))
+    setResetStatus(res.ok ? `✓ ${json.reset} submission${json.reset !== 1 ? 's' : ''} reset — run triage to re-score` : `✗ Error: ${json.error ?? 'check logs'}`)
+    setResettingScores(false)
   }
 
   async function runTriage() {
@@ -526,6 +545,35 @@ export default function AdminPage() {
                   </table>
                 </div>
               )}
+            </div>
+
+            <hr className="border-gray-200" />
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-1">Reset scores for re-triage</h3>
+              <p className="text-sm text-gray-500 mb-3">
+                Clears all AI scores, flags, and cluster assignments so submissions are re-queued for the next triage run.
+                Use <strong>Test data only</strong> to re-score just test submissions, or <strong>All submissions</strong> to reset everything.
+              </p>
+              <div className="flex gap-3 flex-wrap">
+                <button
+                  onClick={() => resetScores('test')}
+                  disabled={resettingScores}
+                  className="bramley-btn"
+                  style={{ background: '#7d3c98' }}
+                >
+                  {resettingScores ? <><span className="spinner" /> Resetting…</> : '↺ Reset test data only'}
+                </button>
+                <button
+                  onClick={() => resetScores('all')}
+                  disabled={resettingScores}
+                  className="bramley-btn"
+                  style={{ background: '#922b21' }}
+                >
+                  {resettingScores ? <><span className="spinner" /> Resetting…</> : '↺ Reset all submissions'}
+                </button>
+              </div>
+              {resetStatus && <p className="text-sm mt-2 text-gray-700">{resetStatus}</p>}
             </div>
           </div>
         </div>

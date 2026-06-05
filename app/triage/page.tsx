@@ -104,7 +104,7 @@ export default function TriagePage() {
   useEffect(() => {
     fetch('/api/triage')
       .then((r) => {
-        if (r.status === 403) { router.push('/'); return null }
+        if (r.status === 403) { router.push('/committee'); return null }
         return r.json()
       })
       .then((d) => { if (d) setData(d) })
@@ -246,7 +246,7 @@ export default function TriagePage() {
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/')
+    router.push('/committee')
   }
 
   function formatDate(iso: string) {

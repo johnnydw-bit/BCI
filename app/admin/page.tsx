@@ -61,7 +61,7 @@ export default function AdminPage() {
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/')
+    router.push('/committee')
   }
   const [config, setConfig] = useState<ConfigRow[]>([])
   const [edits, setEdits] = useState<Record<string, string>>({})
@@ -97,7 +97,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/admin/config').then((r) => { if (r.status === 403) { router.push('/'); return null } return r.json() }),
+      fetch('/api/admin/config').then((r) => { if (r.status === 403) { router.push('/committee'); return null } return r.json() }),
       fetch('/api/admin/directors').then((r) => r.json()),
     ]).then(([cfg, dirs]) => {
       if (cfg) {

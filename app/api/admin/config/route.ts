@@ -13,9 +13,10 @@ async function requireManager() {
 }
 
 export async function GET() {
-  if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const session = await requireManager()
+  if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const rows = await sql`SELECT key, value, label FROM config ORDER BY key`
-  return NextResponse.json({ config: rows })
+  return NextResponse.json({ config: rows, role: session.role, directorName: session.directorName })
 }
 
 export async function PATCH(req: NextRequest) {

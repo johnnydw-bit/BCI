@@ -77,13 +77,19 @@ export default function AdminPage() {
   const [seedingData, setSeedingData] = useState(false)
   const [clearingData, setClearingData] = useState(false)
   const [moderationResults, setModerationResults] = useState<Array<{ description: string; expected: string; actual: string; passed: boolean }> | null>(null)
+  const [directorName, setDirectorName] = useState('')
+  const [directorRole, setDirectorRole] = useState('')
 
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/config').then((r) => { if (r.status === 403) { router.push('/'); return null } return r.json() }),
       fetch('/api/admin/directors').then((r) => r.json()),
     ]).then(([cfg, dirs]) => {
-      if (cfg) setConfig(cfg.config)
+      if (cfg) {
+        setConfig(cfg.config)
+        setDirectorName(cfg.directorName ?? '')
+        setDirectorRole(cfg.role ?? '')
+      }
       if (dirs) setDirectors(dirs.directors)
     }).finally(() => setLoading(false))
   }, [router])
@@ -274,7 +280,7 @@ export default function AdminPage() {
       <div className="bramley-card">
         <div className="bramley-header flex justify-between items-center">
           <BramleyHeader
-            subtitle="Club Manager — Admin"
+            subtitle={`${directorName ? directorName + ' — ' : ''}${directorRole || 'Admin'} — Admin`}
             right={
               <div className="flex gap-3">
                 <button onClick={() => router.push('/triage')} className="text-xs opacity-70 hover:opacity-100">← Triage</button>

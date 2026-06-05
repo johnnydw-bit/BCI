@@ -320,6 +320,20 @@ export default function AdminPage() {
     return edits[key] ?? config.find((r) => r.key === key)?.value ?? ''
   }
 
+  function shortLabel(label: string) {
+    return label
+      .replace(/^Scoring weight:\s*/i, '')
+      .replace(/^Multiplier:\s*/i, '')
+      .replace(/^Score threshold:\s*/i, '')
+      .replace(/^Category impact ceiling:\s*/i, '')
+      .replace(/^Cluster bonus[^:]*:\s*/i, '')
+      .replace(/\s*\(0[\s·\-–]1\)/g, '')
+      .replace(/\s*\(≥ this value\)/g, '')
+      .replace(/^./, (c) => c.toUpperCase())
+  }
+
+  const WEIGHT_KEYS = ['WEIGHT_MEMBER_IMPACT', 'WEIGHT_STRATEGIC', 'WEIGHT_FEASIBILITY', 'WEIGHT_COST_BENEFIT', 'WEIGHT_NOVELTY', 'WEIGHT_EXPERIENCE_DELTA']
+
   if (loading) {
     return (
       <div className="bramley-card">
@@ -372,36 +386,53 @@ export default function AdminPage() {
       {/* Config tab */}
       {tab === 'config' && (
         <div className="bramley-card">
-          <div className="bramley-body space-y-6">
-            {CONFIG_GROUPS.map((group) => (
-              <div key={group.title}>
-                <h3 className="font-semibold text-gray-800 mb-1">{group.title}</h3>
-                {group.note && <p className="text-xs text-gray-500 mb-2">{group.note}</p>}
-                <div className="space-y-2">
-                  {group.keys.map((key) => {
-                    const row = config.find((r) => r.key === key)
-                    return (
-                      <div key={key} className="flex items-center gap-3">
-                        <label className="text-sm text-gray-600 flex-1">{row?.label ?? key}</label>
-                        <input
-                          type="number"
-                          step="any"
-                          className="bramley-input w-32 text-right py-1.5 text-sm"
-                          value={configValue(key)}
-                          onChange={(e) => handleEdit(key, e.target.value)}
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
+          <div className="bramley-body">
+            <div className="max-w-2xl space-y-3">
+              {CONFIG_GROUPS.map((group) => {
+                const isWeights = group.title === 'Scoring Weights'
+                const weightsTotal = isWeights
+                  ? WEIGHT_KEYS.reduce((sum, k) => sum + (parseFloat(configValue(k)) || 0), 0)
+                  : 0
+                const weightsOk = Math.abs(weightsTotal - 1) < 0.001
+                return (
+                  <div key={group.title} className="rounded-[8px] border border-gray-100 bg-gray-50 p-4">
+                    <h3 className="font-semibold text-gray-800 text-sm mb-1">{group.title}</h3>
+                    {group.note && <p className="text-xs text-gray-500 mb-3">{group.note}</p>}
+                    <div className="space-y-2">
+                      {group.keys.map((key) => {
+                        const row = config.find((r) => r.key === key)
+                        return (
+                          <div key={key} className="flex items-center gap-3">
+                            <label className="text-sm text-gray-600 flex-1">{shortLabel(row?.label ?? key)}</label>
+                            <input
+                              type="number"
+                              step="any"
+                              className="bramley-input !w-28 text-right py-1.5 text-sm"
+                              value={configValue(key)}
+                              onChange={(e) => handleEdit(key, e.target.value)}
+                            />
+                          </div>
+                        )
+                      })}
+                      {isWeights && (
+                        <div className="flex items-center gap-3 pt-2 border-t border-gray-200 mt-1">
+                          <span className="text-sm font-semibold text-gray-600 flex-1">Total</span>
+                          <span className={`text-sm font-bold w-28 text-right pr-1 ${weightsOk ? 'text-green-600' : 'text-red-600'}`}>
+                            {weightsTotal.toFixed(2)} {weightsOk ? '✓' : '✗ must equal 1.0'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+              <div className="flex items-center gap-3 pt-1">
+                <button onClick={saveConfig} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={saving || Object.keys(edits).length === 0}>
+                  {saving ? <span className="spinner" /> : 'Save changes'}
+                </button>
+                {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
+                {Object.keys(edits).length > 0 && !saved && <span className="text-xs text-amber-600">{Object.keys(edits).length} unsaved change{Object.keys(edits).length !== 1 ? 's' : ''}</span>}
               </div>
-            ))}
-
-            <div className="flex items-center gap-3 pt-2">
-              <button onClick={saveConfig} className="bramley-btn" disabled={saving || Object.keys(edits).length === 0}>
-                {saving ? <span className="spinner" /> : 'Save changes'}
-              </button>
-              {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
             </div>
           </div>
         </div>
@@ -460,7 +491,8 @@ export default function AdminPage() {
                   >
                     {editingId === d.id ? 'Cancel' : 'Edit'}
                   </button>
-                  <button onClick={() => deleteDirector(d.id)} className="text-red-400 hover:text-red-600 text-xs">Remove</button>
+                  <span className="text-gray-200 select-none">|</span>
+                  <button onClick={() => deleteDirector(d.id)} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove</button>
                 </div>
 
                 {/* Inline edit form */}
@@ -496,7 +528,7 @@ export default function AdminPage() {
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
               {dirError && <p className="bramley-error">{dirError}</p>}
-              <button onClick={addDirector} className="bramley-btn" disabled={addingDir}>
+              <button onClick={addDirector} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={addingDir}>
                 {addingDir ? <span className="spinner" /> : 'Add director'}
               </button>
             </div>
@@ -507,37 +539,41 @@ export default function AdminPage() {
       {/* Communications tab */}
       {tab === 'comms' && (
         <div className="bramley-card">
-          <div className="bramley-body space-y-6">
-            <div>
-              <h3 className="font-semibold text-gray-800 mb-1">Member communication tone</h3>
-              <p className="text-xs text-gray-500 mb-3">Controls the tone of AI-generated emails sent to members when their improvement status changes.</p>
+          <div className="bramley-body">
+            <div className="max-w-2xl space-y-4">
+              <div className="rounded-[8px] border border-gray-100 bg-gray-50 p-4 space-y-3">
+                <div>
+                  <h3 className="font-semibold text-gray-800 text-sm mb-0.5">Member communication tone</h3>
+                  <p className="text-xs text-gray-500">Controls the tone of AI-generated emails sent to members when their improvement status changes.</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-gray-600 w-36 shrink-0">Communication tone</label>
+                  <select
+                    className="bramley-input !w-40 py-1.5 text-sm"
+                    value={configValue('COMMS_TONE')}
+                    onChange={(e) => handleEdit('COMMS_TONE', e.target.value)}
+                  >
+                    <option value="friendly">Friendly</option>
+                    <option value="formal">Formal</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-gray-600 w-36 shrink-0">Email sign-off</label>
+                  <input
+                    type="text"
+                    className="bramley-input py-1.5 text-sm"
+                    value={configValue('COMMS_SIGNOFF')}
+                    onChange={(e) => handleEdit('COMMS_SIGNOFF', e.target.value)}
+                    placeholder="e.g. The Committee, Bramley Golf Club"
+                  />
+                </div>
+              </div>
               <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-600 flex-1">Communication tone</label>
-                <select
-                  className="bramley-input w-40 py-1.5 text-sm"
-                  value={configValue('COMMS_TONE')}
-                  onChange={(e) => handleEdit('COMMS_TONE', e.target.value)}
-                >
-                  <option value="friendly">Friendly</option>
-                  <option value="formal">Formal</option>
-                </select>
+                <button onClick={saveConfig} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={saving || Object.keys(edits).length === 0}>
+                  {saving ? <span className="spinner" /> : 'Save changes'}
+                </button>
+                {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
               </div>
-              <div className="flex items-center gap-3 mt-2">
-                <label className="text-sm text-gray-600 flex-1">Email sign-off</label>
-                <input
-                  type="text"
-                  className="bramley-input w-72 py-1.5 text-sm"
-                  value={configValue('COMMS_SIGNOFF')}
-                  onChange={(e) => handleEdit('COMMS_SIGNOFF', e.target.value)}
-                  placeholder="e.g. The Committee, Bramley Golf Club"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-3 pt-2">
-              <button onClick={saveConfig} className="bramley-btn" disabled={saving || Object.keys(edits).length === 0}>
-                {saving ? <span className="spinner" /> : 'Save changes'}
-              </button>
-              {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
             </div>
           </div>
         </div>
@@ -586,8 +622,8 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {dashboard.byStatus.map((row) => (
-                        <tr key={row.status} className="border-b border-gray-100">
+                      {dashboard.byStatus.map((row, i) => (
+                        <tr key={row.status} className={`border-b border-gray-100 ${i % 2 === 0 ? '' : 'bg-gray-50'}`}>
                           <td className="py-1.5 text-gray-700 capitalize">{row.status.replace(/_/g, ' ')}</td>
                           <td className="py-1.5 text-right text-gray-800 font-medium">{row.count}</td>
                         </tr>
@@ -608,8 +644,8 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {dashboard.byCategory.map((row) => (
-                        <tr key={row.category} className="border-b border-gray-100">
+                      {dashboard.byCategory.map((row, i) => (
+                        <tr key={row.category} className={`border-b border-gray-100 ${i % 2 === 0 ? '' : 'bg-gray-50'}`}>
                           <td className="py-1.5 text-gray-700 capitalize">{row.category.replace(/_/g, ' ')}</td>
                           <td className="py-1.5 text-right text-gray-800 font-medium">{row.count}</td>
                           <td className="py-1.5 text-right text-gray-600">{row.avg_score != null ? Number(row.avg_score).toFixed(1) : '—'}</td>
@@ -630,8 +666,8 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {dashboard.scoreDist.map((row) => (
-                        <tr key={row.band} className="border-b border-gray-100">
+                      {dashboard.scoreDist.map((row, i) => (
+                        <tr key={row.band} className={`border-b border-gray-100 ${i % 2 === 0 ? '' : 'bg-gray-50'}`}>
                           <td className="py-1.5 text-gray-700 capitalize">{row.band.replace(/_/g, ' ')}</td>
                           <td className="py-1.5 text-right text-gray-800 font-medium">{row.count}</td>
                         </tr>
@@ -652,7 +688,7 @@ export default function AdminPage() {
             <div>
               <h3 className="font-semibold text-gray-800 mb-1">Database initialisation</h3>
               <p className="text-sm text-gray-500 mb-3">Run once on first deployment to create all tables and seed default configuration values. Safe to run again — existing data is preserved.</p>
-              <button onClick={initDb} className="bramley-btn">⚙ Initialise database</button>
+              <button onClick={initDb} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm">⚙ Initialise database</button>
               {initStatus && <p className="text-sm mt-2 text-gray-700">{initStatus}</p>}
             </div>
 
@@ -664,7 +700,8 @@ export default function AdminPage() {
               <button
                 onClick={runTriage}
                 disabled={runningTriage}
-                className="bramley-btn flex items-center justify-center gap-2"
+                style={{ width: 'auto' }}
+                className="bramley-btn px-8 py-2.5 text-sm flex items-center gap-2"
               >
                 {runningTriage ? <><span className="spinner" /> Running…</> : '▶ Run triage now'}
               </button>

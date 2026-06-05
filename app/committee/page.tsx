@@ -16,7 +16,6 @@ export default function CommitteeLoginPage() {
   useEffect(() => {
     fetch('/api/session').then((r) => r.json()).then((s) => {
       if (s.authenticated && s.type === 'director') { router.replace('/triage'); return }
-      if (s.authenticated && s.type === 'member') { router.replace('/submit'); return }
       setChecking(false)
     })
   }, [router])

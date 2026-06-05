@@ -56,7 +56,15 @@ export async function PUT(req: NextRequest) {
   await sql`UPDATE director_roles SET name = ${name}, email = ${email}, role = ${role} WHERE id = ${id}`
   if (pin) {
     const pinHash = createHash('sha256').update(pin.trim()).digest('hex')
-    await sql`UPDATE director_roles SET pin_hash = ${pinHash}, pin = ${pin.trim()} WHERE id = ${id}`
+    try {
+      await sql`UPDATE director_roles SET pin_hash = ${pinHash}, pin = ${pin.trim()} WHERE id = ${id}`
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (msg.includes('unique') || msg.includes('duplicate')) {
+        return NextResponse.json({ error: 'That PIN is already in use by another director. Each director must have a unique PIN.' }, { status: 409 })
+      }
+      throw e
+    }
   }
   return NextResponse.json({ ok: true })
 }

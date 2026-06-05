@@ -164,10 +164,11 @@ export default function AdminPage() {
       body: JSON.stringify({ id, ...editForm }),
     })
     if (res.ok) {
-      setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, name: editForm.name, email: editForm.email, role: editForm.role } : d))
+      setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, name: editForm.name, email: editForm.email, role: editForm.role, pin: editForm.pin || d.pin } : d))
       setEditingId(null)
     } else {
-      setEditError('Failed to save changes')
+      const data = await res.json().catch(() => ({}))
+      setEditError(data.error ?? 'Failed to save changes')
     }
   }
 

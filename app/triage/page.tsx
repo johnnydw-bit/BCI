@@ -125,7 +125,8 @@ export default function TriagePage() {
   const [completing, setCompleting] = useState<number | null>(null)
   const [recognitionAlert, setRecognitionAlert] = useState<string | null>(null)
   const [filterCategory, setFilterCategory] = useState<string>('all')
-  const [sortBy, setSortBy] = useState<'score' | 'date'>('score')
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
 
   async function deleteImprovement(id: number) {
     if (!confirm('Remove this improvement? This cannot be undone.')) return
@@ -204,9 +205,14 @@ export default function TriagePage() {
 
   if (!data) return null
 
-  function applySort<T extends { score?: number | null; created_at?: string; scored_at?: string | null }>(items: T[]): T[] {
+  const STATUS_ORDER: Record<string, number> = {
+    new: 0, under_consideration: 1, approved: 2, implemented: 3, rejected: 4,
+  }
+
+  function applySort<T extends { score?: number | null; created_at?: string; scored_at?: string | null; status?: string }>(items: T[]): T[] {
     return [...items].sort((a, b) => {
       if (sortBy === 'score') return (Number(b.score) || 0) - (Number(a.score) || 0)
+      if (sortBy === 'status') return (STATUS_ORDER[a.status ?? ''] ?? 9) - (STATUS_ORDER[b.status ?? ''] ?? 9)
       return new Date(b.created_at ?? b.scored_at ?? 0).getTime() - new Date(a.created_at ?? a.scored_at ?? 0).getTime()
     })
   }
@@ -214,8 +220,16 @@ export default function TriagePage() {
   const moderated = data.submissions.filter((s) => s.moderation_reason)
     .filter((s) => filterCategory === 'all' || s.category === filterCategory)
   const triageItems = data.submissions.filter((s) => !s.moderation_reason)
-  const urgent = applySort(triageItems.filter((s) => s.h_and_s_flag && (filterCategory === 'all' || s.category === filterCategory)))
-  const normal = applySort(triageItems.filter((s) => !s.h_and_s_flag && (filterCategory === 'all' || s.category === filterCategory)))
+
+  function applyFilters(items: Submission[]) {
+    return items.filter((s) =>
+      (filterCategory === 'all' || s.category === filterCategory) &&
+      (filterStatus === 'all' || s.status === filterStatus)
+    )
+  }
+
+  const urgent = applySort(applyFilters(triageItems.filter((s) => s.h_and_s_flag)))
+  const normal = applySort(applyFilters(triageItems.filter((s) => !s.h_and_s_flag)))
 
   const filteredTracked = applySort(
     filterCategory === 'all' ? tracked : tracked.filter((t) => t.category === filterCategory)
@@ -273,13 +287,9 @@ export default function TriagePage() {
       {/* Filter & sort bar */}
       <div className="bramley-card">
         <div className="bramley-body py-3 flex flex-wrap gap-3 items-center">
-          <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+          <div className="flex items-center gap-2 flex-1 min-w-[160px]">
             <label className="text-xs text-gray-500 shrink-0">Area</label>
-            <select
-              className="bramley-input text-sm py-1.5 flex-1"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-            >
+            <select className="bramley-input text-sm py-1.5 flex-1" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
               <option value="all">All areas</option>
               {CATEGORIES.filter((c) => c.value !== 'other').map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -287,19 +297,28 @@ export default function TriagePage() {
               <option value="other">Other</option>
             </select>
           </div>
+          <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+            <label className="text-xs text-gray-500 shrink-0">Decision</label>
+            <select className="bramley-input text-sm py-1.5 flex-1" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+              <option value="all">All decisions</option>
+              {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                <option key={val} value={val}>{label}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 shrink-0">Sort by</label>
+            <label className="text-xs text-gray-500 shrink-0">Sort</label>
             <div className="flex rounded-[8px] overflow-hidden border border-gray-200">
-              <button
-                onClick={() => setSortBy('score')}
-                className={`px-3 py-1.5 text-sm transition-colors ${sortBy === 'score' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-                style={sortBy === 'score' ? { background: 'var(--bramley-navy)' } : {}}
-              >Score</button>
-              <button
-                onClick={() => setSortBy('date')}
-                className={`px-3 py-1.5 text-sm transition-colors border-l border-gray-200 ${sortBy === 'date' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-                style={sortBy === 'date' ? { background: 'var(--bramley-navy)' } : {}}
-              >Date</button>
+              {(['score', 'status', 'date'] as const).map((s, i) => (
+                <button
+                  key={s}
+                  onClick={() => setSortBy(s)}
+                  className={`px-3 py-1.5 text-sm transition-colors ${i > 0 ? 'border-l border-gray-200' : ''} ${sortBy === s ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                  style={sortBy === s ? { background: 'var(--bramley-navy)' } : {}}
+                >
+                  {s === 'score' ? 'Score' : s === 'status' ? 'Decision' : 'Date'}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -538,7 +557,7 @@ function TriageTable({
           <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Improvement</th>
           <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-28 hidden lg:table-cell">Area</th>
           <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24 hidden md:table-cell">Date</th>
-          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-40">Status</th>
+          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-40">Decision</th>
           <th className="w-8"></th>
         </tr>
       </thead>
@@ -646,8 +665,9 @@ function SubmissionTableRow({
       {expanded && (
         <tr className={urgent ? 'bg-red-50' : 'bg-gray-50'}>
           <td colSpan={6} className="px-5 py-4 border-b border-gray-200">
-            <div className="space-y-3 max-w-4xl">
+            <div className="max-w-4xl space-y-4">
 
+              {/* ── Submission text ── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Improvement</p>
@@ -659,130 +679,137 @@ function SubmissionTableRow({
                 </div>
               </div>
 
-              {s.ai_narrative && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Assessment</p>
+              {/* ── AI Assessment section ── */}
+              <div className="rounded-[10px] border border-indigo-100 bg-indigo-50 p-4 space-y-3">
+                <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider">🤖 AI Assessment</p>
+
+                {s.ai_narrative && (
                   <p className="text-sm text-gray-700">{s.ai_narrative}</p>
-                </div>
-              )}
+                )}
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                {(s.cost_estimate_low != null || s.cost_band) && (
-                  <div className={`rounded-[8px] px-3 py-2 col-span-2 ${s.cost_threshold_flag ? 'bg-orange-50 border border-orange-200' : 'bg-white border border-gray-200'}`}>
-                    <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">
-                      Cost estimate {s.cost_confidence && <span className="normal-case font-normal text-gray-400">({s.cost_confidence} confidence)</span>}
-                    </span>
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      {s.cost_estimate_low != null && s.cost_estimate_high != null ? (
-                        <span className="text-gray-900 font-semibold text-sm">
-                          £{Number(s.cost_estimate_low).toLocaleString()} – £{Number(s.cost_estimate_high).toLocaleString()}
-                        </span>
-                      ) : (
-                        <span className="text-gray-800 capitalize">{s.cost_band?.replace('_', ' ')}</span>
-                      )}
-                      {s.cost_threshold_flag && <span className="text-orange-600 font-semibold">⚠ Exceeds committee threshold</span>}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  {(s.cost_estimate_low != null || s.cost_band) && (
+                    <div className={`rounded-[8px] px-3 py-2 col-span-2 ${s.cost_threshold_flag ? 'bg-orange-50 border border-orange-200' : 'bg-white border border-gray-200'}`}>
+                      <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+                        Cost estimate {s.cost_confidence && <span className="normal-case font-normal text-gray-400">({s.cost_confidence} confidence)</span>}
+                      </span>
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        {s.cost_estimate_low != null && s.cost_estimate_high != null ? (
+                          <span className="text-gray-900 font-semibold text-sm">
+                            £{Number(s.cost_estimate_low).toLocaleString()} – £{Number(s.cost_estimate_high).toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="text-gray-800 capitalize">{s.cost_band?.replace('_', ' ')}</span>
+                        )}
+                        {s.cost_threshold_flag && <span className="text-orange-600 font-semibold">⚠ Exceeds committee threshold</span>}
+                      </div>
+                      {s.cost_rationale && <p className="text-gray-500 mt-0.5">{s.cost_rationale}</p>}
                     </div>
-                    {s.cost_rationale && <p className="text-gray-500 mt-0.5">{s.cost_rationale}</p>}
-                  </div>
-                )}
+                  )}
 
-                {s.impl_complexity && (
-                  <div className={`rounded-[8px] px-3 py-2 ${s.quick_win_flag ? 'bg-green-50 border border-green-200' : 'bg-white border border-gray-200'}`}>
-                    <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">Implementation</span>
-                    <span className={`font-semibold capitalize ${s.quick_win_flag ? 'text-green-700' : 'text-gray-800'}`}>
-                      {s.impl_complexity.replace('_', ' ')}
-                    </span>
-                    {s.impl_weeks_low != null && s.impl_weeks_high != null && (
-                      <p className="text-gray-500 mt-0.5">
-                        {s.impl_weeks_low === s.impl_weeks_high
-                          ? `~${s.impl_weeks_low}w`
-                          : `${s.impl_weeks_low}–${s.impl_weeks_high}w`}
-                      </p>
-                    )}
-                    {s.suggested_target_date && (
-                      <p className="text-gray-400 mt-0.5">By {new Date(s.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                    )}
-                  </div>
-                )}
+                  {s.impl_complexity && (
+                    <div className={`rounded-[8px] px-3 py-2 ${s.quick_win_flag ? 'bg-green-50 border border-green-200' : 'bg-white border border-gray-200'}`}>
+                      <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">Implementation</span>
+                      <span className={`font-semibold capitalize ${s.quick_win_flag ? 'text-green-700' : 'text-gray-800'}`}>
+                        {s.impl_complexity.replace('_', ' ')}
+                      </span>
+                      {s.impl_weeks_low != null && s.impl_weeks_high != null && (
+                        <p className="text-gray-500 mt-0.5">
+                          {s.impl_weeks_low === s.impl_weeks_high ? `~${s.impl_weeks_low}w` : `${s.impl_weeks_low}–${s.impl_weeks_high}w`}
+                        </p>
+                      )}
+                      {s.suggested_target_date && (
+                        <p className="text-gray-400 mt-0.5">By {new Date(s.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      )}
+                    </div>
+                  )}
 
-                {s.strategic_note && (
-                  <div className="bg-white border border-gray-200 rounded-[8px] px-3 py-2 col-span-2">
-                    <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Strategic alignment</span>
-                    <span className="text-gray-800">{s.strategic_note}</span>
-                  </div>
-                )}
+                  {s.suggested_owner && (
+                    <div className="bg-white border border-gray-200 rounded-[8px] px-3 py-2">
+                      <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Suggested owner</span>
+                      <span className="text-gray-800 font-medium">{s.suggested_owner}</span>
+                    </div>
+                  )}
 
-                {s.cluster_theme && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-[8px] px-3 py-2 col-span-2">
-                    <span className="font-semibold text-blue-600 uppercase tracking-wide block mb-0.5">Cluster theme</span>
-                    <span className="text-blue-800">{s.cluster_theme} ({s.cluster_size} submission{s.cluster_size !== 1 ? 's' : ''})</span>
-                  </div>
-                )}
-                {s.recurring_flag && (
-                  <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#fdf2f8', border: '1px solid #e8b4d0' }}>
-                    <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#922b21' }}>🔁 Recurring theme</span>
-                    <span className="text-gray-700">This theme has appeared in {s.recurring_run_count} previous triage run{s.recurring_run_count !== 1 ? 's' : ''}. Persistent member pressure.</span>
-                  </div>
-                )}
-                {s.suggested_owner && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-3 py-2">
-                    <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Suggested owner</span>
-                    <span className="text-gray-800 font-medium">{s.suggested_owner}</span>
-                  </div>
-                )}
-                {s.needs_external_approval && s.approval_body && (
-                  <div className="rounded-[8px] px-3 py-2" style={{ background: '#fef9e7', border: '1px solid #d4ac0d' }}>
-                    <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#7d6608' }}>⚖ External approval required</span>
-                    <span className="text-gray-700">{s.approval_body}</span>
-                  </div>
-                )}
-                {s.seasonal_window && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-[8px] px-3 py-2">
-                    <span className="font-semibold text-blue-700 uppercase tracking-wide block mb-0.5">📅 Seasonal window</span>
-                    <span className="text-blue-800">{s.seasonal_window}</span>
-                  </div>
-                )}
-                {s.revenue_opportunity && s.revenue_note && (
-                  <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#f5eef8', border: '1px solid #c39bd3' }}>
-                    <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#6c3483' }}>💰 Revenue opportunity</span>
-                    <span className="text-gray-700">{s.revenue_note}</span>
-                  </div>
+                  {s.strategic_note && (
+                    <div className="bg-white border border-gray-200 rounded-[8px] px-3 py-2 col-span-2">
+                      <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Strategic alignment</span>
+                      <span className="text-gray-800">{s.strategic_note}</span>
+                    </div>
+                  )}
+
+                  {s.cluster_theme && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-[8px] px-3 py-2 col-span-2">
+                      <span className="font-semibold text-blue-600 uppercase tracking-wide block mb-0.5">Cluster theme</span>
+                      <span className="text-blue-800">{s.cluster_theme} ({s.cluster_size} submission{s.cluster_size !== 1 ? 's' : ''})</span>
+                    </div>
+                  )}
+
+                  {s.recurring_flag && (
+                    <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#fdf2f8', border: '1px solid #e8b4d0' }}>
+                      <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#922b21' }}>🔁 Recurring theme</span>
+                      <span className="text-gray-700">This theme has appeared in {s.recurring_run_count} previous triage run{s.recurring_run_count !== 1 ? 's' : ''}. Persistent member pressure.</span>
+                    </div>
+                  )}
+
+                  {s.needs_external_approval && s.approval_body && (
+                    <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#fef9e7', border: '1px solid #d4ac0d' }}>
+                      <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#7d6608' }}>⚖ External approval required</span>
+                      <span className="text-gray-700">{s.approval_body}</span>
+                    </div>
+                  )}
+
+                  {s.seasonal_window && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-[8px] px-3 py-2 col-span-2">
+                      <span className="font-semibold text-blue-700 uppercase tracking-wide block mb-0.5">📅 Seasonal window</span>
+                      <span className="text-blue-800">{s.seasonal_window}</span>
+                    </div>
+                  )}
+
+                  {s.revenue_opportunity && s.revenue_note && (
+                    <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#f5eef8', border: '1px solid #c39bd3' }}>
+                      <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#6c3483' }}>💰 Revenue opportunity</span>
+                      <span className="text-gray-700">{s.revenue_note}</span>
+                    </div>
+                  )}
+                </div>
+
+                {s.recognition !== 'anonymous' && s.member_name && (
+                  <p className="text-xs text-indigo-400">Submitted by <span className="font-medium">{s.member_name}</span></p>
                 )}
               </div>
 
-              {s.recognition !== 'anonymous' && s.member_name && (
-                <p className="text-xs text-gray-400">
-                  Submitted by <span className="font-medium">{s.member_name}</span>
-                </p>
-              )}
-
-              {/* Manager controls */}
+              {/* ── Committee Decision section ── */}
               {isManager && (
-                <div className="flex gap-3 pt-1 flex-wrap items-end border-t border-gray-200">
-                  <div className="min-w-[160px]">
-                    <label className="text-xs text-gray-500 block mb-1">Reassign area</label>
-                    <select
-                      className="bramley-input text-sm py-1.5"
-                      value={s.category}
-                      onChange={(e) => onUpdate(s.id, 'category', e.target.value)}
-                      disabled={updating}
-                    >
-                      {CATEGORIES.map((c) => (
-                        <option key={c.value} value={c.value}>{c.label}</option>
-                      ))}
-                    </select>
+                <div className="rounded-[10px] border border-amber-200 bg-amber-50 p-4 space-y-3">
+                  <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">📋 Committee Decision</p>
+                  <div className="flex gap-3 flex-wrap items-end">
+                    <div className="min-w-[160px]">
+                      <label className="text-xs text-gray-600 block mb-1">Reassign area</label>
+                      <select
+                        className="bramley-input text-sm py-1.5"
+                        value={s.category}
+                        onChange={(e) => onUpdate(s.id, 'category', e.target.value)}
+                        disabled={updating}
+                      >
+                        {CATEGORIES.map((c) => (
+                          <option key={c.value} value={c.value}>{c.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {s.status !== 'approved' && s.status !== 'implemented' && (
+                      <button
+                        onClick={() => onDelete(s.id)}
+                        disabled={deleting}
+                        className="text-xs text-red-400 hover:text-red-600 transition-colors pb-1.5"
+                      >
+                        {deleting ? 'Removing…' : 'Remove improvement'}
+                      </button>
+                    )}
                   </div>
-                  {s.status !== 'approved' && s.status !== 'implemented' && (
-                    <button
-                      onClick={() => onDelete(s.id)}
-                      disabled={deleting}
-                      className="text-xs text-red-400 hover:text-red-600 transition-colors pb-1.5"
-                    >
-                      {deleting ? 'Removing…' : 'Remove improvement'}
-                    </button>
-                  )}
                 </div>
               )}
+
             </div>
           </td>
         </tr>

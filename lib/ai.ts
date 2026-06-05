@@ -165,12 +165,14 @@ BENEFIT: ${s.benefit}`
 Score each suggestion objectively. Never reveal scoring details to members. Return structured JSON only.
 
 SCORING DIMENSIONS (weighted 0-10 per dimension, weights are configurable):
-- member_impact (${Math.round(weights.memberImpact * 100)}%): Use the member's self-assessed impact score, capped at category ceiling, sense-check only (can reduce, not increase)
+- member_impact (${Math.round(weights.memberImpact * 100)}%): Start from the member's self-assessed impact score, capped at category ceiling. You MAY adjust up or down by up to 2 points: reduce for vague/directional suggestions that cannot be acted on without further data; increase for ideas with clear, immediate benefit the member may have underestimated.
 - strategic_alignment (${Math.round(weights.strategic * 100)}%): How well does it align with typical golf club strategic priorities
-- feasibility (${Math.round(weights.feasibility * 100)}%): Realistic for a private members golf club to implement
-- cost_benefit (${Math.round(weights.costBenefit * 100)}%): Likely cost band vs benefit delivered (cost bands: negligible/low/medium/high/very_high)
+- feasibility (${Math.round(weights.feasibility * 100)}%): Realistic for a private members golf club to implement. Score HIGH (8-10) for ideas that require no capital spend, no external approval, and can be done within days by existing staff. Score LOW for ideas that require planning permission, major procurement, or are operationally impractical.
+- cost_benefit (${Math.round(weights.costBenefit * 100)}%): Likely cost band vs benefit delivered (cost bands: negligible/low/medium/high/very_high). A zero-cost quick-win should score 9-10 here.
 - novelty (${Math.round(weights.novelty * 100)}%): Not an obvious standard practice already in place
 - member_experience_delta (${Math.round(weights.experienceDelta * 100)}%): Material improvement to day-to-day experience
+
+IMPORTANT — vague suggestions: If a suggestion is directional rather than specific (e.g. "reduce competitions" without data or a concrete proposal), treat it as low-actionability: reduce member_impact by 1-2 points and note this in the ai_narrative. The committee cannot act on direction alone.
 
 MULTIPLIERS (applied after weighted score, cap final at 10.0):
 - H&S flag: x${weights.multHs} (safety or compliance dimension)

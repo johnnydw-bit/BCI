@@ -1,0 +1,375 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 15">
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #222; margin: 2cm 2.5cm; line-height: 1.5; }
+  h1 { font-size: 20pt; color: #1a3a5c; border-bottom: 2px solid #1a3a5c; padding-bottom: 6pt; margin-top: 0; }
+  h2 { font-size: 15pt; color: #1a3a5c; margin-top: 18pt; margin-bottom: 4pt; }
+  h3 { font-size: 12pt; color: #1a3a5c; margin-top: 14pt; margin-bottom: 4pt; }
+  h4 { font-size: 11pt; font-weight: bold; color: #333; margin-top: 10pt; margin-bottom: 2pt; }
+  .subtitle { font-size: 13pt; color: #555; margin-top: 2pt; }
+  .version { font-size: 10pt; color: #888; font-style: italic; margin-bottom: 20pt; }
+  p { margin: 6pt 0; }
+  table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
+  th { background: #1a3a5c; color: white; padding: 6pt 8pt; text-align: left; font-size: 10pt; }
+  td { border: 1px solid #ccc; padding: 5pt 8pt; font-size: 10pt; vertical-align: top; }
+  tr:nth-child(even) td { background: #f5f7fa; }
+  .callout { background: #e8f0f8; border-left: 4px solid #1a3a5c; padding: 8pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  .tip { background: #eafaf1; border-left: 4px solid #1e8449; padding: 8pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  .warning { background: #fef9e7; border-left: 4px solid #b7770d; padding: 8pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  .danger { background: #fdf2f2; border-left: 4px solid #c0392b; padding: 8pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  ul, ol { margin: 6pt 0 6pt 20pt; padding: 0; }
+  li { margin: 3pt 0; font-size: 10.5pt; }
+  .toc { background: #f5f7fa; border: 1px solid #ddd; padding: 12pt 16pt; margin: 16pt 0; }
+  .toc p { margin: 2pt 0; font-size: 10pt; }
+  .toc-title { font-weight: bold; font-size: 11pt; margin-bottom: 6pt; color: #1a3a5c; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 16pt 0; }
+  .page-break { page-break-before: always; }
+  code { font-family: Consolas, monospace; background: #f0f0f0; padding: 1pt 4pt; font-size: 10pt; }
+  .admin-section { background: #f0f4f8; border: 1px solid #b8ccdd; border-radius: 4pt; padding: 10pt 14pt; margin: 10pt 0; }
+  .admin-label { font-size: 9pt; color: #1a3a5c; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5pt; margin-bottom: 4pt; }
+</style>
+</head>
+<body>
+
+<h1>Bramley Golf Club</h1>
+<p class="subtitle"><strong>Continuous Improvement Programme — Committee &amp; Director Guide</strong></p>
+<p class="version">Version 1.0 &nbsp;&bull;&nbsp; June 2026</p>
+
+<hr>
+
+<div class="toc">
+<p class="toc-title">Contents</p>
+<p>1. Programme overview</p>
+<p>2. Roles and access levels</p>
+<p>3. Signing in</p>
+<p>4. The triage report</p>
+<p>5. Understanding scores and bands</p>
+<p>6. Views — Card view and Spreadsheet view</p>
+<p>7. Filters and search</p>
+<p>8. Managing submissions</p>
+<p>9. Target dates</p>
+<p>10. Director notes</p>
+<p>11. Score override</p>
+<p>12. Audit trail</p>
+<p>13. Owner assignment</p>
+<p>14. Tracking approved improvements</p>
+<p>15. Email reports</p>
+<p>16. My Improvements — the member view</p>
+<p>17. Session security</p>
+<p>18. Super Admin — Admin panel</p>
+<p>19. Frequently asked questions</p>
+</div>
+
+<hr>
+
+<h2>1. Programme overview</h2>
+<p>The Continuous Improvement Programme (CIP) collects, scores, and prioritises member improvement ideas using an AI-assisted structured assessment process. The workflow is:</p>
+<ol>
+  <li><strong>Member submits</strong> an idea via the programme website</li>
+  <li><strong>Automated moderation</strong> checks the submission for appropriateness</li>
+  <li><strong>Weekly AI scoring</strong> assesses every unscored submission across six weighted dimensions, producing a score out of 10</li>
+  <li><strong>Triage report</strong> presents scored submissions to directors for decision</li>
+  <li><strong>Directors act</strong> — change statuses, assign owners, set target dates</li>
+  <li><strong>Members are notified</strong> automatically by email when the status of their idea changes</li>
+</ol>
+<p>The system is designed to ensure every submission is treated fairly and consistently, reducing the administrative burden on the committee while maintaining full accountability.</p>
+
+<h2>2. Roles and access levels</h2>
+<table>
+  <tr><th>Role</th><th>Sees in triage</th><th>Can change status / assign owner</th><th>Admin panel</th></tr>
+  <tr><td><strong>Golf Director</strong></td><td>Course, Competitions &amp; Matches</td><td>No</td><td>No</td></tr>
+  <tr><td><strong>Estate Director</strong></td><td>Clubhouse, Grounds, Refreshments</td><td>No</td><td>No</td></tr>
+  <tr><td><strong>F&amp;B Director</strong></td><td>Restaurant, Bar, Refreshments</td><td>No</td><td>No</td></tr>
+  <tr><td><strong>Commercial Director</strong></td><td>Pro Shop</td><td>No</td><td>No</td></tr>
+  <tr><td><strong>Operations Manager</strong></td><td>All categories</td><td>No</td><td>No</td></tr>
+  <tr><td><strong>Chairman / Chair</strong></td><td>All categories</td><td>No</td><td>No</td></tr>
+  <tr><td><strong>Club Manager</strong></td><td>All categories</td><td><strong>Yes</strong></td><td><strong>Yes</strong></td></tr>
+  <tr><td><strong>Super Admin</strong></td><td>All categories</td><td><strong>Yes</strong></td><td><strong>Yes</strong> (full)</td></tr>
+</table>
+
+<h2>3. Signing in</h2>
+<p>Directors sign in using a <strong>6-digit PIN</strong> assigned by the Club Manager.</p>
+<ol>
+  <li>Go to the programme website</li>
+  <li>Click <strong>Committee / Directors</strong></li>
+  <li>Enter your PIN and click <strong>Sign in</strong></li>
+</ol>
+<div class="callout"><strong>Forgotten your PIN?</strong> Contact the Club Manager, who can reset your PIN from the Admin panel. A new PIN will be generated and communicated to you securely.</div>
+<div class="warning"><strong>Locked out?</strong> After 5 failed attempts, access is locked for 15 minutes.</div>
+<div class="tip"><strong>Sessions:</strong> Director sessions last 8 hours. In the triage report, an inactivity warning appears after 110 minutes and you are signed out automatically at 120 minutes.</div>
+
+<h2>4. The triage report</h2>
+<p>After signing in, you are taken directly to the <strong>Triage Report</strong> — the main working view for directors.</p>
+
+<h3>Ordering</h3>
+<p>Submissions are ordered by: (1) Health &amp; Safety flagged items first; (2) Score, highest first; (3) Date submitted, most recent first for equal scores.</p>
+
+<h3>Summary bar</h3>
+<p>At the top of the report, a summary bar shows submission counts by status. Click any status chip to filter.</p>
+
+<h3>Submission cards</h3>
+<p>Each card shows: status badge, score, flags, category, date, description, AI summary, cost estimate, implementation complexity, and cluster membership. Click a card to expand it and see full detail including AI narrative, suggested owner, cost rationale, strategic note, and audit trail.</p>
+
+<h3>Flags</h3>
+<table>
+  <tr><th>Flag</th><th>Meaning</th></tr>
+  <tr><td>&#9888;&#65039; H&amp;S</td><td>Health &amp; Safety dimension — requires attention</td></tr>
+  <tr><td>&#9889; Quick win</td><td>Low cost, fast to implement — may be actioned ahead of schedule</td></tr>
+  <tr><td>&#128176; Revenue</td><td>Potential to generate new income for the club</td></tr>
+  <tr><td>&#128260; Recurring</td><td>This theme has appeared in previous triage runs</td></tr>
+  <tr><td>&#11014; High cost</td><td>Estimated cost exceeds the committee escalation threshold</td></tr>
+  <tr><td>&#128100; Owner</td><td>Suggested owner role assigned</td></tr>
+</table>
+
+<h2>5. Understanding scores and bands</h2>
+
+<h3>Score dimensions</h3>
+<table>
+  <tr><th>Dimension</th><th>Weight</th><th>What it measures</th></tr>
+  <tr><td>Member impact</td><td>25%</td><td>How many members benefit, scaled by category ceiling</td></tr>
+  <tr><td>Strategic alignment</td><td>20%</td><td>Fit with the club's strategic priorities</td></tr>
+  <tr><td>Feasibility</td><td>20%</td><td>Realistic to implement at a private members club</td></tr>
+  <tr><td>Cost vs benefit</td><td>15%</td><td>Estimated cost against benefit delivered</td></tr>
+  <tr><td>Novelty</td><td>10%</td><td>Fresh idea vs standard practice already in place</td></tr>
+  <tr><td>Member experience delta</td><td>10%</td><td>Material improvement to day-to-day experience</td></tr>
+</table>
+
+<h3>Multipliers</h3>
+<table>
+  <tr><th>Multiplier</th><th>Factor</th><th>Applies when</th></tr>
+  <tr><td>H&amp;S dimension</td><td>×1.5</td><td>Submission has a safety or compliance aspect</td></tr>
+  <tr><td>Budget year alignment</td><td>×1.2</td><td>Implementable in the current financial year</td></tr>
+  <tr><td>Cross-category</td><td>×1.1</td><td>Benefits span multiple categories</td></tr>
+</table>
+
+<h3>Cluster consensus bonus</h3>
+<p>When multiple submissions address the same specific issue, each receives an additive bonus: 2 in cluster +0.5; 3 in cluster +1.0; 4 in cluster +1.5; 5 or more +2.0.</p>
+
+<h3>Score bands</h3>
+<table>
+  <tr><th>Band</th><th>Score range</th></tr>
+  <tr><td><strong>Priority</strong></td><td>≥ 8.0</td></tr>
+  <tr><td><strong>Active queue</strong></td><td>≥ 6.0</td></tr>
+  <tr><td><strong>Holding</strong></td><td>≥ 4.0</td></tr>
+  <tr><td><strong>Low priority</strong></td><td>≥ 2.0</td></tr>
+  <tr><td><strong>Not progressed</strong></td><td>&lt; 2.0</td></tr>
+</table>
+<div class="tip">All thresholds, weights, and multipliers are configurable by the Club Manager in Admin → Scoring Config.</div>
+
+<h2>6. Views — Card view and Spreadsheet view</h2>
+<p>Toggle between views using the &#9776; / &#8862; buttons in the top right. Your preference is saved automatically.</p>
+<p><strong>Card view (&#8862;):</strong> Each submission shown as a detailed card. Best for reviewing individual submissions in depth.</p>
+<p><strong>Spreadsheet view (&#9776;):</strong> Compact table, one row per submission. Click any row to open a side panel with full detail. Best for getting an overview quickly and comparing submissions.</p>
+
+<h2>7. Filters and search</h2>
+<ul>
+  <li><strong>Search:</strong> Filter by description, benefit, AI summary, or member name.</li>
+  <li><strong>Status filter:</strong> Click any status chip in the summary bar.</li>
+  <li><strong>Flag filter:</strong> Filter by Quick wins, H&amp;S, Revenue, Recurring, In Plan, or High cost.</li>
+  <li><strong>Owner filter:</strong> Show only submissions assigned to a particular director role.</li>
+  <li><strong>Category filter:</strong> Available to Club Manager / Super Admin (all categories visible).</li>
+  <li><strong>Show withdrawn:</strong> Withdrawn submissions are hidden by default — tick to include them.</li>
+</ul>
+
+<h2>8. Managing submissions</h2>
+<div class="callout">Only the <strong>Club Manager</strong> and <strong>Super Admin</strong> can perform the actions in this section.</div>
+
+<h3>Changing status</h3>
+<p>Use the <strong>Status</strong> dropdown in a submission card or the spreadsheet side panel.</p>
+<table>
+  <tr><th>Status</th><th>Use when</th></tr>
+  <tr><td><strong>Awaiting Decision</strong></td><td>Default — no decision made yet</td></tr>
+  <tr><td><strong>Under Consideration</strong></td><td>Actively being reviewed by the committee</td></tr>
+  <tr><td><strong>In Plan</strong></td><td>Included in the club improvement plan</td></tr>
+  <tr><td><strong>Approved</strong></td><td>Approved for implementation</td></tr>
+  <tr><td><strong>Implemented</strong></td><td>Completed</td></tr>
+  <tr><td><strong>Not Progressed</strong></td><td>Will not be taken forward at this time</td></tr>
+</table>
+<div class="tip">When you change status to Under Consideration, Approved, or In Plan, you will be prompted to enter a target date. The AI's suggested date is pre-filled for convenience.</div>
+<div class="callout"><strong>Member notification:</strong> When you change a submission's status, the member automatically receives a personalised AI-generated email. <strong>Director notes are never included in member emails.</strong></div>
+
+<h3>Deleting a submission</h3>
+<p>The Delete option soft-deletes a submission — it disappears from all views. Submissions with status <strong>Approved</strong> or <strong>Implemented</strong> cannot be deleted.</p>
+
+<h3>Changing category</h3>
+<p>Use the Category dropdown to reassign a submission to a different category. This also changes which director sees it.</p>
+
+<h2>9. Target dates</h2>
+<p><strong>AI suggested date</strong> — calculated from the implementation time estimate; shown in grey as a reference.</p>
+<p><strong>Confirmed target date</strong> — set by the Club Manager when changing status, shown in green with a ✓ confirmed indicator. Visible to the member in their My Improvements page.</p>
+
+<h2>10. Director notes</h2>
+<p>Each submission has a <strong>Notes</strong> field visible only to directors — never to members. Use this to record context from committee discussions, budget considerations, dependencies, or decisions. Notes are saved automatically and included in the full JSON backup.</p>
+
+<h2>11. Score override</h2>
+<p>The Club Manager can override the AI-generated score if the committee believes the automated assessment doesn't reflect the full picture.</p>
+<ol>
+  <li>Open the submission detail panel</li>
+  <li>Find the <strong>Score override</strong> section</li>
+  <li>Enter the override score (0–10) and a reason</li>
+  <li>Click <strong>Apply</strong></li>
+</ol>
+<p>The override score replaces the AI score for display and filtering. The original AI score is preserved. All overrides are logged in the audit trail with the director's name, new score, and reason.</p>
+
+<h2>12. Audit trail</h2>
+<p>Every submission has a complete audit trail recording every status change and score override. Open a submission and scroll to the <strong>Audit trail</strong> section. Each entry shows: previous status, new status, who made the change, when, and any note. The audit trail cannot be edited or deleted.</p>
+
+<h2>13. Owner assignment</h2>
+<p>The AI recommends a suggested owner role for each submission (shown as a &#128100; badge). The Club Manager can assign or change the owner using the Owner dropdown in card view or the spreadsheet view.</p>
+<p>Available owner roles: Golf Director, Estate Director, F&amp;B Director, Commercial Director, Club Manager, Chairman.</p>
+<p>The Owner filter in the triage report allows directors to find submissions relevant to their role.</p>
+
+<h2>14. Tracking approved improvements</h2>
+<p>The <strong>Tracking</strong> tab shows all submissions with status Approved or Implemented. Additional fields are available:</p>
+<table>
+  <tr><th>Field</th><th>Purpose</th></tr>
+  <tr><td><strong>Target date</strong></td><td>Committee-confirmed implementation date</td></tr>
+  <tr><td><strong>Responsible person</strong></td><td>Named individual leading the work</td></tr>
+  <tr><td><strong>Budget year</strong></td><td>Financial year in which cost falls</td></tr>
+  <tr><td><strong>Actual cost</strong></td><td>Recorded once implementation is complete</td></tr>
+  <tr><td><strong>Tracking notes</strong></td><td>Free-text progress updates</td></tr>
+</table>
+
+<h2>15. Email reports</h2>
+<p><strong>Weekly triage report:</strong> After each scoring run (Monday mornings), every director with email reports enabled receives a report covering their categories. H&amp;S items appear first.</p>
+<p><strong>Immediate high-score alert:</strong> If any submission scores 9.0 or above, the relevant director receives an immediate email alert — not just the weekly report.</p>
+<p><strong>H&amp;S alert:</strong> If any submission has a Health &amp; Safety dimension, an urgent alert is sent immediately to the Club Manager.</p>
+<p>Email reports can be toggled per director in Admin → Directors (&#9993; Emails on / Emails off).</p>
+
+<h2>16. My Improvements — the member view</h2>
+<p>The member-facing My Improvements page shows each member their own submissions with current status, score band, target date, and status history timeline. Members can also withdraw submissions.</p>
+<p>Members <strong>do not</strong> see: numerical score, director notes.<br>
+Members <strong>do</strong> see: score band label, committee message, confirmed target date, full status history.</p>
+
+<h2>17. Session security</h2>
+<ul>
+  <li>Director sessions last <strong>8 hours</strong> from sign-in</li>
+  <li>Inactivity warning appears after <strong>110 minutes</strong></li>
+  <li>Session ends automatically after <strong>120 minutes</strong> of inactivity</li>
+  <li>Any mouse movement, keystroke, click, or scroll resets the inactivity timer</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h2>18. Super Admin — Admin panel</h2>
+<div class="admin-section">
+<p class="admin-label">Access: Club Manager and Super Admin only</p>
+<p>Reach the Admin panel via the <strong>Admin</strong> link in the triage report header.</p>
+</div>
+
+<h3>18.1 Scoring Config tab</h3>
+<p>Controls all AI scoring parameters. Changes take effect at the next triage run.</p>
+<ul>
+  <li><strong>Triage schedule:</strong> TRIAGE_INTERVAL_DAYS — days between scoring runs (default: 7)</li>
+  <li><strong>Scoring weights:</strong> Six dimension weights — should sum to 1.0</li>
+  <li><strong>Score multipliers:</strong> H&amp;S, Budget year, Multi-category</li>
+  <li><strong>Score band thresholds:</strong> Minimum score for Priority, Active, Holding, Low</li>
+  <li><strong>Category impact ceilings:</strong> Maximum member impact score per category</li>
+  <li><strong>Cluster consensus bonuses:</strong> Additive bonuses for cluster sizes 2, 3, 4, 5+</li>
+  <li><strong>Cost &amp; implementation thresholds:</strong> Committee escalation threshold, Quick win cost threshold, Quick win implementation weeks</li>
+</ul>
+<p>Click <strong>Save changes</strong> after editing any values.</p>
+
+<h3>18.2 Communications tab</h3>
+<p>Controls the tone of AI-generated emails sent to members when their status changes.</p>
+<ul>
+  <li><strong>Communication tone:</strong> Friendly (warm, personal) or Formal (professional, official)</li>
+  <li><strong>Email sign-off:</strong> The name used to sign off all member emails</li>
+</ul>
+
+<h3>18.3 Directors tab</h3>
+<p>Manage committee members and their access.</p>
+
+<h4>Adding a director</h4>
+<ol>
+  <li>Enter the director's full name, email address, and role</li>
+  <li>Click <strong>Add director</strong></li>
+  <li>A secure 6-digit PIN is generated automatically and shown once in an amber banner</li>
+  <li>Note the PIN and communicate it to the director securely — it cannot be retrieved again</li>
+</ol>
+
+<h4>Editing a director</h4>
+<p>Click <strong>Edit</strong> on any director to change their name, email, or role. Click <strong>Reset PIN</strong> to generate a new PIN (shown once).</p>
+
+<h4>Removing a director</h4>
+<p>Click <strong>Remove</strong> to permanently delete the director record. Alternatively, toggle <strong>Active/Inactive</strong> to block sign-in while preserving the audit trail record.</p>
+
+<div class="callout"><strong>Security:</strong> PINs are never stored in plain text — only a cryptographic hash is stored. If a PIN is lost, use Reset PIN to generate a new one.</div>
+
+<h3>18.4 Dashboard tab</h3>
+<p>A read-only programme overview. Click <strong>Refresh</strong> to update.</p>
+<ul>
+  <li>Summary statistics: total scored, average score, quick wins, in-plan + approved count</li>
+  <li>Submissions by status (table)</li>
+  <li>Submissions by category with average score (table)</li>
+  <li>Score band distribution (table)</li>
+</ul>
+
+<h3>18.5 Setup tab</h3>
+
+<h4>Initialise database</h4>
+<p>Run after every deployment that includes database changes. Safe to run repeatedly — existing data is never deleted, only missing tables and columns are added.</p>
+<div class="warning">Always run this after a major update before using the system.</div>
+
+<h4>Run triage now</h4>
+<p>Manually triggers the AI scoring batch. Allow 30–90 seconds. Do not navigate away during the run.</p>
+
+<h4>Backup &amp; restore</h4>
+<ul>
+  <li><strong>Export CSV:</strong> Downloads submissions as CSV. Suitable for Excel or submission-only restore.</li>
+  <li><strong>Full backup (JSON):</strong> Complete snapshot of all tables. Store securely for disaster recovery.</li>
+  <li><strong>Restore from CSV:</strong> Upload a previously exported CSV to restore submission records. Upserts only — no deletions.</li>
+</ul>
+<div class="callout"><strong>Full JSON restore:</strong> If the app itself is down, use the standalone restore script: <code>node scripts/restore.js &lt;backup-file.json&gt;</code> from your computer. See technical documentation for details.</div>
+
+<h4>Test data</h4>
+<ul>
+  <li><strong>Seed test data:</strong> Inserts 12 pre-written test submissions covering all scenarios.</li>
+  <li><strong>Clear test data:</strong> Removes all test submissions and cleans up orphaned clusters.</li>
+</ul>
+
+<h4>Reset scores for re-triage</h4>
+<ul>
+  <li><strong>Reset test data only:</strong> Resets scores for test submissions only.</li>
+  <li><strong>Reset all submissions:</strong> Resets every submission — use if you have changed scoring weights and want to re-score everything.</li>
+</ul>
+<div class="danger"><strong>Caution:</strong> "Reset all submissions" affects every record including real member data. Confirm carefully before proceeding.</div>
+
+<h2>19. Frequently asked questions</h2>
+
+<p><strong>A member says they never received an email — what should I check?</strong><br>
+Ask them to check spam for emails from <code>noreply@bramleygolfclub.co.uk</code>. If they opted out at submission time, they won't receive updates for that submission.</p>
+
+<p><strong>Can I see who submitted an anonymous idea?</strong><br>
+No. This is intentional and cannot be overridden.</p>
+
+<p><strong>A submission has been scored incorrectly — what can I do?</strong><br>
+Use the Score override feature to set a corrected score and record your reason. All overrides are logged in the audit trail.</p>
+
+<p><strong>Can I move a submission to a different director's category?</strong><br>
+Yes. Use the Category dropdown in the submission detail to reassign it.</p>
+
+<p><strong>What happens if two triage runs are triggered at the same time?</strong><br>
+The system uses an atomic lock to prevent concurrent runs. Any additional trigger while a run is in progress is silently rejected.</p>
+
+<p><strong>A director has left — how do I remove their access?</strong><br>
+Go to Admin → Directors, find their record, and click Remove. Alternatively, toggle to Inactive to block sign-in while preserving the audit trail.</p>
+
+<p><strong>How do I add a new director?</strong><br>
+Go to Admin → Directors → Add director. Enter name, email, and role. A PIN is generated automatically and shown once — communicate it securely before dismissing the banner.</p>
+
+<p><strong>The database seems to be missing columns after an update — what do I do?</strong><br>
+Go to Admin → Setup → Initialise database. This adds any missing columns without affecting existing data.</p>
+
+<p><strong>How do I change the automated triage schedule?</strong><br>
+Edit <code>vercel.json</code> in the project repository to change the cron schedule. The current schedule is Monday at 07:00 UTC.</p>
+
+<hr>
+<p style="font-size:9pt;color:#888;text-align:center;">Bramley Golf Club — Continuous Improvement Programme &nbsp;&bull;&nbsp; Committee &amp; Director Guide v1.0 &nbsp;&bull;&nbsp; June 2026<br>
+For technical support, contact the system administrator &nbsp;&bull;&nbsp; For programme queries, contact the Club Manager</p>
+
+</body>
+</html>

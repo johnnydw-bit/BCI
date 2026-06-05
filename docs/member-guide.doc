@@ -1,0 +1,242 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 15">
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #222; margin: 2cm 2.5cm; line-height: 1.5; }
+  h1 { font-size: 20pt; color: #1a3a5c; border-bottom: 2px solid #1a3a5c; padding-bottom: 6pt; margin-top: 0; }
+  h2 { font-size: 15pt; color: #1a3a5c; margin-top: 18pt; margin-bottom: 4pt; }
+  h3 { font-size: 12pt; color: #1a3a5c; margin-top: 14pt; margin-bottom: 4pt; }
+  h4 { font-size: 11pt; color: #333; margin-top: 10pt; }
+  .subtitle { font-size: 13pt; color: #555; margin-top: 2pt; }
+  .version { font-size: 10pt; color: #888; font-style: italic; margin-bottom: 20pt; }
+  p { margin: 6pt 0; }
+  table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
+  th { background: #1a3a5c; color: white; padding: 6pt 8pt; text-align: left; font-size: 10pt; }
+  td { border: 1px solid #ccc; padding: 5pt 8pt; font-size: 10pt; vertical-align: top; }
+  tr:nth-child(even) td { background: #f5f7fa; }
+  .callout { background: #e8f0f8; border-left: 4px solid #1a3a5c; padding: 8pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  .tip { background: #eafaf1; border-left: 4px solid #1e8449; padding: 8pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  .warning { background: #fef9e7; border-left: 4px solid #b7770d; padding: 8pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  ul, ol { margin: 6pt 0 6pt 20pt; padding: 0; }
+  li { margin: 3pt 0; font-size: 10.5pt; }
+  .toc { background: #f5f7fa; border: 1px solid #ddd; padding: 12pt 16pt; margin: 16pt 0; }
+  .toc p { margin: 2pt 0; font-size: 10pt; }
+  .toc-title { font-weight: bold; font-size: 11pt; margin-bottom: 6pt; color: #1a3a5c; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 16pt 0; }
+  .page-break { page-break-before: always; }
+  code { font-family: Consolas, monospace; background: #f0f0f0; padding: 1pt 4pt; font-size: 10pt; }
+</style>
+</head>
+<body>
+
+<h1>Bramley Golf Club</h1>
+<p class="subtitle"><strong>Continuous Improvement Programme — Member Guide</strong></p>
+<p class="version">Version 1.0 &nbsp;&bull;&nbsp; June 2026</p>
+
+<hr>
+
+<div class="toc">
+<p class="toc-title">Contents</p>
+<p>1. What is the Continuous Improvement Programme?</p>
+<p>2. Signing in</p>
+<p>3. Submitting an improvement idea</p>
+<p>4. Categories</p>
+<p>5. Impact levels</p>
+<p>6. Recognition</p>
+<p>7. What happens after you submit</p>
+<p>8. Tracking your ideas — My Improvements</p>
+<p>9. Email updates</p>
+<p>10. Withdrawing a submission</p>
+<p>11. Privacy and data</p>
+<p>12. Frequently asked questions</p>
+</div>
+
+<hr>
+
+<h2>1. What is the Continuous Improvement Programme?</h2>
+<p>The CIP is a structured way for members to suggest improvements to any aspect of the club — the course, facilities, catering, events, and more. Every idea is reviewed by the committee using a consistent, fair scoring process.</p>
+<ul>
+  <li>Any active member can submit ideas</li>
+  <li>All ideas are treated equally regardless of who submits them</li>
+  <li>Submissions are assessed by an impartial scoring process before committee review</li>
+  <li>You can track the status of your ideas at any time</li>
+  <li>You will receive email updates when the status of your idea changes</li>
+</ul>
+
+<h2>2. Signing in</h2>
+<p>Before you can submit an idea or track your improvements, you need to sign in using your <strong>club membership credentials</strong>.</p>
+<p><strong>What you need:</strong></p>
+<ul>
+  <li>Your <strong>Member ID</strong> (the number on your membership card)</li>
+  <li>Your <strong>club website PIN</strong> (the same PIN you use to log in to the Bramley Golf Club website)</li>
+  <li>Your <strong>email address</strong></li>
+</ul>
+<p><strong>First-time sign-in:</strong> Your email address will be registered against your member ID. On future visits, you must use the same email address.</p>
+<div class="tip">
+  <strong>Tip:</strong> Your session stays active for 8 hours. After 10 minutes of inactivity you will see a warning, and after 20 minutes you will be signed out automatically for security.
+</div>
+<div class="warning">
+  <strong>Locked out?</strong> If you enter incorrect details 5 times, access is locked for 15 minutes. This is a security measure to protect your account.
+</div>
+
+<h2>3. Submitting an improvement idea</h2>
+<p>Once signed in, click <strong>Submit an improvement</strong> to open the submission form.</p>
+
+<h3>The form</h3>
+<p><strong>Describe your improvement</strong> <em>(required — up to 200 characters)</em></p>
+<p>Be specific. Describe exactly what you would like to see changed or introduced. The clearer and more specific your idea, the better it can be assessed.</p>
+<p><em>Good example:</em> "Install a ball-washing station at the 10th tee, which currently has none."<br>
+<em>Less useful:</em> "Improve the back nine."</p>
+
+<p><strong>How would this benefit members?</strong> <em>(required — up to 500 characters)</em></p>
+<p>Explain the benefit to members and the club. Think about: which members would benefit and how, whether it improves safety, enjoyment, revenue or operations, and whether there is a specific problem it solves.</p>
+
+<p><strong>Category</strong> <em>(required)</em> — Select the area of the club your idea relates to. See Section 4.</p>
+<p><strong>How many members does this affect?</strong> <em>(required)</em> — Select the option that best describes how widely this improvement would be felt. See Section 5.</p>
+<p><strong>Recognition</strong> <em>(required)</em> — Choose whether you are happy to be named if your idea is implemented. See Section 6.</p>
+<p><strong>Email updates</strong> — By default, you will receive emails about your submission. Tick the opt-out box if you prefer not to receive these.</p>
+
+<h3>Submission tips</h3>
+<ul>
+  <li><strong>Be specific:</strong> Vague ideas are harder to assess and less likely to be progressed.</li>
+  <li><strong>Focus on the improvement, not the complaint.</strong></li>
+  <li><strong>One idea per submission:</strong> Submit multiple ideas separately so each can be assessed on its own merits.</li>
+  <li><strong>Check your previous submissions:</strong> Duplicate submissions will be flagged.</li>
+</ul>
+
+<h3>What the moderation gate checks</h3>
+<p>Every submission passes through an automated review checking for: offensive language, incoherent or unactionable content, duplicate submissions, personal complaints, and content unrelated to the club. If your submission does not pass, you will receive an explanation and, in most cases, the opportunity to resubmit.</p>
+
+<h2>4. Categories</h2>
+<table>
+  <tr><th>Category</th><th>Covers</th></tr>
+  <tr><td><strong>Course</strong></td><td>Fairways, tees, greens, rough, bunkers, drainage, course layout, signage</td></tr>
+  <tr><td><strong>Competitions &amp; Matches</strong></td><td>Competition formats, scheduling, handicaps, matchplay, visiting teams</td></tr>
+  <tr><td><strong>Clubhouse</strong></td><td>Building fabric, changing rooms, showers, lockers, car park, entrance</td></tr>
+  <tr><td><strong>Grounds (non-course)</strong></td><td>Gardens, paths, practice areas, driving range, car park landscaping</td></tr>
+  <tr><td><strong>On-course Refreshments</strong></td><td>Halfway house, on-course snack trolley, drink stations</td></tr>
+  <tr><td><strong>Restaurant / Catering</strong></td><td>Food menu, dining room, private dining, events catering</td></tr>
+  <tr><td><strong>Bar</strong></td><td>Bar service, drinks menu, social areas, terrace</td></tr>
+  <tr><td><strong>Pro Shop</strong></td><td>Equipment, clothing, club fitting, lessons, merchandise</td></tr>
+  <tr><td><strong>Other</strong></td><td>Anything that doesn't fit the above categories</td></tr>
+</table>
+
+<h2>5. Impact levels</h2>
+<table>
+  <tr><th>Option</th><th>Use when…</th></tr>
+  <tr><td><strong>Affects all or most members</strong></td><td>The improvement would be noticed and used by the majority of the membership</td></tr>
+  <tr><td><strong>Affects regular golfers</strong></td><td>The improvement mainly benefits members who play regularly</td></tr>
+  <tr><td><strong>Affects specific groups</strong></td><td>Mainly benefits a particular group (seniors, juniors, ladies, visitors, etc.)</td></tr>
+  <tr><td><strong>Affects occasional or visiting users only</strong></td><td>Mainly benefits people who visit occasionally or rarely</td></tr>
+</table>
+
+<h2>6. Recognition</h2>
+<p><strong>Named recognition:</strong> Your name will be recorded against the idea. If it is implemented, you will be eligible for recognition awards.</p>
+<p><strong>Anonymous:</strong> Your idea will be assessed exactly the same way, but your name will not be associated with it. You will not be eligible for recognition awards.</p>
+
+<h2>7. What happens after you submit</h2>
+<p><strong>Step 1 — Moderation (immediate):</strong> Automated check against programme guidelines.</p>
+<p><strong>Step 2 — AI-assisted scoring (weekly, Monday mornings):</strong> Each idea is assessed across six dimensions:</p>
+<ul>
+  <li><strong>Member impact</strong> — based on your self-assessed impact and category</li>
+  <li><strong>Strategic alignment</strong> — how well it fits the club's priorities</li>
+  <li><strong>Feasibility</strong> — how realistic it is to implement</li>
+  <li><strong>Cost vs benefit</strong> — likely cost compared to benefit delivered</li>
+  <li><strong>Novelty</strong> — whether this is a fresh idea or standard practice</li>
+  <li><strong>Member experience</strong> — the material improvement to day-to-day club life</li>
+</ul>
+<p><strong>Step 3 — Committee review:</strong> Directors review scored submissions and make decisions.</p>
+<p><strong>Step 4 — You are notified:</strong> When the status of your idea changes, you receive a personalised email update.</p>
+
+<h3>Score bands</h3>
+<table>
+  <tr><th>Band</th><th>What it means</th></tr>
+  <tr><td><strong>Priority</strong></td><td>High score — passed to the relevant director for active consideration</td></tr>
+  <tr><td><strong>Active queue</strong></td><td>Good score — will be reviewed at the next committee cycle</td></tr>
+  <tr><td><strong>Holding</strong></td><td>Solid idea but longer timeframe — recorded for future consideration</td></tr>
+  <tr><td><strong>Low priority</strong></td><td>Noted but unlikely to be progressed in the near term</td></tr>
+  <tr><td><strong>Not progressed</strong></td><td>Score was below the threshold for active consideration</td></tr>
+  <tr><td><strong>Already in our plan</strong></td><td>Great minds think alike — this is already being worked on</td></tr>
+</table>
+<div class="tip">
+  <strong>&#9889; Quick win:</strong> If your idea can be implemented quickly at low cost, it may be flagged as a Quick Win and actioned ahead of the standard review cycle regardless of its score band.
+</div>
+
+<h2>8. Tracking your ideas — My Improvements</h2>
+<p>Sign in and click <strong>My improvements</strong> to see all the ideas you have submitted and their current status. Each card shows the current status, submission date, score band, committee message, target date (if confirmed), and a full status history timeline.</p>
+
+<h3>Status meanings</h3>
+<table>
+  <tr><th>Status</th><th>Meaning</th></tr>
+  <tr><td><strong>Awaiting Decision</strong></td><td>Submitted and assessed — awaiting committee decision</td></tr>
+  <tr><td><strong>Under Consideration</strong></td><td>The committee is actively reviewing this</td></tr>
+  <tr><td><strong>In Plan</strong></td><td>Included in the club's improvement plan</td></tr>
+  <tr><td><strong>Approved</strong></td><td>Approved for implementation — pending action</td></tr>
+  <tr><td><strong>Implemented</strong></td><td>Done! Your idea has been put into practice</td></tr>
+  <tr><td><strong>Not Progressed</strong></td><td>The committee has decided not to progress this at this time</td></tr>
+  <tr><td><strong>Withdrawn</strong></td><td>You chose to withdraw this submission</td></tr>
+</table>
+
+<h2>9. Email updates</h2>
+<table>
+  <tr><th>Email</th><th>When sent</th></tr>
+  <tr><td><strong>Assessment update</strong></td><td>After the weekly scoring run — tells you your score band and committee message</td></tr>
+  <tr><td><strong>Status change</strong></td><td>When a director changes the status of your idea</td></tr>
+  <tr><td><strong>Withdrawal confirmation</strong></td><td>When you withdraw a submission</td></tr>
+</table>
+<p>All emails are sent from <code>noreply@bramleygolfclub.co.uk</code>. Add this to your safe senders list.</p>
+
+<h2>10. Withdrawing a submission</h2>
+<p>You can withdraw any submitted idea from the <strong>My Improvements</strong> page, provided it has not already been <strong>Implemented</strong>.</p>
+<ol>
+  <li>Go to <strong>My Improvements</strong></li>
+  <li>Find the submission you want to withdraw</li>
+  <li>Click <strong>Withdraw this idea</strong> at the bottom of the card</li>
+  <li>Confirm when prompted</li>
+</ol>
+<p>Withdrawal cannot be undone. If you change your mind, you can resubmit your idea as a new submission.</p>
+
+<h2>11. Privacy and data</h2>
+<ul>
+  <li>Your name and email address are stored securely against your member ID</li>
+  <li>Your email is used only for programme communications — never shared with third parties</li>
+  <li>If you choose anonymous recognition, your name is not displayed to committee members</li>
+  <li>Data is stored on secure cloud infrastructure and backed up regularly</li>
+  <li>You may request deletion of your submissions by contacting the Club Manager</li>
+</ul>
+
+<h2>12. Frequently asked questions</h2>
+
+<p><strong>Can I submit more than one idea?</strong><br>
+Yes. There is no limit. Each is assessed independently.</p>
+
+<p><strong>How long does assessment take?</strong><br>
+Scoring runs every Monday morning. Submit on a Tuesday and your idea will typically be assessed the following Monday.</p>
+
+<p><strong>Why was my submission rejected?</strong><br>
+Most common reasons: too vague, duplicate of a previous submission, or content that doesn't meet guidelines. You will receive an explanation and, in most cases, the chance to resubmit.</p>
+
+<p><strong>Can I edit my submission after sending it?</strong><br>
+No. Once submitted, ideas cannot be edited. Withdraw the submission and resubmit with corrected information.</p>
+
+<p><strong>My idea was not progressed — can I resubmit it?</strong><br>
+Yes. If circumstances have changed, or if you have new information that strengthens the case, you are welcome to resubmit.</p>
+
+<p><strong>What does "Quick win" mean?</strong><br>
+An idea that can be implemented within approximately 4 weeks at a cost under approximately £500. These may be actioned ahead of the standard review cycle.</p>
+
+<p><strong>I haven't received any emails — what should I do?</strong><br>
+Check your spam folder for emails from <code>noreply@bramleygolfclub.co.uk</code>. If you cannot find them, contact the Club Manager.</p>
+
+<p><strong>How do I contact someone about my submission?</strong><br>
+Contact the Club Manager directly.</p>
+
+<hr>
+<p style="font-size:9pt;color:#888;text-align:center;">Bramley Golf Club — Continuous Improvement Programme &nbsp;&bull;&nbsp; Member Guide v1.0 &nbsp;&bull;&nbsp; June 2026<br>
+For assistance, contact the Club Manager</p>
+
+</body>
+</html>

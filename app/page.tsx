@@ -175,6 +175,9 @@ export default function LoginPage() {
             <button type="submit" className="bramley-btn" disabled={loading}>
               {loading ? <span className="spinner" /> : 'Access Triage Report'}
             </button>
+            <p className="text-xs text-gray-500 text-center">
+              Forgotten your PIN? Contact the Club Manager or Super Admin to have it reset.
+            </p>
           </form>
         )}
       </div>

@@ -332,8 +332,8 @@ export default function TriagePage() {
         </div>
         <div className="bramley-body pb-0">
           <p className="text-sm text-gray-600 mb-3">
-            {triageItems.filter(s => s.status === 'new' || s.status === 'under_consideration').length} pending Â· {triageItems.length} total in this view
-            {urgent.length > 0 && <span className="ml-2 text-red-600 font-semibold">Â· {urgent.length} urgent H&amp;S</span>}
+            {triageItems.filter(s => s.status === 'new' || s.status === 'under_consideration').length} pending · {triageItems.length} total in this view
+            {urgent.length > 0 && <span className="ml-2 text-red-600 font-semibold">· {urgent.length} urgent H&amp;S</span>}
           </p>
           <div className="flex gap-2">
             {(['triage', 'tracking', 'moderated'] as const).map((t) => (
@@ -361,7 +361,7 @@ export default function TriagePage() {
         <div className="bramley-card border-2 border-amber-400 bg-amber-50">
           <div className="bramley-body flex items-center justify-between gap-3">
             <p className="text-sm font-semibold text-amber-800">â± Your session will expire in 10 minutes due to inactivity. Move your mouse or press a key to stay signed in.</p>
-            <button onClick={() => setSessionWarning(false)} className="text-amber-500 hover:text-amber-700 shrink-0">âœ•</button>
+            <button onClick={() => setSessionWarning(false)} className="text-amber-500 hover:text-amber-700 shrink-0">✕</button>
           </div>
         </div>
       )}
@@ -437,7 +437,7 @@ export default function TriagePage() {
               <p className="text-sm font-semibold text-amber-800">🎯Ÿ† Recognition required</p>
               <p className="text-sm text-amber-700 mt-1">{recognitionAlert}</p>
             </div>
-            <button onClick={() => setRecognitionAlert(null)} className="text-amber-500 hover:text-amber-700 text-lg leading-none shrink-0">âœ•</button>
+            <button onClick={() => setRecognitionAlert(null)} className="text-amber-500 hover:text-amber-700 text-lg leading-none shrink-0">✕</button>
           </div>
         </div>
       )}
@@ -495,7 +495,7 @@ export default function TriagePage() {
                           {STATUS_LABELS[t.status]}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === t.category)?.label} {t.score != null ? `Â· Score ${Number(t.score).toFixed(1)}` : ''}</p>
+                      <p className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === t.category)?.label} {t.score != null ? `· Score ${Number(t.score).toFixed(1)}` : ''}</p>
                       {t.recognition !== 'anonymous' && t.member_name && (
                         <p className="text-xs text-gray-400">Submitted by {t.member_name}</p>
                       )}
@@ -558,7 +558,7 @@ export default function TriagePage() {
                           <textarea
                             className="bramley-input resize-none text-sm"
                             rows={2}
-                            placeholder="Progress notes, blockers, decisions"¦"
+                            placeholder="Progress notes, blockers, decisions..."
                             value={trackingEdit[t.id]?.tracking_notes ?? t.tracking_notes ?? ''}
                             onChange={(e) => editTracking(t.id, 'tracking_notes', e.target.value)}
                           />
@@ -690,7 +690,7 @@ function SpreadsheetTable({
                       value={s.suggested_owner ?? ''}
                       onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
                     >
-                      <option value="">"” Unassigned "”</option>
+                      <option value=–>"” Unassigned "”</option>
                       {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
@@ -751,7 +751,7 @@ function SpreadsheetTable({
                     {s.cost_threshold_flag && <span title="Committee approval" className="text-orange-600 font-bold text-xs">£</span>}
                     {s.needs_external_approval && <span title="External approval">âš–</span>}
                     {s.seasonal_window && <span title="Seasonal">🎯Ÿ“…</span>}
-                    {s.recurring_flag && <span title={`Recurring Ã—${s.recurring_run_count + 1}`}>🎯Ÿ”</span>}
+                    {s.recurring_flag && <span title={`Recurring ×${s.recurring_run_count + 1}`}>🎯Ÿ”</span>}
                     {s.cluster_theme && <span title={`Cluster: ${s.cluster_theme}`} className="text-blue-600 font-bold text-xs">C</span>}
                   </div>
                 </td>
@@ -791,7 +791,7 @@ function SpreadsheetDetailPanel({
             )}
             <span className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === s.category)?.label}</span>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none shrink-0">âœ•</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none shrink-0">✕</button>
         </div>
 
         {/* Improvement text */}
@@ -816,7 +816,7 @@ function SpreadsheetDetailPanel({
           {s.needs_external_approval && <span className="bramley-badge text-xs" style={{ background: '#7d6608' }}>âš– Approval</span>}
           {s.suggested_owner && <span className="bramley-badge text-xs" style={{ background: '#117a65' }}>🎯Ÿ‘¤ {s.suggested_owner}</span>}
           {s.seasonal_window && <span className="bramley-badge text-xs" style={{ background: '#1a5276' }}>🎯Ÿ“… Seasonal</span>}
-          {s.recurring_flag && <span className="bramley-badge text-xs" style={{ background: '#922b21' }}>🎯Ÿ” Recurring Ã—{s.recurring_run_count + 1}</span>}
+          {s.recurring_flag && <span className="bramley-badge text-xs" style={{ background: '#922b21' }}>🎯Ÿ” Recurring ×{s.recurring_run_count + 1}</span>}
           {s.cluster_theme && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>Cluster ({s.cluster_size})</span>}
         </div>
 
@@ -832,7 +832,7 @@ function SpreadsheetDetailPanel({
             )}
             {s.impl_complexity && (
               <p><span className="font-semibold text-gray-500">Implementation:</span> <span className="capitalize">{s.impl_complexity.replace('_', ' ')}</span>
-                {s.impl_weeks_low != null && s.impl_weeks_high != null && ` Â· ${s.impl_weeks_low}"“${s.impl_weeks_high}w`}
+                {s.impl_weeks_low != null && s.impl_weeks_high != null && ` · ${s.impl_weeks_low}"“${s.impl_weeks_high}w`}
               </p>
             )}
             {(s.confirmed_target_date || s.suggested_target_date) && (
@@ -877,7 +877,7 @@ function SpreadsheetDetailPanel({
                 onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
                 disabled={updating}
               >
-                <option value="">"” Unassigned "”</option>
+                <option value=–>"” Unassigned "”</option>
                 {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
@@ -898,7 +898,7 @@ function SpreadsheetDetailPanel({
               disabled={deleting}
               className="text-red-500 hover:text-red-700 text-xs font-semibold"
             >
-              {deleting ? 'Removing"¦' : 'âœ• Remove improvement'}
+              {deleting ? 'Removing...' : '✕ Remove improvement'}
             </button>
           </div>
         )}
@@ -968,7 +968,7 @@ function TargetDateField({ s, onUpdate, updating }: {
             disabled={updating}
             className="text-xs text-gray-400 hover:text-red-500"
             title="Clear date"
-          >âœ•</button>
+          >✕</button>
         )}
       </div>
       {aiDate && !s.confirmed_target_date && (
@@ -1092,7 +1092,7 @@ function NotesPanel({ s, onUpdate, updating }: {
           <textarea
             rows={3}
             className="bramley-input text-xs py-1 w-full resize-none"
-            placeholder="Add committee notes visible to all managers"¦"
+            placeholder="Add committee notes visible to all managers..."
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
           />
@@ -1122,8 +1122,8 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
           ? <span> {entry.note}</span>
           : <span> changed status to <span className="font-medium text-gray-700">{STATUS_LABELS[entry.new_status] ?? entry.new_status}</span></span>
         }
-        {entry.note && !isScoreOverride && <span className="text-gray-400"> Â· {entry.note}</span>}
-        <span className="text-gray-400 ml-1">Â· {fmt(entry.changed_at)}</span>
+        {entry.note && !isScoreOverride && <span className="text-gray-400"> · {entry.note}</span>}
+        <span className="text-gray-400 ml-1">· {fmt(entry.changed_at)}</span>
       </div>
     </div>
   )

@@ -431,7 +431,7 @@ export default function AdminPage() {
               <button
                 onClick={runTriage}
                 disabled={runningTriage}
-                className="bramley-btn flex items-center gap-2"
+                className="bramley-btn flex items-center justify-center gap-2"
               >
                 {runningTriage ? <><span className="spinner" /> Running…</> : '▶ Run triage now'}
               </button>

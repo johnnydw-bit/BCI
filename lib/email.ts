@@ -104,7 +104,10 @@ export async function sendSubmitterUpdate(to: string, submission: {
     not_progressed: 'Not progressed',
     in_plan:        'Already in our improvement plan',
   }
-  const bandLabel = bandLabels[submission.scoreBand] ?? submission.scoreBand
+  // Quick wins override the band label so it doesn't say "longer timeframe"
+  const bandLabel = submission.quickWinFlag && !['priority', 'active'].includes(submission.scoreBand)
+    ? 'Quick win — may be actioned ahead of schedule'
+    : (bandLabels[submission.scoreBand] ?? submission.scoreBand)
 
   const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 

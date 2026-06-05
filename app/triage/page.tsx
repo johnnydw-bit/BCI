@@ -141,10 +141,10 @@ export default function TriagePage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     })
-    const data = await res.json()
+    const d = await res.json()
     setTracked((prev) => prev.map((t) => t.id === id ? { ...t, status: 'implemented' } : t))
-    if (data.recognitionRequired && data.memberName) {
-      setRecognitionAlert(`${data.memberName} is eligible for recognition. Please follow up via the recognition workflow.`)
+    if (d.recognitionRequired && d.memberName) {
+      setRecognitionAlert(`${d.memberName} is eligible for recognition. Please follow up via the recognition workflow.`)
     }
     setCompleting(null)
   }
@@ -169,7 +169,6 @@ export default function TriagePage() {
       submissions: prev.submissions.map((s) => s.id === id ? { ...s, [field]: value } : s),
     } : prev)
     setUpdating(null)
-    // Keep tracking in sync whenever an item is approved or implemented
     if (field === 'status' && (value === 'approved' || value === 'implemented')) {
       refreshTracking()
     }
@@ -204,18 +203,11 @@ export default function TriagePage() {
     })
   }
 
-  // Only hide silently moderated items (political/personal) from main triage view
   const moderated = data.submissions.filter((s) => s.moderation_reason)
     .filter((s) => filterCategory === 'all' || s.category === filterCategory)
   const triageItems = data.submissions.filter((s) => !s.moderation_reason)
   const urgent = applySort(triageItems.filter((s) => s.h_and_s_flag && (filterCategory === 'all' || s.category === filterCategory)))
   const normal = applySort(triageItems.filter((s) => !s.h_and_s_flag && (filterCategory === 'all' || s.category === filterCategory)))
-
-  const byCategory = CATEGORIES.reduce<Record<string, Submission[]>>((acc, cat) => {
-    const subs = normal.filter((s) => s.category === cat.value)
-    if (subs.length > 0) acc[cat.value] = subs
-    return acc
-  }, {})
 
   const filteredTracked = applySort(
     filterCategory === 'all' ? tracked : tracked.filter((t) => t.category === filterCategory)
@@ -262,7 +254,7 @@ export default function TriagePage() {
                   <span className="ml-1.5 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">{tabCount.moderated}</span>
                 )}
                 {t === 'triage' && tabCount.triage > 0 && (
-                  <span className="ml-1.5 bg-bramley-blue text-white text-xs rounded-full px-1.5 py-0.5" style={{background:'#2471a3'}}>{tabCount.triage}</span>
+                  <span className="ml-1.5 text-white text-xs rounded-full px-1.5 py-0.5" style={{ background: '#2471a3' }}>{tabCount.triage}</span>
                 )}
               </button>
             ))}
@@ -318,7 +310,58 @@ export default function TriagePage() {
         </div>
       )}
 
-      {/* Tracking tab */}
+      {/* ── Triage tab ─────────────────────────────────────────────── */}
+      {tab === 'triage' && (
+        <div className="bramley-card overflow-hidden">
+          {urgent.length > 0 && (
+            <div className="border-b-2 border-red-200">
+              <div className="px-4 py-2 bg-red-50 flex items-center gap-2">
+                <span className="text-sm font-bold text-red-600">⚠️ Urgent — Health &amp; Safety</span>
+                <span className="bramley-badge bg-red-600 text-xs">{urgent.length}</span>
+              </div>
+              <TriageTable
+                subs={urgent}
+                urgent
+                expanded={expanded}
+                onToggle={toggleExpand}
+                isManager={data.isManager}
+                onUpdate={updateField}
+                onDelete={deleteImprovement}
+                updating={updating}
+                deleting={deleting}
+                formatDate={formatDate}
+              />
+            </div>
+          )}
+
+          {normal.length > 0 ? (
+            <>
+              {urgent.length > 0 && (
+                <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                  <span className="text-sm font-semibold text-gray-600">Improvements ({normal.length})</span>
+                </div>
+              )}
+              <TriageTable
+                subs={normal}
+                expanded={expanded}
+                onToggle={toggleExpand}
+                isManager={data.isManager}
+                onUpdate={updateField}
+                onDelete={deleteImprovement}
+                updating={updating}
+                deleting={deleting}
+                formatDate={formatDate}
+              />
+            </>
+          ) : urgent.length === 0 ? (
+            <p className="text-center text-gray-500 py-12 text-sm">
+              {filterCategory !== 'all' ? 'No improvements in this area.' : 'No improvements to triage.'}
+            </p>
+          ) : null}
+        </div>
+      )}
+
+      {/* ── Tracking tab ───────────────────────────────────────────── */}
       {tab === 'tracking' && (
         <div className="bramley-card">
           <div className="bramley-body">
@@ -351,7 +394,7 @@ export default function TriagePage() {
                                 onClick={() => editTracking(t.id, 'target_date', t.suggested_target_date)}
                                 className="ml-2 text-blue-500 hover:text-blue-700 underline normal-case font-normal"
                               >
-                                Use AI suggestion ({new Date(t.suggested_target_date).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})})
+                                Use AI suggestion ({new Date(t.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
                               </button>
                             )}
                           </label>
@@ -405,11 +448,7 @@ export default function TriagePage() {
                         </div>
                         {trackingEdit[t.id] && (
                           <div className="col-span-2">
-                            <button
-                              onClick={() => saveTracking(t.id)}
-                              className="bramley-btn py-2 text-sm"
-                              disabled={savingTracking === t.id}
-                            >
+                            <button onClick={() => saveTracking(t.id)} className="bramley-btn py-2 text-sm" disabled={savingTracking === t.id}>
                               {savingTracking === t.id ? <span className="spinner" /> : 'Save'}
                             </button>
                           </div>
@@ -436,7 +475,7 @@ export default function TriagePage() {
         </div>
       )}
 
-      {/* Moderated tab — Club Manager only */}
+      {/* ── Moderated tab ──────────────────────────────────────────── */}
       {tab === 'moderated' && data.isManager && (
         <div className="bramley-card">
           <div className="bramley-body">
@@ -463,256 +502,271 @@ export default function TriagePage() {
           </div>
         </div>
       )}
-
-      {/* Triage tab */}
-      {tab === 'triage' && urgent.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-red-600 uppercase tracking-wide px-1 mb-2">
-            ⚠️ Urgent — Health &amp; Safety
-          </h2>
-          {urgent.map((s) => (
-            <SubmissionRow
-              key={s.id}
-              s={s}
-              expanded={expanded.has(s.id)}
-              onToggle={() => toggleExpand(s.id)}
-              isManager={data.isManager}
-              onUpdate={updateField}
-              onDelete={deleteImprovement}
-              updating={updating === s.id}
-              deleting={deleting === s.id}
-              urgent
-              formatDate={formatDate}
-            />
-          ))}
-        </section>
-      )}
-
-      {/* By category */}
-      {tab === 'triage' && CATEGORIES.filter((c) => byCategory[c.value]).map((cat) => (
-        <section key={cat.value}>
-          <h2 className="text-sm font-bold uppercase tracking-wide px-1 mb-2" style={{ color: 'var(--bramley-navy)' }}>
-            {cat.label} <span className="font-normal text-gray-400">({byCategory[cat.value].length})</span>
-          </h2>
-          {byCategory[cat.value].map((s) => (
-            <SubmissionRow
-              key={s.id}
-              s={s}
-              expanded={expanded.has(s.id)}
-              onToggle={() => toggleExpand(s.id)}
-              isManager={data.isManager}
-              onUpdate={updateField}
-              onDelete={deleteImprovement}
-              updating={updating === s.id}
-              deleting={deleting === s.id}
-              formatDate={formatDate}
-            />
-          ))}
-        </section>
-      ))}
     </div>
   )
 }
 
-function SubmissionRow({
-  s, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, urgent, formatDate,
+// ── Triage table ────────────────────────────────────────────────────────────
+
+function TriageTable({
+  subs, urgent, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, formatDate,
+}: {
+  subs: Submission[]
+  urgent?: boolean
+  expanded: Set<number>
+  onToggle: (id: number) => void
+  isManager: boolean
+  onUpdate: (id: number, field: 'status' | 'category', value: string) => void
+  onDelete: (id: number) => void
+  updating: number | null
+  deleting: number | null
+  formatDate: (iso: string) => string
+}) {
+  return (
+    <table className="w-full border-collapse text-sm">
+      <thead>
+        <tr className="border-b border-gray-200 bg-gray-50">
+          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-14">Score</th>
+          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Improvement</th>
+          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-28 hidden lg:table-cell">Area</th>
+          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24 hidden md:table-cell">Date</th>
+          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-40">Status</th>
+          <th className="w-8"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {subs.map((s) => (
+          <SubmissionTableRow
+            key={s.id}
+            s={s}
+            urgent={urgent}
+            expanded={expanded.has(s.id)}
+            onToggle={onToggle}
+            isManager={isManager}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+            updating={updating === s.id}
+            deleting={deleting === s.id}
+            formatDate={formatDate}
+          />
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+function SubmissionTableRow({
+  s, urgent, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, formatDate,
 }: {
   s: Submission
+  urgent?: boolean
   expanded: boolean
-  onToggle: () => void
+  onToggle: (id: number) => void
   isManager: boolean
   onUpdate: (id: number, field: 'status' | 'category', value: string) => void
   onDelete: (id: number) => void
   updating: boolean
   deleting: boolean
-  urgent?: boolean
   formatDate: (iso: string) => string
 }) {
+  const categoryLabel = CATEGORIES.find(c => c.value === s.category)?.label ?? s.category
+
   return (
-    <div className={`border rounded-[10px] mb-2 overflow-hidden ${urgent ? 'border-red-300' : 'border-gray-200'}`}>
-      <button
-        onClick={onToggle}
-        className="w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors"
+    <>
+      <tr
+        className={`border-b border-gray-100 cursor-pointer transition-colors
+          ${urgent ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}
+          ${expanded ? (urgent ? 'bg-red-100' : 'bg-gray-50') : ''}`}
+        onClick={() => onToggle(s.id)}
       >
-        {s.score != null && (
-          <span
-            className="bramley-badge shrink-0 mt-0.5"
-            style={{ background: scoreBandColor(s.score_band) }}
-          >
-            {Number(s.score).toFixed(1)}
-          </span>
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-800 truncate">
-            {s.ai_summary ?? s.description}
-          </p>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="text-xs text-gray-500">{formatDate(s.created_at)}</span>
-            {s.quick_win_flag && (
-              <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>
-            )}
-            {s.cost_threshold_flag && (
-              <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Committee review</span>
-            )}
-            {s.cluster_theme && (
-              <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>
-                Cluster ({s.cluster_size})
-              </span>
-            )}
-            <span className={`bramley-badge text-xs ${statusClass(s.status)}`}>
-              {STATUS_LABELS[s.status] ?? s.status}
+        {/* Score */}
+        <td className="py-2.5 px-3 align-top">
+          {s.score != null ? (
+            <span className="bramley-badge text-xs" style={{ background: scoreBandColor(s.score_band) }}>
+              {Number(s.score).toFixed(1)}
             </span>
-          </div>
-        </div>
-        <span className="text-gray-400 text-xs shrink-0">{expanded ? '▲' : '▼'}</span>
-      </button>
+          ) : (
+            <span className="text-gray-300 text-xs">—</span>
+          )}
+        </td>
 
+        {/* Summary + flags */}
+        <td className="py-2.5 px-3 max-w-0 align-top">
+          <p className="font-medium text-gray-800 truncate">{s.ai_summary ?? s.description}</p>
+          <div className="flex gap-1 mt-0.5 flex-wrap">
+            {s.h_and_s_flag && <span className="bramley-badge text-xs bg-red-600">⚠ H&amp;S</span>}
+            {s.quick_win_flag && <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>}
+            {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Committee</span>}
+            {s.cluster_theme && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>Cluster ({s.cluster_size})</span>}
+          </div>
+        </td>
+
+        {/* Area */}
+        <td className="py-2.5 px-3 text-xs text-gray-500 hidden lg:table-cell align-top whitespace-nowrap">{categoryLabel}</td>
+
+        {/* Date */}
+        <td className="py-2.5 px-3 text-xs text-gray-400 hidden md:table-cell align-top whitespace-nowrap">{formatDate(s.created_at)}</td>
+
+        {/* Status — stop click propagation so the dropdown doesn't toggle expand */}
+        <td className="py-2.5 px-3 align-top" onClick={(e) => e.stopPropagation()}>
+          {isManager ? (
+            <select
+              className="bramley-input text-xs py-1 px-2"
+              value={s.status}
+              onChange={(e) => onUpdate(s.id, 'status', e.target.value)}
+              disabled={updating}
+            >
+              {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                <option key={val} value={val}>{label}</option>
+              ))}
+            </select>
+          ) : (
+            <span className={`bramley-badge text-xs ${statusClass(s.status)}`}>{STATUS_LABELS[s.status] ?? s.status}</span>
+          )}
+        </td>
+
+        {/* Expand toggle */}
+        <td className="py-2.5 px-3 text-center text-gray-400 text-xs align-top">{expanded ? '▲' : '▼'}</td>
+      </tr>
+
+      {/* Expanded detail row */}
       {expanded && (
-        <div className="px-4 pb-4 border-t border-gray-100 space-y-3 pt-3">
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Improvement</p>
-            <p className="text-sm text-gray-800">{s.description}</p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Perceived benefit</p>
-            <p className="text-sm text-gray-700">{s.benefit}</p>
-          </div>
-          {s.ai_narrative && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Assessment</p>
-              <p className="text-sm text-gray-700">{s.ai_narrative}</p>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            {/* Cost estimate */}
-            {(s.cost_estimate_low != null || s.cost_band) && (
-              <div className={`rounded-[8px] px-3 py-2 col-span-2 ${s.cost_threshold_flag ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'}`}>
-                <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">
-                  Cost estimate {s.cost_confidence && <span className="normal-case font-normal text-gray-400">({s.cost_confidence} confidence)</span>}
-                </span>
-                <div className="flex items-baseline gap-2">
-                  {s.cost_estimate_low != null && s.cost_estimate_high != null ? (
-                    <span className="text-gray-900 font-semibold text-sm">
-                      £{Number(s.cost_estimate_low).toLocaleString()} – £{Number(s.cost_estimate_high).toLocaleString()}
-                    </span>
-                  ) : (
-                    <span className="text-gray-800 capitalize">{s.cost_band?.replace('_', ' ')}</span>
-                  )}
-                  {s.cost_threshold_flag && <span className="text-orange-600 font-semibold">⚠ Exceeds committee threshold</span>}
+        <tr className={urgent ? 'bg-red-50' : 'bg-gray-50'}>
+          <td colSpan={6} className="px-5 py-4 border-b border-gray-200">
+            <div className="space-y-3 max-w-4xl">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Improvement</p>
+                  <p className="text-sm text-gray-800">{s.description}</p>
                 </div>
-                {s.cost_rationale && <p className="text-gray-500 mt-0.5">{s.cost_rationale}</p>}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Perceived benefit</p>
+                  <p className="text-sm text-gray-700">{s.benefit}</p>
+                </div>
               </div>
-            )}
 
-            {/* Implementation time */}
-            {s.impl_complexity && (
-              <div className={`rounded-[8px] px-3 py-2 ${s.quick_win_flag ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
-                <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">Implementation</span>
-                <span className={`font-semibold capitalize ${s.quick_win_flag ? 'text-green-700' : 'text-gray-800'}`}>
-                  {s.impl_complexity.replace('_', ' ')}
-                </span>
-                {s.impl_weeks_low != null && s.impl_weeks_high != null && (
-                  <p className="text-gray-500 mt-0.5">
-                    {s.impl_weeks_low === s.impl_weeks_high
-                      ? `~${s.impl_weeks_low} week${s.impl_weeks_low !== 1 ? 's' : ''}`
-                      : `${s.impl_weeks_low}–${s.impl_weeks_high} weeks`}
-                  </p>
+              {s.ai_narrative && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Assessment</p>
+                  <p className="text-sm text-gray-700">{s.ai_narrative}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                {(s.cost_estimate_low != null || s.cost_band) && (
+                  <div className={`rounded-[8px] px-3 py-2 col-span-2 ${s.cost_threshold_flag ? 'bg-orange-50 border border-orange-200' : 'bg-white border border-gray-200'}`}>
+                    <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">
+                      Cost estimate {s.cost_confidence && <span className="normal-case font-normal text-gray-400">({s.cost_confidence} confidence)</span>}
+                    </span>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      {s.cost_estimate_low != null && s.cost_estimate_high != null ? (
+                        <span className="text-gray-900 font-semibold text-sm">
+                          £{Number(s.cost_estimate_low).toLocaleString()} – £{Number(s.cost_estimate_high).toLocaleString()}
+                        </span>
+                      ) : (
+                        <span className="text-gray-800 capitalize">{s.cost_band?.replace('_', ' ')}</span>
+                      )}
+                      {s.cost_threshold_flag && <span className="text-orange-600 font-semibold">⚠ Exceeds committee threshold</span>}
+                    </div>
+                    {s.cost_rationale && <p className="text-gray-500 mt-0.5">{s.cost_rationale}</p>}
+                  </div>
                 )}
-                {s.suggested_target_date && (
-                  <p className="text-gray-400 mt-0.5">Suggested target: {new Date(s.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+
+                {s.impl_complexity && (
+                  <div className={`rounded-[8px] px-3 py-2 ${s.quick_win_flag ? 'bg-green-50 border border-green-200' : 'bg-white border border-gray-200'}`}>
+                    <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">Implementation</span>
+                    <span className={`font-semibold capitalize ${s.quick_win_flag ? 'text-green-700' : 'text-gray-800'}`}>
+                      {s.impl_complexity.replace('_', ' ')}
+                    </span>
+                    {s.impl_weeks_low != null && s.impl_weeks_high != null && (
+                      <p className="text-gray-500 mt-0.5">
+                        {s.impl_weeks_low === s.impl_weeks_high
+                          ? `~${s.impl_weeks_low}w`
+                          : `${s.impl_weeks_low}–${s.impl_weeks_high}w`}
+                      </p>
+                    )}
+                    {s.suggested_target_date && (
+                      <p className="text-gray-400 mt-0.5">By {new Date(s.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    )}
+                  </div>
+                )}
+
+                {s.strategic_note && (
+                  <div className="bg-white border border-gray-200 rounded-[8px] px-3 py-2 col-span-2">
+                    <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Strategic alignment</span>
+                    <span className="text-gray-800">{s.strategic_note}</span>
+                  </div>
+                )}
+
+                {s.cluster_theme && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-[8px] px-3 py-2 col-span-2">
+                    <span className="font-semibold text-blue-600 uppercase tracking-wide block mb-0.5">Cluster theme</span>
+                    <span className="text-blue-800">{s.cluster_theme} ({s.cluster_size} submission{s.cluster_size !== 1 ? 's' : ''})</span>
+                  </div>
                 )}
               </div>
-            )}
 
-            {s.strategic_note && (
-              <div className="bg-gray-50 rounded-[8px] px-3 py-2 col-span-2">
-                <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Strategic alignment</span>
-                <span className="text-gray-800">{s.strategic_note}</span>
-              </div>
-            )}
-            {s.cluster_theme && (
-              <div className="bg-blue-50 rounded-[8px] px-3 py-2 col-span-2">
-                <span className="font-semibold text-blue-600 uppercase tracking-wide block mb-0.5">Cluster theme</span>
-                <span className="text-blue-800">{s.cluster_theme} ({s.cluster_size} submission{s.cluster_size !== 1 ? 's' : ''})</span>
-              </div>
-            )}
-          </div>
+              {s.recognition !== 'anonymous' && s.member_name && (
+                <p className="text-xs text-gray-400">
+                  Submitted by <span className="font-medium">{s.member_name}</span>
+                </p>
+              )}
 
-          {/* Member attribution (respect recognition preference) */}
-          {s.recognition !== 'anonymous' && s.member_name && (
-            <p className="text-xs text-gray-400">
-              {s.recognition === 'public' ? 'Submitted by ' : 'Member (committee only): '}
-              <span className="font-medium">{s.member_name}</span>
-            </p>
-          )}
-
-          {/* Manager controls */}
-          {isManager && (
-            <div className="flex gap-2 pt-1 flex-wrap">
-              <div className="flex-1 min-w-[160px]">
-                <label className="text-xs text-gray-500 block mb-1">Status</label>
-                <select
-                  className="bramley-input text-sm py-1.5"
-                  value={s.status}
-                  onChange={(e) => onUpdate(s.id, 'status', e.target.value)}
-                  disabled={updating}
-                >
-                  {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                    <option key={val} value={val}>{label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex-1 min-w-[160px]">
-                <label className="text-xs text-gray-500 block mb-1">Category</label>
-                <select
-                  className="bramley-input text-sm py-1.5"
-                  value={s.category}
-                  onChange={(e) => onUpdate(s.id, 'category', e.target.value)}
-                  disabled={updating}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-              </div>
-              {s.status !== 'approved' && s.status !== 'implemented' && (
-                <div className="w-full pt-1">
-                  <button
-                    onClick={() => onDelete(s.id)}
-                    disabled={deleting}
-                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                  >
-                    {deleting ? 'Removing…' : 'Remove improvement'}
-                  </button>
+              {/* Manager controls */}
+              {isManager && (
+                <div className="flex gap-3 pt-1 flex-wrap items-end border-t border-gray-200">
+                  <div className="min-w-[160px]">
+                    <label className="text-xs text-gray-500 block mb-1">Reassign area</label>
+                    <select
+                      className="bramley-input text-sm py-1.5"
+                      value={s.category}
+                      onChange={(e) => onUpdate(s.id, 'category', e.target.value)}
+                      disabled={updating}
+                    >
+                      {CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {s.status !== 'approved' && s.status !== 'implemented' && (
+                    <button
+                      onClick={() => onDelete(s.id)}
+                      disabled={deleting}
+                      className="text-xs text-red-400 hover:text-red-600 transition-colors pb-1.5"
+                    >
+                      {deleting ? 'Removing…' : 'Remove improvement'}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </td>
+        </tr>
       )}
-    </div>
+    </>
   )
 }
 
 function scoreBandColor(band: string | null): string {
   const map: Record<string, string> = {
-    priority: '#0d5d3d',
-    active: '#1e8449',
-    holding: '#b7770d',
-    low_priority: '#888',
-    not_progressed: '#aaa',
-    in_plan: '#2471a3',
+    priority:      '#0d5d3d',
+    active:        '#1e8449',
+    holding:       '#b7770d',
+    low_priority:  '#888',
+    not_progressed:'#aaa',
+    in_plan:       '#2471a3',
   }
   return map[band ?? ''] ?? '#888'
 }
 
 function statusClass(status: string): string {
   const map: Record<string, string> = {
-    new: 'status-new',
-    under_consideration: 'status-under_consideration',
-    approved: 'status-approved',
-    implemented: 'status-implemented',
-    rejected: 'status-rejected',
+    new:               'status-new',
+    under_consideration:'status-under_consideration',
+    approved:          'status-approved',
+    implemented:       'status-implemented',
+    rejected:          'status-rejected',
   }
   return map[status] ?? 'status-new'
 }

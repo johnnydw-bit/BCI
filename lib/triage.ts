@@ -122,6 +122,13 @@ export async function runTriage(): Promise<{ scored: number; runId: number }> {
       && (r.implWeeksHigh == null || r.implWeeksHigh <= implQuickwinWeeks)
       && r.implComplexity === 'quick_win'
 
+    // If the AI scored this as a quick win, ensure the member message reflects that
+    // regardless of the score band (avoids contradiction like "longer timeframe" + quick win badge)
+    let memberMsg = r.memberMsg
+    if (quickWinFlag && !['priority', 'active'].includes(r.scoreBand)) {
+      memberMsg = 'Your improvement has been identified as a potential quick win and may be actioned ahead of the standard review cycle.'
+    }
+
     const suggestedTargetDate = r.implWeeksHigh != null
       ? new Date(Date.now() + r.implWeeksHigh * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       : null
@@ -130,7 +137,7 @@ export async function runTriage(): Promise<{ scored: number; runId: number }> {
       UPDATE submissions SET
         score                = ${finalScore},
         score_band           = ${r.scoreBand},
-        member_msg           = ${r.memberMsg},
+        member_msg           = ${memberMsg},
         h_and_s_flag         = ${r.hAndSFlag},
         cluster_id           = ${clusterId},
         ai_summary           = ${r.aiSummary},
@@ -164,12 +171,26 @@ export async function runTriage(): Promise<{ scored: number; runId: number }> {
     }
 
     const sub = unscored.find((s) => s.id === r.submissionId)
-    if (sub?.member_email && !sub.email_opt_out) {
+
+    // Resolve submitter email — prefer the stored column, fall back to member_preferences
+    let emailTo: string | null = sub?.member_email ?? null
+    if (!emailTo && sub?.member_id) {
+      console.log(`[triage] member_email null for submission ${r.submissionId}, looking up member_preferences for ${sub.member_id}`)
+      const pref = await sql`SELECT email FROM member_preferences WHERE member_id = ${sub.member_id}`
+      emailTo = (pref[0] as { email: string } | undefined)?.email ?? null
+      if (emailTo) {
+        console.log(`[triage] Found email in member_preferences: ${emailTo}`)
+        // Also store it back so future runs don't need the lookup
+        await sql`UPDATE submissions SET member_email = ${emailTo} WHERE id = ${r.submissionId}`
+      }
+    }
+
+    if (emailTo && !sub?.email_opt_out) {
       try {
-        await sendSubmitterUpdate(sub.member_email, {
-          description: sub.description,
+        await sendSubmitterUpdate(emailTo, {
+          description: sub!.description,
           scoreBand: r.scoreBand,
-          memberMsg: r.memberMsg,
+          memberMsg,
           costBand: r.costBand,
           implComplexity: r.implComplexity,
           suggestedTargetDate,
@@ -178,6 +199,8 @@ export async function runTriage(): Promise<{ scored: number; runId: number }> {
       } catch (e) {
         console.error(`Submitter email failed for submission ${r.submissionId}:`, e)
       }
+    } else {
+      console.log(`[triage] No submitter email for submission ${r.submissionId}: emailTo=${emailTo}, opt_out=${sub?.email_opt_out}`)
     }
   }
 

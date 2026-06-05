@@ -348,17 +348,15 @@ export default function AdminPage() {
   return (
     <div className="bramley-wide-page space-y-4">
       <div className="bramley-card">
-        <div className="bramley-header flex justify-between items-center">
-          <BramleyHeader
-            subtitle={`${directorName ? directorName + ' — ' : ''}${directorRole || 'Admin'} — Admin`}
-            right={
-              <div className="flex items-center justify-between w-full gap-4">
-                <button onClick={() => router.push('/triage')} className="text-xs opacity-70 hover:opacity-100">← Triage</button>
-                <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
-              </div>
-            }
-          />
-        </div>
+        <BramleyHeader
+          subtitle={`${directorName ? directorName + ' — ' : ''}${directorRole || 'Admin'} — Admin`}
+          below={
+            <div className="flex gap-4">
+              <button onClick={() => router.push('/triage')} className="text-xs opacity-70 hover:opacity-100">← Triage</button>
+              <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
+            </div>
+          }
+        />
 
         {/* Tabs */}
         <div className="bramley-body pb-0">

@@ -79,6 +79,16 @@ export async function initDb() {
   // Test data flag — allows bulk seeding and clearing for testing
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS test_data BOOLEAN NOT NULL DEFAULT FALSE`
 
+  // Extended flags — v2
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS suggested_owner TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS needs_external_approval BOOLEAN NOT NULL DEFAULT FALSE`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS approval_body TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS recurring_flag BOOLEAN NOT NULL DEFAULT FALSE`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS recurring_run_count INTEGER NOT NULL DEFAULT 0`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS seasonal_window TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS revenue_opportunity BOOLEAN NOT NULL DEFAULT FALSE`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS revenue_note TEXT`
+
   // Member preferences — stores verified email against member ID
   await sql`
     CREATE TABLE IF NOT EXISTS member_preferences (

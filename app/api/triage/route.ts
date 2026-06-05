@@ -26,6 +26,9 @@ export async function GET() {
       s.strategic_note, s.member_msg,
       s.recognition, s.member_name, s.created_at, s.scored_at,
       s.moderation_reason,
+      s.suggested_owner, s.needs_external_approval, s.approval_body,
+      s.recurring_flag, s.recurring_run_count,
+      s.seasonal_window, s.revenue_opportunity, s.revenue_note,
       c.theme AS cluster_theme, c.size AS cluster_size
     FROM submissions s
     LEFT JOIN clusters c ON c.id = s.cluster_id

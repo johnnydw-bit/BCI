@@ -34,6 +34,14 @@ interface Submission {
   cluster_size: number | null
   created_at: string
   moderation_reason: string | null
+  suggested_owner: string | null
+  needs_external_approval: boolean
+  approval_body: string | null
+  recurring_flag: boolean
+  recurring_run_count: number
+  seasonal_window: string | null
+  revenue_opportunity: boolean
+  revenue_note: string | null
 }
 
 interface TrackedImprovement {
@@ -595,8 +603,13 @@ function SubmissionTableRow({
           <p className="font-medium text-gray-800 truncate">{s.ai_summary ?? s.description}</p>
           <div className="flex gap-1 mt-0.5 flex-wrap">
             {s.h_and_s_flag && <span className="bramley-badge text-xs bg-red-600">⚠ H&amp;S</span>}
+            {s.score_band === 'in_plan' && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>📋 In plan</span>}
             {s.quick_win_flag && <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>}
+            {s.revenue_opportunity && <span className="bramley-badge text-xs" style={{ background: '#6c3483' }}>💰 Revenue</span>}
             {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Committee</span>}
+            {s.needs_external_approval && <span className="bramley-badge text-xs" style={{ background: '#7d6608' }}>⚖ Approval</span>}
+            {s.seasonal_window && <span className="bramley-badge text-xs" style={{ background: '#1a5276' }}>📅 Seasonal</span>}
+            {s.recurring_flag && <span className="bramley-badge text-xs" style={{ background: '#922b21' }}>🔁 Recurring ×{s.recurring_run_count + 1}</span>}
             {s.cluster_theme && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>Cluster ({s.cluster_size})</span>}
           </div>
         </td>
@@ -703,6 +716,36 @@ function SubmissionTableRow({
                   <div className="bg-blue-50 border border-blue-200 rounded-[8px] px-3 py-2 col-span-2">
                     <span className="font-semibold text-blue-600 uppercase tracking-wide block mb-0.5">Cluster theme</span>
                     <span className="text-blue-800">{s.cluster_theme} ({s.cluster_size} submission{s.cluster_size !== 1 ? 's' : ''})</span>
+                  </div>
+                )}
+                {s.recurring_flag && (
+                  <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#fdf2f8', border: '1px solid #e8b4d0' }}>
+                    <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#922b21' }}>🔁 Recurring theme</span>
+                    <span className="text-gray-700">This theme has appeared in {s.recurring_run_count} previous triage run{s.recurring_run_count !== 1 ? 's' : ''}. Persistent member pressure.</span>
+                  </div>
+                )}
+                {s.suggested_owner && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-3 py-2">
+                    <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Suggested owner</span>
+                    <span className="text-gray-800 font-medium">{s.suggested_owner}</span>
+                  </div>
+                )}
+                {s.needs_external_approval && s.approval_body && (
+                  <div className="rounded-[8px] px-3 py-2" style={{ background: '#fef9e7', border: '1px solid #d4ac0d' }}>
+                    <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#7d6608' }}>⚖ External approval required</span>
+                    <span className="text-gray-700">{s.approval_body}</span>
+                  </div>
+                )}
+                {s.seasonal_window && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-[8px] px-3 py-2">
+                    <span className="font-semibold text-blue-700 uppercase tracking-wide block mb-0.5">📅 Seasonal window</span>
+                    <span className="text-blue-800">{s.seasonal_window}</span>
+                  </div>
+                )}
+                {s.revenue_opportunity && s.revenue_note && (
+                  <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#f5eef8', border: '1px solid #c39bd3' }}>
+                    <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#6c3483' }}>💰 Revenue opportunity</span>
+                    <span className="text-gray-700">{s.revenue_note}</span>
                   </div>
                 )}
               </div>

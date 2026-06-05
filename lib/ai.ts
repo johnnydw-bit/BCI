@@ -107,6 +107,13 @@ export interface ScoringResult {
   implWeeksLow: number | null
   implWeeksHigh: number | null
   implComplexity: 'quick_win' | 'project' | 'programme'
+  // Extended flags
+  suggestedOwner: string | null
+  needsExternalApproval: boolean
+  approvalBody: string | null
+  seasonalWindow: string | null
+  revenueOpportunity: boolean
+  revenueNote: string | null
 }
 
 export interface ScoringWeights {
@@ -153,7 +160,7 @@ BENEFIT: ${s.benefit}`
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    max_tokens: 8192,
     system: `You are a scoring engine for a golf club continuous improvement system at Bramley Golf Club.
 Score each suggestion objectively. Never reveal scoring details to members. Return structured JSON only.
 
@@ -179,7 +186,31 @@ Suggestions that are not a strong match with any other suggestion get cluster_th
 When in doubt, do NOT cluster — false negatives are better than false positives.
 
 ALREADY IN PLAN:
-If a suggestion describes something that any well-run golf club would already have in its standard strategic plan, set already_in_plan: true.`,
+If a suggestion describes something that any well-run golf club would already have in its standard strategic plan, set already_in_plan: true.
+
+SUGGESTED OWNER:
+Return the single most appropriate role to own this improvement:
+- "Golf Director" — course conditions, competition formats, handicaps, tee times
+- "Estate Director" — buildings, grounds, car park, maintenance, capital works
+- "F&B Director" — bar, restaurant, halfway house, on-course refreshments
+- "Commercial Director" — pro shop, visitor revenue, external partnerships, marketing
+- "Club Manager" — member communications, staff, policies, cross-cutting or admin issues
+
+EXTERNAL APPROVAL:
+Set needs_external_approval: true if implementation would require sign-off from any external body.
+Common triggers: planning permission (structures, significant landscaping), local licensing authority (alcohol, entertainment), England Golf or county union (competition formats, course ratings), HSE (structural safety), Environment Agency (drainage, chemicals, protected species), insurance underwriters (liability changes).
+If true, name the specific body in approval_body (e.g. "Planning permission required from local authority", "England Golf handicapping committee approval").
+If no external approval is needed, return false and null.
+
+SEASONAL WINDOW:
+If implementation is constrained to a specific time of year, describe it concisely in seasonal_window.
+Examples: "Winter only — course closure preferred Oct–Mar", "Pre-season — ideally February before main season", "Summer — dry ground required for groundworks".
+Return null if there is no meaningful seasonal constraint.
+
+REVENUE OPPORTUNITY:
+Set revenue_opportunity: true only if successful implementation could actively generate new income for the club — not merely save costs.
+In revenue_note, briefly explain the income mechanism (e.g. "Pay-and-play visitors attracted by improved facilities", "Premium pricing opportunity for enhanced locker experience").
+Return false and null if there is no direct revenue upside.`,
     messages: [{
       role: 'user',
       content: `Score these ${submissions.length} improvement(s), estimate costs and implementation time, and detect clusters.
@@ -219,7 +250,13 @@ Return a JSON array with one object per improvement in the same order:
     "impl_weeks_low": <number or null>,
     "impl_weeks_high": <number or null>,
     "impl_complexity": "quick_win|project|programme",
-    "strategic_note": "<one sentence on strategic alignment>"
+    "strategic_note": "<one sentence on strategic alignment>",
+    "suggested_owner": "<role title>",
+    "needs_external_approval": true/false,
+    "approval_body": "<description or null>",
+    "seasonal_window": "<description or null>",
+    "revenue_opportunity": true/false,
+    "revenue_note": "<brief explanation or null>"
   }
 ]`,
     }],
@@ -243,6 +280,12 @@ Return a JSON array with one object per improvement in the same order:
     impl_weeks_high: number | null
     impl_complexity: 'quick_win' | 'project' | 'programme'
     strategic_note: string
+    suggested_owner: string | null
+    needs_external_approval: boolean
+    approval_body: string | null
+    seasonal_window: string | null
+    revenue_opportunity: boolean
+    revenue_note: string | null
   }>
   try {
     const jsonMatch = text.match(/\[[\s\S]*\]/)
@@ -293,6 +336,12 @@ Return a JSON array with one object per improvement in the same order:
       implWeeksLow: r.impl_weeks_low ?? null,
       implWeeksHigh: r.impl_weeks_high ?? null,
       implComplexity: r.impl_complexity ?? 'project',
+      suggestedOwner: r.suggested_owner ?? null,
+      needsExternalApproval: r.needs_external_approval ?? false,
+      approvalBody: r.approval_body ?? null,
+      seasonalWindow: r.seasonal_window ?? null,
+      revenueOpportunity: r.revenue_opportunity ?? false,
+      revenueNote: r.revenue_note ?? null,
     }
   })
 }

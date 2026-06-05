@@ -86,18 +86,40 @@ export async function runTriage(): Promise<{ scored: number; runId: number }> {
   const results: ScoringResult[] = scoringInput.length > 0 ? await scoreBatch(scoringInput, weights) : []
 
   const clusterMap = new Map<string, number>()
+  // Track which submissions reused a pre-existing cluster (= recurring theme)
+  const recurringClusterRunCounts = new Map<number, number>() // clusterId -> distinct prior run count
 
   for (const r of results) {
     let clusterId: number | null = null
 
     if (r.clusterTheme) {
       if (clusterMap.has(r.clusterTheme)) {
+        // Already seen in this run
         clusterId = clusterMap.get(r.clusterTheme)!
         await sql`UPDATE clusters SET size = size + 1, updated_at = NOW() WHERE id = ${clusterId}`
       } else {
-        const clusterRows = await sql`INSERT INTO clusters (theme) VALUES (${r.clusterTheme}) RETURNING id`
-        clusterId = (clusterRows[0] as { id: number }).id
-        clusterMap.set(r.clusterTheme, clusterId)
+        // Check if this theme already exists from a previous run
+        const existing = await sql`
+          SELECT id FROM clusters WHERE LOWER(theme) = LOWER(${r.clusterTheme}) LIMIT 1
+        `
+        if (existing.length > 0) {
+          // Reuse existing cluster — this is a recurring theme
+          clusterId = (existing[0] as { id: number }).id
+          await sql`UPDATE clusters SET size = size + 1, updated_at = NOW() WHERE id = ${clusterId}`
+          clusterMap.set(r.clusterTheme, clusterId)
+          // Count how many distinct prior triage runs used this cluster
+          const priorRuns = await sql`
+            SELECT COUNT(DISTINCT triage_run_id)::int AS cnt
+            FROM submissions
+            WHERE cluster_id = ${clusterId} AND triage_run_id IS NOT NULL
+          `
+          recurringClusterRunCounts.set(clusterId, (priorRuns[0] as { cnt: number }).cnt ?? 1)
+        } else {
+          // Brand-new cluster
+          const clusterRows = await sql`INSERT INTO clusters (theme) VALUES (${r.clusterTheme}) RETURNING id`
+          clusterId = (clusterRows[0] as { id: number }).id
+          clusterMap.set(r.clusterTheme, clusterId)
+        }
       }
     }
 
@@ -133,29 +155,41 @@ export async function runTriage(): Promise<{ scored: number; runId: number }> {
       ? new Date(Date.now() + r.implWeeksHigh * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       : null
 
+    // Recurring detection — did this cluster exist before this run?
+    const recurringFlag = clusterId != null && recurringClusterRunCounts.has(clusterId)
+    const recurringRunCount = recurringFlag ? (recurringClusterRunCounts.get(clusterId!) ?? 1) : 0
+
     await sql`
       UPDATE submissions SET
-        score                = ${finalScore},
-        score_band           = ${r.scoreBand},
-        member_msg           = ${memberMsg},
-        h_and_s_flag         = ${r.hAndSFlag},
-        cluster_id           = ${clusterId},
-        ai_summary           = ${r.aiSummary},
-        ai_narrative         = ${r.aiNarrative},
-        cost_band            = ${r.costBand},
-        cost_estimate_low    = ${r.costEstimateLow},
-        cost_estimate_high   = ${r.costEstimateHigh},
-        cost_confidence      = ${r.costConfidence},
-        cost_rationale       = ${r.costRationale},
-        impl_weeks_low       = ${r.implWeeksLow},
-        impl_weeks_high      = ${r.implWeeksHigh},
-        impl_complexity      = ${r.implComplexity},
-        suggested_target_date = ${suggestedTargetDate},
-        cost_threshold_flag  = ${costThresholdFlag},
-        quick_win_flag       = ${quickWinFlag},
-        strategic_note       = ${r.strategicNote},
-        scored_at            = NOW(),
-        status               = CASE WHEN ${r.alreadyInPlan} THEN 'rejected' ELSE status END
+        score                   = ${finalScore},
+        score_band              = ${r.scoreBand},
+        member_msg              = ${memberMsg},
+        h_and_s_flag            = ${r.hAndSFlag},
+        cluster_id              = ${clusterId},
+        ai_summary              = ${r.aiSummary},
+        ai_narrative            = ${r.aiNarrative},
+        cost_band               = ${r.costBand},
+        cost_estimate_low       = ${r.costEstimateLow},
+        cost_estimate_high      = ${r.costEstimateHigh},
+        cost_confidence         = ${r.costConfidence},
+        cost_rationale          = ${r.costRationale},
+        impl_weeks_low          = ${r.implWeeksLow},
+        impl_weeks_high         = ${r.implWeeksHigh},
+        impl_complexity         = ${r.implComplexity},
+        suggested_target_date   = ${suggestedTargetDate},
+        cost_threshold_flag     = ${costThresholdFlag},
+        quick_win_flag          = ${quickWinFlag},
+        strategic_note          = ${r.strategicNote},
+        suggested_owner         = ${r.suggestedOwner},
+        needs_external_approval = ${r.needsExternalApproval},
+        approval_body           = ${r.approvalBody},
+        recurring_flag          = ${recurringFlag},
+        recurring_run_count     = ${recurringRunCount},
+        seasonal_window         = ${r.seasonalWindow},
+        revenue_opportunity     = ${r.revenueOpportunity},
+        revenue_note            = ${r.revenueNote},
+        scored_at               = NOW(),
+        status                  = CASE WHEN ${r.alreadyInPlan} THEN 'rejected' ELSE status END
       WHERE id = ${r.submissionId}
     `
 

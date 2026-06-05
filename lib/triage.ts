@@ -11,6 +11,27 @@ const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
 )
 
 export async function runTriage(): Promise<{ scored: number; runId: number }> {
+  // Atomic lock: only proceed if TRIAGE_LOCK is currently 'false'
+  // This prevents two simultaneous runs (e.g. cron + manual trigger at the same time)
+  const locked = await sql`
+    UPDATE config SET value = 'true'
+    WHERE key = 'TRIAGE_LOCK' AND value = 'false'
+    RETURNING key
+  `
+  if (locked.length === 0) {
+    console.log('[triage] Already running — skipping duplicate invocation')
+    throw new Error('Triage is already running. Please wait for the current run to finish.')
+  }
+
+  try {
+    return await _runTriage()
+  } finally {
+    await sql`UPDATE config SET value = 'false' WHERE key = 'TRIAGE_LOCK'`
+    console.log('[triage] Lock released')
+  }
+}
+
+async function _runTriage(): Promise<{ scored: number; runId: number }> {
   const configRows = await sql`SELECT key, value FROM config`
   const config = Object.fromEntries(configRows.map((r) => [r.key as string, r.value as string]))
 

@@ -12,6 +12,14 @@ export async function POST() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const result = await runTriage()
-  return NextResponse.json({ ok: true, ...result })
+  try {
+    const result = await runTriage()
+    return NextResponse.json({ ok: true, ...result })
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg.includes('already running')) {
+      return NextResponse.json({ error: msg }, { status: 409 })
+    }
+    throw e
+  }
 }

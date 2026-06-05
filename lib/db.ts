@@ -184,6 +184,7 @@ export async function initDb() {
     ['COST_THRESHOLD_COMMITTEE',  '5000',  'Cost threshold (£): above this, escalate to full committee review'],
     ['COST_THRESHOLD_QUICKWIN',   '500',   'Cost threshold (£): below this, flag as quick win'],
     ['IMPL_QUICKWIN_WEEKS',       '4',     'Implementation weeks: at or below this = quick win'],
+    ['TRIAGE_LOCK',               'false', 'Internal: prevents concurrent triage runs'],
   ]
 
   for (const [key, value, _label] of defaults) {

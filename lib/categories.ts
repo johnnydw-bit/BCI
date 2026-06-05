@@ -41,6 +41,7 @@ export const DIRECTOR_CATEGORIES: Record<string, string[]> = {
   'Super Admin':         ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
   'Chairman':            ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
   'Chair':               ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
+  'Operations Manager':  ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
 }
 
 /** Returns true for roles that have full management permissions */

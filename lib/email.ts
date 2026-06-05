@@ -17,7 +17,7 @@ function resolveRecipient(to: string | string[]): string | string[] {
   return to
 }
 
-async function send(payload: { from: string; to: string | string[]; subject: string; html: string }) {
+async function send(payload: { from: string; to: string | string[]; subject: string; html: string; attachments?: Array<{ filename: string; content: Buffer }> }) {
   const resolvedTo = resolveRecipient(payload.to)
   console.log(`[email] Sending "${payload.subject}" from ${payload.from} to ${JSON.stringify(resolvedTo)}`)
   const result = await resend.emails.send({ ...payload, to: resolvedTo as string | string[] })
@@ -144,6 +144,32 @@ export async function sendSubmitterUpdate(to: string, submission: {
         </div>
       </div>
     `,
+  })
+}
+
+export async function sendBackupEmail(to: string, filename: string, csvContent: string) {
+  const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  const now = new Date()
+
+  await send({
+    from: FROM,
+    to,
+    subject: `Bramley GC — Data Backup ${fmt(now)}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme — Data Backup')}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">Your weekly automated data backup is attached.</p>
+          <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:16px 0;border-collapse:collapse">
+            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Date</td><td style="font-family:sans-serif">${fmt(now)}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">File</td><td style="font-family:sans-serif">${filename}</td></tr>
+          </table>
+          <p style="color:#555;font-size:14px;font-family:sans-serif">Keep this email in case you ever need to restore the system. To restore, sign in to the admin panel and use <strong>Admin → Setup → Restore from CSV</strong>.</p>
+          <p style="color:#aaa;font-size:12px;font-family:sans-serif">This is an automated backup. No action is required.</p>
+        </div>
+      </div>
+    `,
+    attachments: [{ filename, content: Buffer.from(csvContent, 'utf-8') }],
   })
 }
 

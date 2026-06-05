@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BramleyHeader from '@/components/BramleyHeader'
 
-const ROLES = ['Club Manager', 'Super Admin', 'Chairman', 'Chair', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
+const ROLES = ['Club Manager', 'Super Admin', 'Operations Manager', 'Chairman', 'Chair', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
 
 const CONFIG_GROUPS = [
   {
@@ -70,6 +70,9 @@ export default function AdminPage() {
   const [initStatus, setInitStatus] = useState('')
   const [triageStatus, setTriageStatus] = useState('')
   const [runningTriage, setRunningTriage] = useState(false)
+  const [exportingCsv, setExportingCsv] = useState(false)
+  const [importStatus, setImportStatus] = useState('')
+  const [importingCsv, setImportingCsv] = useState(false)
   const [seedStatus, setSeedStatus] = useState('')
   const [seedingData, setSeedingData] = useState(false)
   const [clearingData, setClearingData] = useState(false)
@@ -182,6 +185,37 @@ export default function AdminPage() {
     setInitStatus('Initialising…')
     const res = await fetch('/api/admin/init-db', { method: 'POST' })
     setInitStatus(res.ok ? '✓ Database initialised successfully' : '✗ Error — check logs')
+  }
+
+  async function exportCsv() {
+    setExportingCsv(true)
+    const res = await fetch('/api/admin/export-csv')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `bramley-backup-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    setExportingCsv(false)
+  }
+
+  async function importCsv(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!confirm(`Restore from ${file.name}? Existing records will be updated, new ones added. No data will be deleted.`)) {
+      e.target.value = ''
+      return
+    }
+    setImportingCsv(true)
+    setImportStatus('Restoring…')
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/admin/import-csv', { method: 'POST', body: form })
+    const json = await res.json().catch(() => ({}))
+    setImportStatus(res.ok ? `✓ ${json.upserted} records restored` : `✗ Error: ${json.error ?? 'check logs'}`)
+    setImportingCsv(false)
+    e.target.value = ''
   }
 
   async function seedTestData() {
@@ -401,6 +435,31 @@ export default function AdminPage() {
                 {runningTriage ? <><span className="spinner" /> Running…</> : '▶ Run triage now'}
               </button>
               {triageStatus && <p className="text-sm mt-2 text-gray-700">{triageStatus}</p>}
+            </div>
+
+            <hr className="border-gray-200" />
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-1">Backup &amp; restore</h3>
+              <p className="text-sm text-gray-500 mb-3">
+                Export all submissions as a CSV file. A backup is also emailed automatically to the Operations Manager every Sunday at 06:00.
+                To restore, upload a previously exported CSV — existing records are updated, missing records are re-inserted. No data is deleted.
+              </p>
+              <div className="flex gap-3 flex-wrap items-center">
+                <button
+                  onClick={exportCsv}
+                  disabled={exportingCsv}
+                  className="bramley-btn"
+                  style={{ background: '#1e8449' }}
+                >
+                  {exportingCsv ? <><span className="spinner" /> Exporting…</> : '⬇ Export CSV'}
+                </button>
+                <label className={`bramley-btn text-center cursor-pointer ${importingCsv ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ background: '#2471a3' }}>
+                  {importingCsv ? 'Restoring…' : '⬆ Restore from CSV'}
+                  <input type="file" accept=".csv" className="hidden" onChange={importCsv} disabled={importingCsv} />
+                </label>
+              </div>
+              {importStatus && <p className="text-sm mt-2 text-gray-700">{importStatus}</p>}
             </div>
 
             <hr className="border-gray-200" />

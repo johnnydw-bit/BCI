@@ -722,7 +722,7 @@ function SpreadsheetTable({
                   {s.confirmed_target_date ? (
                     <span className="text-green-700 font-semibold text-xs" title="Confirmed target date">🎯 {formatDate(s.confirmed_target_date)}</span>
                   ) : s.suggested_target_date ? (
-                    <span className="text-gray-400 text-xs" title="AI estimated target date">{formatDate(s.suggested_target_date)} <span className="text-gray-300">(est)</span></span>
+                    <span className="text-gray-400 text-xs" title="AI estimated target date">❓ {formatDate(s.suggested_target_date)}</span>
                   ) : (
                     <span className="text-gray-400 text-xs">{formatDate(s.created_at)}</span>
                   )}
@@ -843,7 +843,7 @@ function SpreadsheetDetailPanel({
                 <span className="font-semibold text-gray-500">Target:</span>{' '}
                 {s.confirmed_target_date
                   ? <><span className="text-green-700 font-semibold">{new Date(s.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span> <span className="text-green-600 text-xs">✓ confirmed</span></>
-                  : <span className="text-gray-500">{new Date(s.suggested_target_date!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} <span className="text-gray-400 text-xs">(AI estimate)</span></span>
+                  : <span className="text-gray-500">❓ {new Date(s.suggested_target_date!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 }
               </p>
             )}

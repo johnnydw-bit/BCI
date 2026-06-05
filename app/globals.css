@@ -45,6 +45,12 @@ body {
     max-width: 1400px;
   }
 
+  @media (min-width: 1536px) {
+    .bramley-wide-page {
+      max-width: 1800px;
+    }
+  }
+
   /* Card — used inside both layouts */
   .bramley-card {
     @apply bg-white rounded-[10px] shadow-sm overflow-hidden w-full;

@@ -645,11 +645,11 @@ function SpreadsheetTable({
           <tr className="border-b-2 border-gray-200 bg-gray-50">
             <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-12">Score</th>
             <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide">Improvement</th>
-            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-28 hidden lg:table-cell">Area</th>
-            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-24 hidden xl:table-cell">Owner</th>
-            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-20 hidden md:table-cell">Cost</th>
-            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-20 hidden md:table-cell">Impl</th>
-            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-20 hidden md:table-cell">Date</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-28 hidden md:table-cell">Area</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-36 hidden lg:table-cell">Owner</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-44 hidden lg:table-cell">Cost</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-24 hidden lg:table-cell">Impl</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-24 hidden md:table-cell">Date</th>
             <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-36">Decision</th>
             <th className="w-16 py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide text-center hidden sm:table-cell">Flags</th>
           </tr>
@@ -681,12 +681,12 @@ function SpreadsheetTable({
                 </td>
 
                 {/* Area */}
-                <td className="py-1.5 px-2 text-gray-500 hidden lg:table-cell whitespace-nowrap">
+                <td className="py-1.5 px-2 text-gray-500 hidden md:table-cell whitespace-nowrap">
                   {CATEGORIES.find(c => c.value === s.category)?.label ?? s.category}
                 </td>
 
                 {/* Owner */}
-                <td className="py-1.5 px-2 hidden xl:table-cell" onClick={(e) => e.stopPropagation()}>
+                <td className="py-1.5 px-2 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
                   {isManager ? (
                     <select
                       className="bramley-input text-xs py-0.5 px-1.5 w-full"
@@ -702,16 +702,16 @@ function SpreadsheetTable({
                 </td>
 
                 {/* Cost */}
-                <td className="py-1.5 px-2 text-gray-600 hidden md:table-cell whitespace-nowrap">
+                <td className="py-1.5 px-2 text-gray-600 hidden lg:table-cell whitespace-nowrap">
                   {s.cost_estimate_low != null && s.cost_estimate_high != null
-                    ? `£${Number(s.cost_estimate_low).toLocaleString()}–£${Number(s.cost_estimate_high).toLocaleString()}`
+                    ? `£${Number(s.cost_estimate_low).toLocaleString()} – £${Number(s.cost_estimate_high).toLocaleString()}`
                     : s.cost_band
                       ? <span className="capitalize">{s.cost_band.replace('_', ' ')}</span>
                       : <span className="text-gray-300">—</span>}
                 </td>
 
                 {/* Impl */}
-                <td className="py-1.5 px-2 text-gray-600 hidden md:table-cell whitespace-nowrap">
+                <td className="py-1.5 px-2 text-gray-600 hidden lg:table-cell whitespace-nowrap">
                   {s.impl_complexity
                     ? <span className={`capitalize ${s.quick_win_flag ? 'text-green-700 font-semibold' : ''}`}>{s.impl_complexity.replace('_', ' ')}</span>
                     : <span className="text-gray-300">—</span>}
@@ -771,7 +771,7 @@ function SpreadsheetDetailPanel({
   deleting: boolean
 }) {
   return (
-    <div className="bramley-card w-80 shrink-0 sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <div className="bramley-card w-80 xl:w-96 2xl:w-[440px] shrink-0 sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
       <div className="bramley-body space-y-4 text-sm">
         {/* Header */}
         <div className="flex items-start justify-between gap-2">

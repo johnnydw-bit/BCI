@@ -4,36 +4,34 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import BramleyHeader from '@/components/BramleyHeader'
 
-export default function LoginPage() {
+export default function CommitteeLoginPage() {
   const router = useRouter()
 
   useEffect(() => {
     fetch('/api/session').then((r) => r.json()).then((s) => {
-      if (s.authenticated && s.type === 'member') router.replace('/submit')
       if (s.authenticated && s.type === 'director') router.replace('/triage')
+      if (s.authenticated && s.type === 'member') router.replace('/submit')
     })
   }, [router])
 
-  const [memberId, setMemberId] = useState('')
-  const [memberEmail, setMemberEmail] = useState('')
   const [pin, setPin] = useState('')
   const [showPin, setShowPin] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleMemberLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/director', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, pin, email: memberEmail }),
+        body: JSON.stringify({ pin }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
-      router.push('/submit')
+      router.push('/triage')
     } catch {
       setError('Unable to connect. Please try again.')
     } finally {
@@ -44,36 +42,12 @@ export default function LoginPage() {
   return (
     <div className="bramley-wide-page">
       <div className="bramley-card">
-        <BramleyHeader subtitle="Continuous Improvement Programme" />
+        <BramleyHeader subtitle="Committee Access" />
 
         <div className="bramley-body">
-          <form onSubmit={handleMemberLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="bramley-label">Member ID</label>
-              <input
-                className="bramley-input"
-                type="text"
-                value={memberId}
-                onChange={(e) => setMemberId(e.target.value)}
-                autoComplete="username"
-                placeholder="Your membership number"
-                required
-              />
-            </div>
-            <div>
-              <label className="bramley-label">Email address</label>
-              <input
-                className="bramley-input"
-                type="email"
-                value={memberEmail}
-                onChange={(e) => setMemberEmail(e.target.value)}
-                autoComplete="email"
-                placeholder="Your email address"
-                required
-              />
-            </div>
-            <div>
-              <label className="bramley-label">PIN</label>
+              <label className="bramley-label">Committee PIN</label>
               <div className="relative">
                 <input
                   className="bramley-input pr-12"
@@ -81,8 +55,9 @@ export default function LoginPage() {
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
                   autoComplete="current-password"
-                  placeholder="Your website PIN"
+                  placeholder="Enter your committee PIN"
                   required
+                  autoFocus
                 />
                 <button
                   type="button"
@@ -102,7 +77,7 @@ export default function LoginPage() {
             </button>
 
             <p className="text-xs text-gray-500 text-center">
-              Use your Bramley GC membership number, registered email address and website PIN.
+              Forgotten your PIN? Contact the Club Manager or Super Admin to have it reset.
             </p>
           </form>
         </div>

@@ -129,6 +129,8 @@ export default function TriagePage() {
   const [filterFlag, setFilterFlag] = useState<string>('all')
   const [filterOwner, setFilterOwner] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
+  const [viewMode, setViewMode] = useState<'card' | 'grid'>('card')
+  const [sidePanelId, setSidePanelId] = useState<number | null>(null)
 
   async function deleteImprovement(id: number) {
     if (!confirm('Remove this improvement? This cannot be undone.')) return
@@ -362,6 +364,23 @@ export default function TriagePage() {
               ))}
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 shrink-0">View</label>
+            <div className="flex rounded-[8px] overflow-hidden border border-gray-200">
+              <button
+                onClick={() => setViewMode('card')}
+                title="Expanded card view"
+                className={`px-3 py-1.5 text-sm transition-colors ${viewMode === 'card' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                style={viewMode === 'card' ? { background: 'var(--bramley-navy)' } : {}}
+              >☰</button>
+              <button
+                onClick={() => { setViewMode('grid'); setSidePanelId(null) }}
+                title="Spreadsheet view"
+                className={`px-3 py-1.5 text-sm transition-colors border-l border-gray-200 ${viewMode === 'grid' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                style={viewMode === 'grid' ? { background: 'var(--bramley-navy)' } : {}}
+              >⊞</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -379,7 +398,7 @@ export default function TriagePage() {
       )}
 
       {/* ── Triage tab ─────────────────────────────────────────────── */}
-      {tab === 'triage' && (
+      {tab === 'triage' && viewMode === 'card' && (
         <div className="bramley-card overflow-hidden">
           {urgent.length > 0 && (
             <div className="border-b-2 border-red-200">
@@ -401,7 +420,6 @@ export default function TriagePage() {
               />
             </div>
           )}
-
           {normal.length > 0 ? (
             <>
               {urgent.length > 0 && (
@@ -426,6 +444,40 @@ export default function TriagePage() {
               {filterCategory !== 'all' ? 'No improvements in this area.' : 'No improvements to triage.'}
             </p>
           ) : null}
+        </div>
+      )}
+
+      {/* ── Spreadsheet view ───────────────────────────────────────── */}
+      {tab === 'triage' && viewMode === 'grid' && (
+        <div className="flex gap-4 items-start">
+          <div className="bramley-card overflow-hidden flex-1 min-w-0">
+            <SpreadsheetTable
+              subs={[...urgent, ...normal]}
+              isManager={data.isManager}
+              onUpdate={updateField}
+              selectedId={sidePanelId}
+              onSelect={setSidePanelId}
+              formatDate={formatDate}
+            />
+            {urgent.length === 0 && normal.length === 0 && (
+              <p className="text-center text-gray-500 py-12 text-sm">No improvements to triage.</p>
+            )}
+          </div>
+          {sidePanelId != null && (() => {
+            const s = [...urgent, ...normal].find(x => x.id === sidePanelId)
+            if (!s) return null
+            return (
+              <SpreadsheetDetailPanel
+                s={s}
+                isManager={data.isManager}
+                onUpdate={updateField}
+                onDelete={deleteImprovement}
+                onClose={() => setSidePanelId(null)}
+                updating={updating === s.id}
+                deleting={deleting === s.id}
+              />
+            )
+          })()}
         </div>
       )}
 
@@ -570,6 +622,253 @@ export default function TriagePage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Spreadsheet table ───────────────────────────────────────────────────────
+
+function SpreadsheetTable({
+  subs, isManager, onUpdate, selectedId, onSelect, formatDate,
+}: {
+  subs: Submission[]
+  isManager: boolean
+  onUpdate: (id: number, field: 'status' | 'category', value: string) => void
+  selectedId: number | null
+  onSelect: (id: number | null) => void
+  formatDate: (iso: string) => string
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs border-collapse">
+        <thead>
+          <tr className="border-b-2 border-gray-200 bg-gray-50">
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-12">Score</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide">Improvement</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-28 hidden lg:table-cell">Area</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-24 hidden xl:table-cell">Owner</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-20 hidden md:table-cell">Cost</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-20 hidden md:table-cell">Impl</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-20 hidden md:table-cell">Date</th>
+            <th className="text-left py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide w-36">Decision</th>
+            <th className="w-16 py-2 px-2 font-semibold text-gray-500 uppercase tracking-wide text-center hidden sm:table-cell">Flags</th>
+          </tr>
+        </thead>
+        <tbody>
+          {subs.map((s) => {
+            const isSelected = selectedId === s.id
+            const isUrgent = s.h_and_s_flag
+            return (
+              <tr
+                key={s.id}
+                onClick={() => onSelect(isSelected ? null : s.id)}
+                className={`border-b border-gray-100 cursor-pointer transition-colors
+                  ${isUrgent ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-blue-50'}
+                  ${isSelected ? (isUrgent ? 'bg-red-100 ring-1 ring-inset ring-red-400' : 'bg-blue-50 ring-1 ring-inset ring-blue-400') : ''}`}
+              >
+                {/* Score */}
+                <td className="py-1.5 px-2 whitespace-nowrap">
+                  {s.score != null ? (
+                    <span className="bramley-badge text-xs" style={{ background: scoreBandColor(s.score_band) }}>
+                      {Number(s.score).toFixed(1)}
+                    </span>
+                  ) : <span className="text-gray-300">—</span>}
+                </td>
+
+                {/* Summary */}
+                <td className="py-1.5 px-2 max-w-0">
+                  <p className="truncate font-medium text-gray-800">{s.ai_summary ?? s.description}</p>
+                </td>
+
+                {/* Area */}
+                <td className="py-1.5 px-2 text-gray-500 hidden lg:table-cell whitespace-nowrap">
+                  {CATEGORIES.find(c => c.value === s.category)?.label ?? s.category}
+                </td>
+
+                {/* Owner */}
+                <td className="py-1.5 px-2 text-gray-600 hidden xl:table-cell whitespace-nowrap">
+                  {s.suggested_owner ?? <span className="text-gray-300">—</span>}
+                </td>
+
+                {/* Cost */}
+                <td className="py-1.5 px-2 text-gray-600 hidden md:table-cell whitespace-nowrap">
+                  {s.cost_estimate_low != null && s.cost_estimate_high != null
+                    ? `£${Number(s.cost_estimate_low).toLocaleString()}–£${Number(s.cost_estimate_high).toLocaleString()}`
+                    : s.cost_band
+                      ? <span className="capitalize">{s.cost_band.replace('_', ' ')}</span>
+                      : <span className="text-gray-300">—</span>}
+                </td>
+
+                {/* Impl */}
+                <td className="py-1.5 px-2 text-gray-600 hidden md:table-cell whitespace-nowrap">
+                  {s.impl_complexity
+                    ? <span className={`capitalize ${s.quick_win_flag ? 'text-green-700 font-semibold' : ''}`}>{s.impl_complexity.replace('_', ' ')}</span>
+                    : <span className="text-gray-300">—</span>}
+                </td>
+
+                {/* Date */}
+                <td className="py-1.5 px-2 text-gray-400 hidden md:table-cell whitespace-nowrap">{formatDate(s.created_at)}</td>
+
+                {/* Decision */}
+                <td className="py-1.5 px-2" onClick={(e) => e.stopPropagation()}>
+                  {isManager ? (
+                    <select
+                      className="bramley-input text-xs py-0.5 px-1.5 w-full"
+                      value={s.status}
+                      onChange={(e) => onUpdate(s.id, 'status', e.target.value)}
+                    >
+                      {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                        <option key={val} value={val}>{label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className={`bramley-badge text-xs ${statusClass(s.status)}`}>{STATUS_LABELS[s.status] ?? s.status}</span>
+                  )}
+                </td>
+
+                {/* Flags */}
+                <td className="py-1.5 px-2 text-center hidden sm:table-cell">
+                  <div className="flex gap-0.5 justify-center flex-wrap">
+                    {s.h_and_s_flag && <span title="H&S" className="text-red-600">⚠</span>}
+                    {s.quick_win_flag && <span title="Quick win">⚡</span>}
+                    {s.revenue_opportunity && <span title="Revenue">💰</span>}
+                    {s.cost_threshold_flag && <span title="Committee approval" className="text-orange-600 font-bold text-xs">£</span>}
+                    {s.needs_external_approval && <span title="External approval">⚖</span>}
+                    {s.seasonal_window && <span title="Seasonal">📅</span>}
+                    {s.recurring_flag && <span title={`Recurring ×${s.recurring_run_count + 1}`}>🔁</span>}
+                    {s.cluster_theme && <span title={`Cluster: ${s.cluster_theme}`} className="text-blue-600 font-bold text-xs">C</span>}
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function SpreadsheetDetailPanel({
+  s, isManager, onUpdate, onDelete, onClose, updating, deleting,
+}: {
+  s: Submission
+  isManager: boolean
+  onUpdate: (id: number, field: 'status' | 'category', value: string) => void
+  onDelete: (id: number) => void
+  onClose: () => void
+  updating: boolean
+  deleting: boolean
+}) {
+  return (
+    <div className="bramley-card w-80 shrink-0 sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+      <div className="bramley-body space-y-4 text-sm">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {s.score != null && (
+              <span className="bramley-badge" style={{ background: scoreBandColor(s.score_band) }}>
+                {Number(s.score).toFixed(1)}
+              </span>
+            )}
+            <span className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === s.category)?.label}</span>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none shrink-0">✕</button>
+        </div>
+
+        {/* Improvement text */}
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Improvement</p>
+          <p className="text-gray-800">{s.description}</p>
+        </div>
+        {s.benefit && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Perceived benefit</p>
+            <p className="text-gray-700 text-xs">{s.benefit}</p>
+          </div>
+        )}
+
+        {/* Flags */}
+        <div className="flex gap-1 flex-wrap">
+          {s.h_and_s_flag && <span className="bramley-badge text-xs bg-red-600">⚠ H&amp;S</span>}
+          {s.score_band === 'in_plan' && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>📋 In plan</span>}
+          {s.quick_win_flag && <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>}
+          {s.revenue_opportunity && <span className="bramley-badge text-xs" style={{ background: '#6c3483' }}>💰 Revenue</span>}
+          {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Committee</span>}
+          {s.needs_external_approval && <span className="bramley-badge text-xs" style={{ background: '#7d6608' }}>⚖ Approval</span>}
+          {s.suggested_owner && <span className="bramley-badge text-xs" style={{ background: '#117a65' }}>👤 {s.suggested_owner}</span>}
+          {s.seasonal_window && <span className="bramley-badge text-xs" style={{ background: '#1a5276' }}>📅 Seasonal</span>}
+          {s.recurring_flag && <span className="bramley-badge text-xs" style={{ background: '#922b21' }}>🔁 Recurring ×{s.recurring_run_count + 1}</span>}
+          {s.cluster_theme && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>Cluster ({s.cluster_size})</span>}
+        </div>
+
+        {/* AI Assessment */}
+        {(s.ai_narrative || s.cost_band || s.impl_complexity || s.strategic_note) && (
+          <div className="rounded-[8px] border border-indigo-100 bg-indigo-50 p-3 space-y-2 text-xs">
+            <p className="font-bold text-indigo-700 uppercase tracking-wider">🤖 AI Assessment</p>
+            {s.ai_narrative && <p className="text-gray-700">{s.ai_narrative}</p>}
+            {s.cost_estimate_low != null && s.cost_estimate_high != null && (
+              <p><span className="font-semibold text-gray-500">Cost:</span> £{Number(s.cost_estimate_low).toLocaleString()} – £{Number(s.cost_estimate_high).toLocaleString()}
+                {s.cost_confidence && <span className="text-gray-400"> ({s.cost_confidence})</span>}
+              </p>
+            )}
+            {s.impl_complexity && (
+              <p><span className="font-semibold text-gray-500">Implementation:</span> <span className="capitalize">{s.impl_complexity.replace('_', ' ')}</span>
+                {s.impl_weeks_low != null && s.impl_weeks_high != null && ` · ${s.impl_weeks_low}–${s.impl_weeks_high}w`}
+              </p>
+            )}
+            {s.suggested_target_date && (
+              <p><span className="font-semibold text-gray-500">Target:</span> {new Date(s.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+            )}
+            {s.strategic_note && <p className="text-gray-600 italic">{s.strategic_note}</p>}
+            {s.cluster_theme && <p><span className="font-semibold text-blue-600">Cluster:</span> {s.cluster_theme} ({s.cluster_size})</p>}
+            {s.seasonal_window && <p><span className="font-semibold text-gray-500">Seasonal:</span> {s.seasonal_window}</p>}
+            {s.revenue_note && <p><span className="font-semibold text-purple-600">Revenue:</span> {s.revenue_note}</p>}
+            {s.approval_body && <p><span className="font-semibold text-gray-500">Approval:</span> {s.approval_body}</p>}
+          </div>
+        )}
+
+        {/* Committee Decision */}
+        {isManager && (
+          <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-2 text-xs">
+            <p className="font-bold text-amber-700 uppercase tracking-wider">📋 Committee Decision</p>
+            <div>
+              <label className="text-gray-500 block mb-1">Status</label>
+              <select
+                className="bramley-input text-xs py-1 w-full"
+                value={s.status}
+                onChange={(e) => onUpdate(s.id, 'status', e.target.value)}
+                disabled={updating}
+              >
+                {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                  <option key={val} value={val}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-gray-500 block mb-1">Area</label>
+              <select
+                className="bramley-input text-xs py-1 w-full"
+                value={s.category}
+                onChange={(e) => onUpdate(s.id, 'category', e.target.value)}
+                disabled={updating}
+              >
+                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <button
+              onClick={() => onDelete(s.id)}
+              disabled={deleting}
+              className="text-red-500 hover:text-red-700 text-xs font-semibold"
+            >
+              {deleting ? 'Removing…' : '✕ Remove improvement'}
+            </button>
+          </div>
+        )}
+
+        {s.recognition !== 'anonymous' && s.member_name && (
+          <p className="text-xs text-gray-400">Submitted by {s.member_name}</p>
+        )}
+      </div>
     </div>
   )
 }

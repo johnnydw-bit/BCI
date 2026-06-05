@@ -129,7 +129,9 @@ export default function TriagePage() {
   const [filterFlag, setFilterFlag] = useState<string>('all')
   const [filterOwner, setFilterOwner] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
-  const [viewMode, setViewMode] = useState<'card' | 'grid'>('card')
+  const [viewMode, setViewMode] = useState<'card' | 'grid'>(() =>
+    (typeof window !== 'undefined' ? localStorage.getItem('triageViewMode') : null) as 'card' | 'grid' ?? 'card'
+  )
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
 
   async function deleteImprovement(id: number) {
@@ -368,13 +370,13 @@ export default function TriagePage() {
             <label className="text-xs text-gray-500 shrink-0">View</label>
             <div className="flex rounded-[8px] overflow-hidden border border-gray-200">
               <button
-                onClick={() => setViewMode('card')}
+                onClick={() => { setViewMode('card'); localStorage.setItem('triageViewMode', 'card') }}
                 title="Expanded card view"
                 className={`px-3 py-1.5 text-sm transition-colors ${viewMode === 'card' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                 style={viewMode === 'card' ? { background: 'var(--bramley-navy)' } : {}}
               >☰</button>
               <button
-                onClick={() => { setViewMode('grid'); setSidePanelId(null) }}
+                onClick={() => { setViewMode('grid'); setSidePanelId(null); localStorage.setItem('triageViewMode', 'grid') }}
                 title="Spreadsheet view"
                 className={`px-3 py-1.5 text-sm transition-colors border-l border-gray-200 ${viewMode === 'grid' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
                 style={viewMode === 'grid' ? { background: 'var(--bramley-navy)' } : {}}

@@ -769,7 +769,7 @@ function SpreadsheetDetailPanel({
 }: {
   s: Submission
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override', value: string, extra?: Record<string, string>) => void
+  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override' | 'confirmed_target_date', value: string, extra?: Record<string, string>) => void
   onDelete: (id: number) => void
   onClose: () => void
   updating: boolean

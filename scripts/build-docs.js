@@ -918,11 +918,166 @@ function buildContinuityGuide() {
 }
 
 // ---------------------------------------------------------------------------
+// MEMBER LAUNCH LETTER
+// ---------------------------------------------------------------------------
+function buildMemberLetter() {
+  const children = [
+    // Club header
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 80 },
+      children: [new TextRun({ text: 'BRAMLEY GOLF CLUB', bold: true, size: 36, color: NAVY })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 320 },
+      children: [new TextRun({ text: 'Continuous Improvement Programme', size: 24, color: DGRAY, italics: true })],
+    }),
+
+    // Date
+    new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      spacing: { before: 0, after: 320 },
+      children: [new TextRun({ text: 'June 2026', size: 22, color: DGRAY })],
+    }),
+
+    // Salutation
+    p('Dear Member,'),
+    gap(),
+
+    // Opening
+    p('We are delighted to introduce the Bramley Golf Club Improvement Programme — a simple, online way for every member to share ideas that could make your club better.'),
+    gap(),
+
+    // Section heading
+    new Paragraph({
+      spacing: { before: 200, after: 80 },
+      children: [new TextRun({ text: 'What Bramley is — and what it isn\'t', bold: true, size: 24, color: NAVY })],
+    }),
+    p('Bramley Golf Club is a village club, and we are proud of that. We have no ambition to be a top-100 ranked course or to price ourselves beyond the reach of our community. What we do aspire to is being the best village golf club we possibly can be.'),
+    gap(),
+    p('Independent reviewers have already recognised what many of you know — that Bramley punches above its weight. The course is in great condition, the welcome is warm, and the atmosphere is what a golf club should feel like. But there is always something that could work a little better, run a little smoother, or serve our members a little more effectively. That is what this programme is here to capture.'),
+    gap(),
+
+    // Section heading
+    new Paragraph({
+      spacing: { before: 200, after: 80 },
+      children: [new TextRun({ text: 'What is continuous improvement?', bold: true, size: 24, color: NAVY })],
+    }),
+    p('Continuous improvement is simply the habit of always looking for small, practical ways to do things better — not dramatic overhauls, but the steady accumulation of good ideas. The best organisations in any field do this as a matter of course. They listen to the people closest to the experience. At Bramley, that is you.'),
+    gap(),
+
+    // Section heading
+    new Paragraph({
+      spacing: { before: 200, after: 80 },
+      children: [new TextRun({ text: 'How it works', bold: true, size: 24, color: NAVY })],
+    }),
+    pRuns([
+      { text: 'When you have an idea — however small — you can submit it through the member portal at ' },
+      { text: '[your URL here]', bold: true },
+      { text: '. You will need your membership number, your registered email address, and the PIN that has been issued to you separately.' },
+    ]),
+    gap(),
+    p('Your idea will be reviewed by the committee. You will receive a confirmation when it is received, and updates as it moves through the process. You can log back in at any time to see the status of anything you have submitted.'),
+    gap(),
+
+    // Section heading
+    new Paragraph({
+      spacing: { before: 200, after: 80 },
+      children: [new TextRun({ text: 'What to expect — and what not to expect', bold: true, size: 24, color: NAVY })],
+    }),
+    p('Please do submit ideas. Every submission is read by a committee member. No idea goes into a void.'),
+    gap(),
+    p('However, please understand:'),
+    gap(),
+    bullet('Not every idea will be actioned. Some suggestions may be impractical, too costly, or may conflict with the club\'s plans. If your idea is not taken forward, you will be told why.'),
+    bullet('Things take time. Even good ideas require planning, budgeting, and sometimes planning permission. A suggestion submitted today may not be visible on the course for a year or more.'),
+    bullet('This is not a complaints system. If you have an urgent complaint or a matter requiring immediate attention, please speak directly to the office. This system is for improvement ideas, not grievances.'),
+    bullet('This is not a voting system. The committee makes decisions — but your ideas genuinely influence those decisions.'),
+    gap(),
+
+    // Section heading
+    new Paragraph({
+      spacing: { before: 200, after: 80 },
+      children: [new TextRun({ text: 'What kinds of ideas are welcome?', bold: true, size: 24, color: NAVY })],
+    }),
+    p('Anything that could make the club better for members. Course conditions and layout, the clubhouse, practice facilities, communications, the pro shop, catering, events, the website, pace of play, signage — if you have noticed something that could be improved, we want to hear it.'),
+    gap(),
+
+    // Closing
+    new Paragraph({
+      spacing: { before: 200, after: 80 },
+      children: [new TextRun({ text: 'A final word', bold: true, size: 24, color: NAVY })],
+    }),
+    p('We know that members who care enough to submit an idea are the members who care most about this club. We take that seriously. This programme is our commitment to you that your voice has a place — and that we are always listening.'),
+    gap(),
+    p('Thank you for being part of Bramley Golf Club.'),
+    gap(2),
+
+    // Signatures
+    new Paragraph({
+      spacing: { before: 160, after: 40 },
+      children: [new TextRun({ text: 'Yours sincerely,', size: 22 })],
+    }),
+    gap(2),
+
+    // Side-by-side signatures via table
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: {
+        top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE },
+        left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE },
+        insideH: { style: BorderStyle.NONE }, insideV: { style: BorderStyle.NONE },
+      },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+              children: [
+                new Paragraph({ children: [new TextRun({ text: 'Stuart Butler', bold: true, size: 24, color: NAVY })] }),
+                new Paragraph({ children: [new TextRun({ text: 'Chairman', size: 22, color: DGRAY })] }),
+                new Paragraph({ children: [new TextRun({ text: 'Bramley Golf Club', size: 22, color: DGRAY })] }),
+              ],
+            }),
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+              children: [
+                new Paragraph({ children: [new TextRun({ text: 'Bob Marchbanks', bold: true, size: 24, color: NAVY })] }),
+                new Paragraph({ children: [new TextRun({ text: 'Club Manager', size: 22, color: DGRAY })] }),
+                new Paragraph({ children: [new TextRun({ text: 'Bramley Golf Club', size: 22, color: DGRAY })] }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    }),
+
+    gap(2),
+    hr(),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 80, after: 0 },
+      children: [new TextRun({ text: 'Bramley Golf Club  ·  Member Improvement Programme  ·  June 2026', size: 18, color: '888888', italics: true })],
+    }),
+  ]
+  return docSettings('Member Launch Letter', [children])
+}
+
+// ---------------------------------------------------------------------------
 // Generate files
 // ---------------------------------------------------------------------------
 async function main() {
   const outDir = path.join(__dirname, '..', 'docs')
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
+
+  console.log('Building member-letter.docx...')
+  const letterDoc = buildMemberLetter()
+  const letterBuf = await Packer.toBuffer(letterDoc)
+  fs.writeFileSync(path.join(outDir, 'member-letter.docx'), letterBuf)
+  console.log('  ✓ docs/member-letter.docx')
 
   console.log('Building member-guide.docx...')
   const memberDoc = buildMemberGuide()

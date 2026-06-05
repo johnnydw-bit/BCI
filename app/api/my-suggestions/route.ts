@@ -23,9 +23,11 @@ export async function GET() {
       cost_band,
       impl_complexity,
       suggested_target_date,
+      confirmed_target_date,
       quick_win_flag,
       scored_at,
-      created_at
+      created_at,
+      withdrawn_at
     FROM submissions
     WHERE (
         member_id = ${session.memberId}
@@ -36,5 +38,28 @@ export async function GET() {
     ORDER BY created_at DESC
   `
 
-  return NextResponse.json({ suggestions: rows })
+  // Fetch status history for each submission
+  const ids = (rows as Array<{ id: number }>).map((r) => r.id)
+
+  let historyMap: Record<number, Array<{ new_status: string; changed_at: string }>> = {}
+  if (ids.length > 0) {
+    const histRows = await sql`
+      SELECT submission_id, new_status, changed_at
+      FROM status_log
+      WHERE submission_id = ANY(${ids})
+        AND new_status != 'withdrawn'
+      ORDER BY changed_at ASC
+    `
+    for (const h of histRows as Array<{ submission_id: number; new_status: string; changed_at: string }>) {
+      if (!historyMap[h.submission_id]) historyMap[h.submission_id] = []
+      historyMap[h.submission_id].push({ new_status: h.new_status, changed_at: h.changed_at })
+    }
+  }
+
+  const suggestions = (rows as Array<Record<string, unknown>>).map((r) => ({
+    ...r,
+    history: historyMap[r.id as number] ?? [],
+  }))
+
+  return NextResponse.json({ suggestions })
 }

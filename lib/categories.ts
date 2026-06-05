@@ -31,7 +31,11 @@ export const STATUS_LABELS: Record<string, string> = {
   implemented:         'Implemented',
   rejected:            'Not Progressed',
   in_plan:             'In Plan',
+  withdrawn:           'Withdrawn',
 }
+
+/** Statuses that should prompt for a target date when set by a director */
+export const TARGET_DATE_STATUSES = new Set(['under_consideration', 'approved', 'in_plan'])
 
 export const DIRECTOR_CATEGORIES: Record<string, string[]> = {
   'Golf Director':       ['course', 'competitions'],

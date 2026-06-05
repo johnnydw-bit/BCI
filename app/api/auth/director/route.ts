@@ -3,12 +3,25 @@ import { signSession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { cookies } from 'next/headers'
 import { createHash } from 'crypto'
+import { getClientIp, isRateLimited, recordFailedAttempt, lockoutMinutesRemaining } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
   const { pin } = await req.json()
 
   if (!pin) {
     return NextResponse.json({ error: 'PIN is required' }, { status: 400 })
+  }
+
+  const ip = getClientIp(req)
+  const identifier = 'director'
+
+  // Rate limit check
+  if (await isRateLimited(ip, identifier)) {
+    const mins = await lockoutMinutesRemaining(ip, identifier)
+    return NextResponse.json(
+      { error: `Too many failed attempts. Please try again in ${mins} minute${mins === 1 ? '' : 's'}.` },
+      { status: 429 }
+    )
   }
 
   const pinHash = createHash('sha256').update(pin.trim()).digest('hex')
@@ -20,6 +33,7 @@ export async function POST(req: NextRequest) {
   `
 
   if (rows.length === 0) {
+    await recordFailedAttempt(ip, identifier)
     return NextResponse.json({ error: 'Invalid PIN' }, { status: 401 })
   }
 

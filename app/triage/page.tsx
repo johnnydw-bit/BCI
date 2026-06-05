@@ -46,6 +46,7 @@ interface Submission {
   score_override: number | null
   score_override_reason: string | null
   score_override_by: string | null
+  confirmed_target_date: string | null
 }
 
 interface AuditEntry {
@@ -227,16 +228,38 @@ export default function TriagePage() {
     })
   }
 
-  async function updateField(id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override', value: string, extra?: Record<string, string>) {
+  const TARGET_DATE_STATUSES = new Set(['under_consideration', 'approved', 'in_plan'])
+
+  async function updateField(id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override' | 'confirmed_target_date', value: string, extra?: Record<string, string>) {
+    let confirmed_target_date: string | undefined
+
+    // Prompt for target date when moving to an active status
+    if (field === 'status' && TARGET_DATE_STATUSES.has(value)) {
+      const sub = data?.submissions.find((s) => s.id === id)
+      const prefill = sub?.confirmed_target_date ?? sub?.suggested_target_date ?? ''
+      const input = prompt(
+        `Set a target date for this improvement (optional):\nStatus → ${STATUS_LABELS[value] ?? value}`,
+        prefill
+      )
+      if (input !== null && input.trim()) {
+        confirmed_target_date = input.trim()
+      }
+    }
+
     setUpdating(id)
     await fetch('/api/triage', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, [field]: value, ...extra }),
+      body: JSON.stringify({ id, [field]: value, ...extra, ...(confirmed_target_date ? { confirmed_target_date } : {}) }),
     })
     setData((prev) => prev ? {
       ...prev,
-      submissions: prev.submissions.map((s) => s.id === id ? { ...s, [field]: value, ...extra } : s),
+      submissions: prev.submissions.map((s) => s.id === id ? {
+        ...s,
+        [field]: value,
+        ...extra,
+        ...(confirmed_target_date ? { confirmed_target_date } : {}),
+      } : s),
     } : prev)
     // Refresh audit log after status or score override changes
     if (field === 'status' || field === 'score_override') {
@@ -906,8 +929,14 @@ function SpreadsheetDetailPanel({
                 {s.impl_weeks_low != null && s.impl_weeks_high != null && ` · ${s.impl_weeks_low}–${s.impl_weeks_high}w`}
               </p>
             )}
-            {s.suggested_target_date && (
-              <p><span className="font-semibold text-gray-500">Target:</span> {new Date(s.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+            {(s.confirmed_target_date || s.suggested_target_date) && (
+              <p>
+                <span className="font-semibold text-gray-500">Target:</span>{' '}
+                {s.confirmed_target_date
+                  ? <><span className="text-green-700 font-semibold">{new Date(s.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span> <span className="text-green-600 text-xs">✓ confirmed</span></>
+                  : <span className="text-gray-500">{new Date(s.suggested_target_date!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} <span className="text-gray-400 text-xs">(AI estimate)</span></span>
+                }
+              </p>
             )}
             {s.strategic_note && <p className="text-gray-600 italic">{s.strategic_note}</p>}
             {s.cluster_theme && <p><span className="font-semibold text-blue-600">Cluster:</span> {s.cluster_theme} ({s.cluster_size})</p>}
@@ -1180,8 +1209,11 @@ function SubmissionTableRow({
                           {s.impl_weeks_low === s.impl_weeks_high ? `~${s.impl_weeks_low}w` : `${s.impl_weeks_low}–${s.impl_weeks_high}w`}
                         </p>
                       )}
-                      {s.suggested_target_date && (
-                        <p className="text-gray-400 mt-0.5">By {new Date(s.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      {(s.confirmed_target_date || s.suggested_target_date) && (
+                        <p className={`mt-0.5 text-xs ${s.confirmed_target_date ? 'text-green-600 font-semibold' : 'text-gray-400'}`}>
+                          By {new Date(s.confirmed_target_date ?? s.suggested_target_date!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {s.confirmed_target_date && ' ✓'}
+                        </p>
                       )}
                     </div>
                   )}

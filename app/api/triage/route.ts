@@ -3,6 +3,17 @@ import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { DIRECTOR_CATEGORIES, isManager } from '@/lib/categories'
+import { generateStatusEmail } from '@/lib/ai'
+import { sendStatusChangeEmail } from '@/lib/email'
+
+const STATUS_LABELS: Record<string, string> = {
+  new:                 'Awaiting Decision',
+  under_consideration: 'Under Consideration',
+  approved:            'Approved',
+  implemented:         'Implemented',
+  rejected:            'Not Progressed',
+  in_plan:             'In Plan',
+}
 
 export async function GET() {
   const cookieStore = await cookies()
@@ -23,6 +34,7 @@ export async function GET() {
       s.cost_band, s.cost_estimate_low, s.cost_estimate_high,
       s.cost_confidence, s.cost_rationale, s.cost_threshold_flag, s.quick_win_flag,
       s.impl_weeks_low, s.impl_weeks_high, s.impl_complexity, s.suggested_target_date,
+      s.confirmed_target_date,
       s.strategic_note, s.member_msg,
       s.recognition, s.member_name, s.created_at, s.scored_at,
       s.moderation_reason,
@@ -35,6 +47,7 @@ export async function GET() {
     LEFT JOIN clusters c ON c.id = s.cluster_id
     WHERE s.category = ANY(${allowedCategories})
       AND s.deleted_at IS NULL
+      AND s.withdrawn_at IS NULL
     ORDER BY s.h_and_s_flag DESC, s.score DESC NULLS LAST, s.created_at DESC
   `
 
@@ -55,7 +68,11 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Not authorised' }, { status: 403 })
   }
 
-  const { id, status, category, suggested_owner, notes, score_override, score_override_reason } = await req.json()
+  const {
+    id, status, category, suggested_owner, notes,
+    score_override, score_override_reason,
+    confirmed_target_date,
+  } = await req.json()
 
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
@@ -65,6 +82,10 @@ export async function PATCH(req: NextRequest) {
 
   if (notes !== undefined) {
     await sql`UPDATE submissions SET notes = ${notes || null} WHERE id = ${id}`
+  }
+
+  if (confirmed_target_date !== undefined) {
+    await sql`UPDATE submissions SET confirmed_target_date = ${confirmed_target_date || null} WHERE id = ${id}`
   }
 
   if (score_override !== undefined) {
@@ -91,14 +112,60 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
-    const current = await sql`SELECT status FROM submissions WHERE id = ${id}`
-    const oldStatus = (current[0] as { status: string })?.status
+    const current = await sql`
+      SELECT status, description, member_email, email_opt_out, confirmed_target_date
+      FROM submissions WHERE id = ${id}
+    `
+    const row = current[0] as {
+      status: string
+      description: string
+      member_email: string | null
+      email_opt_out: boolean
+      confirmed_target_date: string | null
+    }
+    const oldStatus = row?.status
 
-    await sql`UPDATE submissions SET status = ${status} WHERE id = ${id}`
+    await sql`
+      UPDATE submissions
+      SET status = ${status},
+          confirmed_target_date = COALESCE(${confirmed_target_date ?? null}, confirmed_target_date)
+      WHERE id = ${id}
+    `
     await sql`
       INSERT INTO status_log (submission_id, old_status, new_status, changed_by)
       VALUES (${id}, ${oldStatus}, ${status}, ${session.directorName})
     `
+
+    // Send AI-generated email to member if they have email and haven't opted out
+    if (row?.member_email && !row.email_opt_out) {
+      // Run email async — don't block the response
+      void (async () => {
+        try {
+          const configRows = await sql`SELECT key, value FROM config WHERE key IN ('COMMS_TONE', 'COMMS_SIGNOFF')`
+          const cfg = Object.fromEntries((configRows as Array<{ key: string; value: string }>).map((r) => [r.key, r.value]))
+          const tone = (cfg['COMMS_TONE'] ?? 'friendly') as 'friendly' | 'formal'
+          const signoff = cfg['COMMS_SIGNOFF'] ?? 'The Improvement Committee, Bramley Golf Club'
+          const targetDate = confirmed_target_date ?? row.confirmed_target_date ?? null
+
+          const emailBody = await generateStatusEmail({
+            description: row.description,
+            newStatus: status,
+            statusLabel: STATUS_LABELS[status] ?? status,
+            confirmedTargetDate: targetDate,
+            tone,
+            signoff,
+          })
+
+          await sendStatusChangeEmail(row.member_email!, {
+            description: row.description,
+            statusLabel: STATUS_LABELS[status] ?? status,
+            emailBody,
+          })
+        } catch (e) {
+          console.error('[triage PATCH] Failed to send status change email:', e)
+        }
+      })()
+    }
   }
 
   if (category) {

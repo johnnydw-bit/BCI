@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { CATEGORIES, IMPACT_OPTIONS } from '@/lib/categories'
 import BramleyHeader from '@/components/BramleyHeader'
@@ -14,12 +14,38 @@ export default function SubmitPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>('form')
 
+  const [sessionWarning, setSessionWarning] = useState(false)
+
   // Redirect directors to triage, unauthenticated users to login
   useEffect(() => {
     fetch('/api/session').then((r) => r.json()).then((s) => {
       if (!s.authenticated) router.replace('/')
       if (s.type === 'director') router.replace('/triage')
     })
+  }, [router])
+
+  // Session timeout — 110 min warning, 120 min auto-logout
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const logoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    function reset() {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      if (logoutRef.current) clearTimeout(logoutRef.current)
+      setSessionWarning(false)
+      timerRef.current   = setTimeout(() => setSessionWarning(true), 110 * 60 * 1000)
+      logoutRef.current  = setTimeout(async () => {
+        await fetch('/api/auth/logout', { method: 'POST' })
+        router.push('/?timeout=1')
+      }, 120 * 60 * 1000)
+    }
+    reset()
+    const events = ['mousemove', 'keydown', 'click', 'scroll'] as const
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }))
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      if (logoutRef.current) clearTimeout(logoutRef.current)
+      events.forEach((e) => window.removeEventListener(e, reset))
+    }
   }, [router])
   const [description, setDescription] = useState('')
   const [benefit, setBenefit] = useState('')
@@ -103,6 +129,11 @@ export default function SubmitPage() {
   return (
     <div className="bramley-wide-page"><div className="bramley-card">
       <BramleyHeader subtitle="Continuous Improvement Programme" />
+      {sessionWarning && (
+        <div className="mx-4 mt-4 bg-amber-50 border border-amber-300 rounded-[8px] px-4 py-3 text-sm text-amber-800">
+          ⚠️ Your session will expire in 10 minutes due to inactivity.
+        </div>
+      )}
       <div className="bramley-body">
         <form onSubmit={handleSubmit} className="space-y-5">
 

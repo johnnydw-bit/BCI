@@ -42,12 +42,21 @@ const CONFIG_GROUPS = [
   },
 ]
 
+interface DashboardData {
+  byStatus: Array<{ status: string; count: number }>
+  byCategory: Array<{ category: string; count: number; avg_score: number | null }>
+  scoreDist: Array<{ band: string; count: number }>
+  quickWins: number
+  totalScored: number
+  avgScore: number | null
+}
+
 interface ConfigRow { key: string; value: string; label: string }
-interface Director { id: number; role: string; name: string; email: string; active: boolean; email_reports: boolean; pin?: string }
+interface Director { id: number; role: string; name: string; email: string; active: boolean; email_reports: boolean }
 
 export default function AdminPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<'config' | 'directors' | 'setup'>('config')
+  const [tab, setTab] = useState<'config' | 'comms' | 'directors' | 'dashboard' | 'setup'>('config')
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -59,14 +68,16 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [newDir, setNewDir] = useState({ pin: '', role: ROLES[0], name: '', email: '' })
+  const [newDir, setNewDir] = useState({ role: ROLES[0], name: '', email: '' })
   const [addingDir, setAddingDir] = useState(false)
   const [dirError, setDirError] = useState('')
+  const [newlyGeneratedPin, setNewlyGeneratedPin] = useState<{ name: string; pin: string } | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', email: '', role: '', pin: '' })
+  const [editForm, setEditForm] = useState({ name: '', email: '', role: '' })
   const [editError, setEditError] = useState('')
-  const [showNewPin, setShowNewPin] = useState(false)
-  const [showEditPin, setShowEditPin] = useState(false)
+  const [resetPinResult, setResetPinResult] = useState<{ name: string; pin: string } | null>(null)
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null)
+  const [dashLoading, setDashLoading] = useState(false)
   const [initStatus, setInitStatus] = useState('')
   const [triageStatus, setTriageStatus] = useState('')
   const [runningTriage, setRunningTriage] = useState(false)
@@ -119,9 +130,8 @@ export default function AdminPage() {
 
   async function addDirector() {
     setDirError('')
-    const missing = ['name', 'email', 'role', 'pin'].filter((f) => !newDir[f as keyof typeof newDir])
-    if (missing.length > 0) {
-      setDirError(`Missing: ${missing.join(', ')}`)
+    if (!newDir.name || !newDir.email || !newDir.role) {
+      setDirError('Name, email and role are required')
       return
     }
     setAddingDir(true)
@@ -130,12 +140,13 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newDir),
     })
+    const json = await res.json().catch(() => ({}))
     if (res.ok) {
       const updated = await fetch('/api/admin/directors').then((r) => r.json())
       setDirectors(updated.directors)
-      setNewDir({ pin: '', role: ROLES[0], name: '', email: '' })
+      setNewlyGeneratedPin({ name: newDir.name, pin: json.pin })
+      setNewDir({ role: ROLES[0], name: '', email: '' })
     } else {
-      const json = await res.json().catch(() => ({}))
       setDirError(json.error ?? 'Failed to add director')
     }
     setAddingDir(false)
@@ -161,24 +172,36 @@ export default function AdminPage() {
 
   function startEdit(d: Director) {
     setEditingId(d.id)
-    setEditForm({ name: d.name, email: d.email, role: d.role, pin: d.pin ?? '' })
+    setEditForm({ name: d.name, email: d.email, role: d.role })
     setEditError('')
+    setResetPinResult(null)
   }
 
-  async function saveEdit(id: number) {
+  async function saveEdit(id: number, resetPin = false) {
     setEditError('')
     const res = await fetch('/api/admin/directors', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, ...editForm }),
+      body: JSON.stringify({ id, ...editForm, resetPin }),
     })
+    const data = await res.json().catch(() => ({}))
     if (res.ok) {
-      setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, name: editForm.name, email: editForm.email, role: editForm.role, pin: editForm.pin || d.pin } : d))
-      setEditingId(null)
+      setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, name: editForm.name, email: editForm.email, role: editForm.role } : d))
+      if (resetPin && data.newPin) {
+        setResetPinResult({ name: editForm.name, pin: data.newPin })
+      } else {
+        setEditingId(null)
+      }
     } else {
-      const data = await res.json().catch(() => ({}))
       setEditError(data.error ?? 'Failed to save changes')
     }
+  }
+
+  async function loadDashboard() {
+    setDashLoading(true)
+    const res = await fetch('/api/admin/dashboard').then((r) => r.json()).catch(() => null)
+    if (res) setDashboard(res)
+    setDashLoading(false)
   }
 
   async function deleteDirector(id: number) {
@@ -325,15 +348,21 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="bramley-body pb-0">
-          <div className="flex gap-2">
-            {(['config', 'directors', 'setup'] as const).map((t) => (
+          <div className="flex gap-2 flex-wrap">
+            {([
+              ['config', 'Scoring Config'],
+              ['comms', 'Communications'],
+              ['directors', 'Directors'],
+              ['dashboard', 'Dashboard'],
+              ['setup', 'Setup'],
+            ] as const).map(([t, label]) => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
-                className={`px-4 py-2 rounded-t-[8px] text-sm font-semibold transition-all capitalize ${tab === t ? 'text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                onClick={() => { setTab(t); if (t === 'dashboard' && !dashboard) loadDashboard() }}
+                className={`px-4 py-2 rounded-t-[8px] text-sm font-semibold transition-all ${tab === t ? 'text-white' : 'text-gray-500 hover:text-gray-700'}`}
                 style={tab === t ? { background: 'var(--bramley-navy)' } : {}}
               >
-                {t === 'config' ? 'Scoring Config' : t === 'directors' ? 'Directors' : 'Setup'}
+                {label}
               </button>
             ))}
           </div>
@@ -382,13 +411,35 @@ export default function AdminPage() {
       {tab === 'directors' && (
         <div className="bramley-card">
           <div className="bramley-body space-y-4">
+            {/* PIN reveal alerts */}
+            {newlyGeneratedPin && (
+              <div className="bg-amber-50 border border-amber-300 rounded-[8px] p-4">
+                <p className="text-sm font-semibold text-amber-800 mb-1">✓ Director added — note their PIN</p>
+                <p className="text-sm text-amber-700">
+                  <strong>{newlyGeneratedPin.name}</strong> has been added. Their login PIN is: <strong className="font-mono text-lg tracking-widest">{newlyGeneratedPin.pin}</strong>
+                </p>
+                <p className="text-xs text-amber-600 mt-1">Share this PIN securely. It will not be shown again.</p>
+                <button onClick={() => setNewlyGeneratedPin(null)} className="text-xs text-amber-600 underline mt-2">Dismiss</button>
+              </div>
+            )}
+            {resetPinResult && (
+              <div className="bg-amber-50 border border-amber-300 rounded-[8px] p-4">
+                <p className="text-sm font-semibold text-amber-800 mb-1">✓ PIN reset — note the new PIN</p>
+                <p className="text-sm text-amber-700">
+                  <strong>{resetPinResult.name}</strong>'s new PIN is: <strong className="font-mono text-lg tracking-widest">{resetPinResult.pin}</strong>
+                </p>
+                <p className="text-xs text-amber-600 mt-1">Share this PIN securely. It will not be shown again.</p>
+                <button onClick={() => { setResetPinResult(null); setEditingId(null) }} className="text-xs text-amber-600 underline mt-2">Dismiss</button>
+              </div>
+            )}
+
             {directors.map((d) => (
               <div key={d.id} className="border border-gray-200 rounded-[10px] overflow-hidden">
                 {/* Summary row */}
-                <div className="flex items-center gap-3 p-3">
+                <div className="flex items-center gap-3 p-3 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800">{d.name}</p>
-                    <p className="text-xs text-gray-500">{d.role} · {d.email} · PIN: {d.pin ?? '—'}</p>
+                    <p className="text-xs text-gray-500">{d.role} · {d.email}</p>
                   </div>
                   <button
                     onClick={() => toggleDirector(d.id, !d.active)}
@@ -420,12 +471,17 @@ export default function AdminPage() {
                     <select className="bramley-input text-sm py-2" value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}>
                       {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                     </select>
-                    <div className="relative">
-                      <input className="bramley-input text-sm py-2 pr-12" placeholder="PIN" type={showEditPin ? 'text' : 'password'} value={editForm.pin} onChange={(e) => setEditForm({ ...editForm, pin: e.target.value })} />
-                      <button type="button" onClick={() => setShowEditPin(!showEditPin)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm hover:text-gray-600" tabIndex={-1}>{showEditPin ? 'Hide' : 'Show'}</button>
-                    </div>
                     {editError && <p className="bramley-error">{editError}</p>}
-                    <button onClick={() => saveEdit(d.id)} className="bramley-btn py-2 text-sm">Save changes</button>
+                    <div className="flex gap-2">
+                      <button onClick={() => saveEdit(d.id, false)} className="bramley-btn py-2 text-sm">Save changes</button>
+                      <button
+                        onClick={() => { if (confirm(`Reset PIN for ${d.name}? A new PIN will be generated.`)) saveEdit(d.id, true) }}
+                        className="bramley-btn py-2 text-sm"
+                        style={{ background: '#7d3c98' }}
+                      >
+                        🔑 Reset PIN
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -433,20 +489,158 @@ export default function AdminPage() {
 
             <div className="border-t border-gray-100 pt-4 space-y-3">
               <h3 className="font-semibold text-gray-800 text-sm">Add director / committee member</h3>
+              <p className="text-xs text-gray-500">A secure 6-digit PIN will be automatically generated and shown once after adding.</p>
               <input className="bramley-input" placeholder="Full name" value={newDir.name} onChange={(e) => setNewDir({ ...newDir, name: e.target.value })} />
               <input className="bramley-input" placeholder="Email address" type="email" value={newDir.email} onChange={(e) => setNewDir({ ...newDir, email: e.target.value })} />
               <select className="bramley-input" value={newDir.role} onChange={(e) => setNewDir({ ...newDir, role: e.target.value })}>
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
-              <div className="relative">
-                <input className="bramley-input pr-12" placeholder="Set their PIN" type={showNewPin ? 'text' : 'password'} value={newDir.pin} onChange={(e) => setNewDir({ ...newDir, pin: e.target.value })} />
-                <button type="button" onClick={() => setShowNewPin(!showNewPin)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm hover:text-gray-600" tabIndex={-1}>{showNewPin ? 'Hide' : 'Show'}</button>
-              </div>
               {dirError && <p className="bramley-error">{dirError}</p>}
               <button onClick={addDirector} className="bramley-btn" disabled={addingDir}>
                 {addingDir ? <span className="spinner" /> : 'Add director'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Communications tab */}
+      {tab === 'comms' && (
+        <div className="bramley-card">
+          <div className="bramley-body space-y-6">
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-1">Member communication tone</h3>
+              <p className="text-xs text-gray-500 mb-3">Controls the tone of AI-generated emails sent to members when their improvement status changes.</p>
+              <div className="flex items-center gap-3">
+                <label className="text-sm text-gray-600 flex-1">Communication tone</label>
+                <select
+                  className="bramley-input w-40 py-1.5 text-sm"
+                  value={configValue('COMMS_TONE')}
+                  onChange={(e) => handleEdit('COMMS_TONE', e.target.value)}
+                >
+                  <option value="friendly">Friendly</option>
+                  <option value="formal">Formal</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-3 mt-2">
+                <label className="text-sm text-gray-600 flex-1">Email sign-off</label>
+                <input
+                  type="text"
+                  className="bramley-input w-72 py-1.5 text-sm"
+                  value={configValue('COMMS_SIGNOFF')}
+                  onChange={(e) => handleEdit('COMMS_SIGNOFF', e.target.value)}
+                  placeholder="e.g. The Committee, Bramley Golf Club"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button onClick={saveConfig} className="bramley-btn" disabled={saving || Object.keys(edits).length === 0}>
+                {saving ? <span className="spinner" /> : 'Save changes'}
+              </button>
+              {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dashboard tab */}
+      {tab === 'dashboard' && (
+        <div className="bramley-card">
+          <div className="bramley-body space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-800">Programme dashboard</h3>
+              <button onClick={loadDashboard} className="bramley-btn py-1.5 text-sm" disabled={dashLoading}>
+                {dashLoading ? <span className="spinner" /> : '↺ Refresh'}
+              </button>
+            </div>
+
+            {dashLoading && !dashboard && (
+              <div className="flex justify-center py-8"><span className="spinner" style={{ borderColor: 'var(--bramley-navy)', borderTopColor: 'transparent' }} /></div>
+            )}
+
+            {dashboard && (
+              <>
+                {/* Summary stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Total scored', value: dashboard.totalScored },
+                    { label: 'Average score', value: dashboard.avgScore != null ? dashboard.avgScore.toFixed(1) : '—' },
+                    { label: 'Quick wins', value: dashboard.quickWins },
+                    { label: 'In plan / approved', value: (dashboard.byStatus.find((s) => s.status === 'in_plan')?.count ?? 0) + (dashboard.byStatus.find((s) => s.status === 'approved')?.count ?? 0) },
+                  ].map((stat) => (
+                    <div key={stat.label} className="bg-gray-50 rounded-[8px] p-4 text-center">
+                      <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+                      <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* By status */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Submissions by status</h4>
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-1.5 text-xs text-gray-500 font-semibold">Status</th>
+                        <th className="text-right py-1.5 text-xs text-gray-500 font-semibold w-20">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dashboard.byStatus.map((row) => (
+                        <tr key={row.status} className="border-b border-gray-100">
+                          <td className="py-1.5 text-gray-700 capitalize">{row.status.replace(/_/g, ' ')}</td>
+                          <td className="py-1.5 text-right text-gray-800 font-medium">{row.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* By category */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Submissions by category</h4>
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-1.5 text-xs text-gray-500 font-semibold">Category</th>
+                        <th className="text-right py-1.5 text-xs text-gray-500 font-semibold w-20">Count</th>
+                        <th className="text-right py-1.5 text-xs text-gray-500 font-semibold w-24">Avg score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dashboard.byCategory.map((row) => (
+                        <tr key={row.category} className="border-b border-gray-100">
+                          <td className="py-1.5 text-gray-700 capitalize">{row.category.replace(/_/g, ' ')}</td>
+                          <td className="py-1.5 text-right text-gray-800 font-medium">{row.count}</td>
+                          <td className="py-1.5 text-right text-gray-600">{row.avg_score != null ? Number(row.avg_score).toFixed(1) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Score distribution */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Score band distribution</h4>
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-1.5 text-xs text-gray-500 font-semibold">Band</th>
+                        <th className="text-right py-1.5 text-xs text-gray-500 font-semibold w-20">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dashboard.scoreDist.map((row) => (
+                        <tr key={row.band} className="border-b border-gray-100">
+                          <td className="py-1.5 text-gray-700 capitalize">{row.band.replace(/_/g, ' ')}</td>
+                          <td className="py-1.5 text-right text-gray-800 font-medium">{row.count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

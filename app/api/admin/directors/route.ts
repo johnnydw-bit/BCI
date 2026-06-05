@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
-import { createHash } from 'crypto'
+import { createHash, randomInt } from 'crypto'
 import { isManager } from '@/lib/categories'
 
 async function requireManager() {
@@ -13,32 +13,41 @@ async function requireManager() {
   return session
 }
 
+function generatePin(): string {
+  // 6-digit numeric PIN
+  return String(randomInt(100000, 999999))
+}
+
 export async function GET() {
   if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const rows = await sql`SELECT id, role, name, email, active, email_reports, pin FROM director_roles ORDER BY name`
+  // Never return pin_hash; return a placeholder so frontend knows PIN is set
+  const rows = await sql`SELECT id, role, name, email, active, email_reports FROM director_roles ORDER BY name`
   return NextResponse.json({ directors: rows })
 }
 
 export async function POST(req: NextRequest) {
   if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const { pin, role, name, email } = await req.json()
-  if (!pin || !role || !name || !email) {
-    return NextResponse.json({ error: 'All fields required' }, { status: 400 })
+  const { role, name, email } = await req.json()
+  if (!role || !name || !email) {
+    return NextResponse.json({ error: 'Role, name and email are required' }, { status: 400 })
   }
-  const pinHash = createHash('sha256').update(pin.trim()).digest('hex')
+  // Generate a random PIN for new directors
+  const pin = generatePin()
+  const pinHash = createHash('sha256').update(pin).digest('hex')
   try {
     await sql`
-      INSERT INTO director_roles (pin_hash, pin, role, name, email)
-      VALUES (${pinHash}, ${pin.trim()}, ${role}, ${name}, ${email})
+      INSERT INTO director_roles (pin_hash, role, name, email)
+      VALUES (${pinHash}, ${role}, ${name}, ${email})
     `
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     if (msg.includes('unique') || msg.includes('duplicate')) {
-      return NextResponse.json({ error: 'That PIN is already in use by another director. Each director must have a unique PIN.' }, { status: 409 })
+      return NextResponse.json({ error: 'A conflict occurred. Please try again.' }, { status: 409 })
     }
     throw e
   }
-  return NextResponse.json({ ok: true })
+  // Return the plain PIN once so admin can communicate it to the director
+  return NextResponse.json({ ok: true, pin })
 }
 
 export async function PATCH(req: NextRequest) {
@@ -51,20 +60,23 @@ export async function PATCH(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const { id, name, email, role, pin } = await req.json()
+  const { id, name, email, role, resetPin } = await req.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
   await sql`UPDATE director_roles SET name = ${name}, email = ${email}, role = ${role} WHERE id = ${id}`
-  if (pin) {
-    const pinHash = createHash('sha256').update(pin.trim()).digest('hex')
+  if (resetPin) {
+    const pin = generatePin()
+    const pinHash = createHash('sha256').update(pin).digest('hex')
     try {
-      await sql`UPDATE director_roles SET pin_hash = ${pinHash}, pin = ${pin.trim()} WHERE id = ${id}`
+      await sql`UPDATE director_roles SET pin_hash = ${pinHash} WHERE id = ${id}`
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       if (msg.includes('unique') || msg.includes('duplicate')) {
-        return NextResponse.json({ error: 'That PIN is already in use by another director. Each director must have a unique PIN.' }, { status: 409 })
+        return NextResponse.json({ error: 'A PIN conflict occurred. Please try again.' }, { status: 409 })
       }
       throw e
     }
+    // Return new PIN so admin can communicate it
+    return NextResponse.json({ ok: true, newPin: pin })
   }
   return NextResponse.json({ ok: true })
 }

@@ -206,6 +206,36 @@ export async function initDb() {
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS score_override NUMERIC(4,2)`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS score_override_reason TEXT`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS score_override_by TEXT`
+
+  // Committee-confirmed target date (separate from AI's suggested_target_date)
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS confirmed_target_date DATE`
+
+  // Withdrawn status support
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS withdrawn_at TIMESTAMPTZ`
+
+  // Login rate limiting
+  await sql`
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      id           SERIAL PRIMARY KEY,
+      ip           TEXT NOT NULL,
+      identifier   TEXT NOT NULL,
+      attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+  await sql`CREATE INDEX IF NOT EXISTS login_attempts_lookup ON login_attempts (ip, identifier, attempted_at)`
+
+  // Communication tone config
+  const commsDefaults: [string, string, string][] = [
+    ['COMMS_TONE',    'friendly', 'Member communication tone: friendly | formal'],
+    ['COMMS_SIGNOFF', 'The Improvement Committee, Bramley Golf Club', 'Email sign-off name'],
+  ]
+  for (const [key, value, label] of commsDefaults) {
+    await sql`
+      INSERT INTO config (key, value, label) VALUES (${key}, ${value}, ${label})
+      ON CONFLICT (key) DO NOTHING
+    `
+  }
+
   for (const [key, _value, label] of defaults) {
     await sql`UPDATE config SET label = ${label} WHERE key = ${key} AND label IS NULL`
   }

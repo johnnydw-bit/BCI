@@ -4,6 +4,7 @@ import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { moderateSubmission } from '@/lib/ai'
 import { CATEGORIES } from '@/lib/categories'
+import { sendModerationRejectionEmail } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -53,6 +54,13 @@ export async function POST(req: NextRequest) {
           'rejected', ${moderation.reason ?? 'silent_reject'}
         )
       `
+    }
+    // Send rejection email to member if they have an email
+    if (session.memberEmail && !emailOptOut) {
+      void sendModerationRejectionEmail(session.memberEmail, {
+        description: description.trim(),
+        message: moderation.message,
+      }).catch((e) => console.error('[submit] Moderation rejection email failed:', e))
     }
     return NextResponse.json({ ok: false, rejected: true, message: moderation.message })
   }

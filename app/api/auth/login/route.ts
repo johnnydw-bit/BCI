@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { loginMember, signSession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { cookies } from 'next/headers'
+import { getClientIp, isRateLimited, recordFailedAttempt, lockoutMinutesRemaining } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
   const { memberId, pin, email } = await req.json()
@@ -10,11 +11,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Member ID, PIN and email address are required' }, { status: 400 })
   }
 
+  const ip = getClientIp(req)
+  const identifier = `member:${memberId.trim().toLowerCase()}`
+
+  // Rate limit check
+  if (await isRateLimited(ip, identifier)) {
+    const mins = await lockoutMinutesRemaining(ip, identifier)
+    return NextResponse.json(
+      { error: `Too many failed attempts. Please try again in ${mins} minute${mins === 1 ? '' : 's'}.` },
+      { status: 429 }
+    )
+  }
+
   const emailNorm = email.trim().toLowerCase()
 
   // Validate against Bramley website
   const result = await loginMember(memberId.trim(), pin.trim())
   if (!result.success) {
+    await recordFailedAttempt(ip, identifier)
     return NextResponse.json({ error: result.error }, { status: 401 })
   }
 
@@ -26,6 +40,7 @@ export async function POST(req: NextRequest) {
   if (existing.length > 0) {
     const storedEmail = (existing[0] as { email: string }).email
     if (storedEmail !== emailNorm) {
+      await recordFailedAttempt(ip, identifier)
       return NextResponse.json({ error: 'Email address does not match our records for this member' }, { status: 401 })
     }
   } else {

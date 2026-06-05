@@ -1,6 +1,6 @@
 import { sql } from '@/lib/db'
 import { scoreBatch, ScoringResult, ScoringWeights, DEFAULT_WEIGHTS } from '@/lib/ai'
-import { sendHAndSAlert, sendTriageReport, sendSubmitterUpdate } from '@/lib/email'
+import { sendHAndSAlert, sendTriageReport, sendSubmitterUpdate, sendHighScoreAlert } from '@/lib/email'
 import { CATEGORIES, DIRECTOR_CATEGORIES, STATUS_LABELS } from '@/lib/categories'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bramley-bci.vercel.app'
@@ -221,6 +221,32 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
           await sendHAndSAlert({ id: sub.id, description: sub.description, category: sub.category, aiSummary: r.aiSummary })
         } catch (e) {
           console.error(`H&S alert email failed for submission ${r.submissionId}:`, e)
+        }
+      }
+    }
+
+    // High-score alert: score >= 9 — notify the relevant director immediately
+    if (finalScore >= 9 && r.suggestedOwner) {
+      const sub = unscored.find((s) => s.id === r.submissionId)
+      if (sub) {
+        try {
+          // Find directors whose role matches suggestedOwner and have email_reports=true
+          const alertDirs = await sql`
+            SELECT email FROM director_roles
+            WHERE role = ${r.suggestedOwner} AND active = TRUE AND email_reports = TRUE
+          `
+          for (const dir of alertDirs as Array<{ email: string }>) {
+            await sendHighScoreAlert(dir.email, {
+              id: sub.id,
+              description: sub.description,
+              category: sub.category,
+              score: finalScore,
+              aiSummary: r.aiSummary,
+              suggestedOwner: r.suggestedOwner,
+            })
+          }
+        } catch (e) {
+          console.error(`High-score alert email failed for submission ${r.submissionId}:`, e)
         }
       }
     }

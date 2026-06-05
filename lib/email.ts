@@ -173,6 +173,141 @@ export async function sendBackupEmail(to: string, filename: string, csvContent: 
   })
 }
 
+/** Email sent to a member when their submission status changes (AI-generated body). */
+export async function sendStatusChangeEmail(to: string, opts: {
+  description: string
+  statusLabel: string
+  emailBody: string
+}) {
+  await send({
+    from: FROM,
+    to,
+    subject: `Update on your Bramley GC improvement idea`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:0 0 20px">
+            <p style="margin:0 0 6px;font-size:12px;color:#888;font-family:sans-serif;text-transform:uppercase;letter-spacing:0.05em">Your idea</p>
+            <p style="margin:0;color:#333;font-family:sans-serif">${opts.description}</p>
+          </div>
+          <div style="white-space:pre-line;color:#333;line-height:1.7;font-family:sans-serif">${opts.emailBody.replace(/\n/g, '<br>')}</div>
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
+          ${emailButton(`${APP_URL}/my-improvements`, 'View my improvements →')}
+          <p style="color:#aaa;font-size:12px;margin-top:8px;font-family:sans-serif">You can track all your improvement ideas at any time by signing in to the programme.</p>
+        </div>
+      </div>
+    `,
+  })
+}
+
+/** Email sent to a member when their submission is moderation-rejected. */
+export async function sendModerationRejectionEmail(to: string, opts: {
+  description: string
+  message: string
+}) {
+  await send({
+    from: FROM,
+    to,
+    subject: `Your Bramley GC improvement submission`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:0 0 20px">
+            <p style="margin:0 0 6px;font-size:12px;color:#888;font-family:sans-serif;text-transform:uppercase;letter-spacing:0.05em">Your submission</p>
+            <p style="margin:0;color:#333;font-family:sans-serif">${opts.description}</p>
+          </div>
+          <p style="color:#333;line-height:1.7;font-family:sans-serif">${opts.message}</p>
+          ${emailButton(`${APP_URL}/submit`, 'Submit a new improvement →')}
+        </div>
+      </div>
+    `,
+  })
+}
+
+/** Notification to a director when a high-scoring (≥9) submission is found during triage. */
+export async function sendHighScoreAlert(to: string, submission: {
+  id: number
+  description: string
+  category: string
+  score: number
+  aiSummary: string
+  suggestedOwner: string
+}) {
+  await send({
+    from: FROM,
+    to,
+    subject: `🌟 High-priority improvement flagged — score ${submission.score.toFixed(1)}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#0d5d3d', '🌟 High-Priority Improvement', `Score: ${submission.score.toFixed(1)} / 10`)}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">A member improvement idea has scored <strong>${submission.score.toFixed(1)}/10</strong> during this week's triage — above the high-priority threshold. Your attention is recommended.</p>
+          <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:16px 0;border-collapse:collapse">
+            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Category</td><td style="font-family:sans-serif">${submission.category}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Summary</td><td style="font-family:sans-serif">${submission.aiSummary}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Idea</td><td style="font-family:sans-serif">${submission.description}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Suggested owner</td><td style="font-family:sans-serif">${submission.suggestedOwner}</td></tr>
+          </table>
+          ${emailButton(`${APP_URL}/triage`, 'View in Triage Report →')}
+        </div>
+      </div>
+    `,
+  })
+}
+
+/** Confirmation email to a member who withdraws a submission. */
+export async function sendWithdrawalConfirmationEmail(to: string, description: string) {
+  await send({
+    from: FROM,
+    to,
+    subject: `Your improvement idea has been withdrawn`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">We've received your withdrawal request and the following improvement idea has been removed from the programme.</p>
+          <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:16px 0">
+            <p style="margin:0;color:#333;font-family:sans-serif">${description}</p>
+          </div>
+          <p style="color:#555;font-size:14px;font-family:sans-serif">If this was a mistake or you'd like to resubmit, please feel free to use the programme again.</p>
+          ${emailButton(`${APP_URL}/submit`, 'Submit a new improvement →')}
+        </div>
+      </div>
+    `,
+  })
+}
+
+/** Notification to relevant director when a member withdraws a scored submission. */
+export async function sendWithdrawalDirectorNotification(to: string, opts: {
+  memberName: string
+  description: string
+  category: string
+  score: number | null
+}) {
+  await send({
+    from: FROM,
+    to,
+    subject: `Member withdrawal: improvement idea removed from programme`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#888888', 'Bramley Golf Club — Withdrawal Notification', 'Member improvement withdrawn')}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">A member has withdrawn an improvement idea. If this was under active consideration, you may wish to review your queue.</p>
+          <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:16px 0;border-collapse:collapse">
+            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Member</td><td style="font-family:sans-serif">${opts.memberName}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Category</td><td style="font-family:sans-serif">${opts.category}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Score</td><td style="font-family:sans-serif">${opts.score !== null ? opts.score.toFixed(1) : 'Not yet scored'}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Idea</td><td style="font-family:sans-serif">${opts.description}</td></tr>
+          </table>
+          ${emailButton(`${APP_URL}/triage`, 'View Triage Report →')}
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendTriageReport(to: string[], periodStart: Date, periodEnd: Date, nextRunAt: Date, htmlReport: string) {
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 

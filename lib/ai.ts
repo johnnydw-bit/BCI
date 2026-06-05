@@ -139,6 +139,40 @@ export const DEFAULT_WEIGHTS: ScoringWeights = {
   bandPriority: 8.0, bandActive: 6.0, bandHolding: 4.0, bandLow: 2.0,
 }
 
+/**
+ * Generate a personalised status-change email body for a member.
+ * The director's internal note is NOT passed here — it is internal only.
+ */
+export async function generateStatusEmail(opts: {
+  description: string
+  newStatus: string
+  statusLabel: string
+  confirmedTargetDate: string | null
+  tone: 'friendly' | 'formal'
+  signoff: string
+}): Promise<string> {
+  const { description, statusLabel, confirmedTargetDate, tone, signoff } = opts
+  const dateNote = confirmedTargetDate
+    ? `The committee's target date for this is ${new Date(confirmedTargetDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.`
+    : ''
+
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 400,
+    system: `You write short, ${tone} member emails for Bramley Golf Club's Continuous Improvement Programme.
+Tone: ${tone === 'friendly' ? 'warm, appreciative, concise — like a friendly club secretary' : 'professional, courteous, formal — like an official club communication'}.
+Keep to 2-3 sentences. Never mention scoring, internal processes, or staff names. Never include a subject line. Do not start with "Dear Member" — just write the body paragraph(s).
+Sign off as: ${signoff}`,
+    messages: [{
+      role: 'user',
+      content: `Write the email body to send to the member whose improvement idea ("${description}") has moved to status: "${statusLabel}". ${dateNote}
+The tone is ${tone}. End with the sign-off "${signoff}". Output plain text only — no HTML, no markdown.`,
+    }],
+  })
+
+  return (response.content[0] as { text: string }).text.trim()
+}
+
 export async function scoreBatch(
   submissions: Array<{
     id: number

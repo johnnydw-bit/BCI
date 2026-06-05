@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -93,7 +93,6 @@ export default function TriagePage() {
   const router = useRouter()
   const [data, setData] = useState<TriageData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [updating, setUpdating] = useState<number | null>(null)
   const [tab, setTab] = useState<'triage' | 'tracking' | 'moderated'>('triage')
   const [tracked, setTracked] = useState<TrackedImprovement[]>([])
@@ -110,7 +109,7 @@ export default function TriagePage() {
       .finally(() => setLoading(false))
   }, [router])
 
-  // Session inactivity timeout — warn at 110 min, log out at 120 min
+  // Session inactivity timeout â€” warn at 110 min, log out at 120 min
   useEffect(() => {
     const WARN_MS = 110 * 60 * 1000
     const LOGOUT_MS = 120 * 60 * 1000
@@ -178,9 +177,6 @@ export default function TriagePage() {
   const [filterFlag, setFilterFlag] = useState<string>('all')
   const [filterOwner, setFilterOwner] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
-  const [viewMode, setViewMode] = useState<'card' | 'grid'>(() =>
-    (typeof window !== 'undefined' ? localStorage.getItem('triageViewMode') : null) as 'card' | 'grid' ?? 'card'
-  )
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
   const [auditLog, setAuditLog] = useState<Record<number, AuditEntry[]>>({})
   const [sessionWarning, setSessionWarning] = useState(false)
@@ -213,19 +209,6 @@ export default function TriagePage() {
       setRecognitionAlert(`${d.memberName} is eligible for recognition. Please follow up via the recognition workflow.`)
     }
     setCompleting(null)
-  }
-
-  function toggleExpand(id: number) {
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-        fetchAuditLog(id)
-      }
-      return next
-    })
   }
 
   const TARGET_DATE_STATUSES = new Set(['under_consideration', 'approved', 'in_plan'])
@@ -336,7 +319,7 @@ export default function TriagePage() {
       <div className="bramley-card">
         <div className="bramley-header flex justify-between items-center">
           <BramleyHeader
-            subtitle={`${data.directorName} — ${data.role}`}
+            subtitle={`${data.directorName} â€” ${data.role}`}
             right={
               <div className="flex gap-3 items-center">
                 {data.isManager && (
@@ -349,8 +332,8 @@ export default function TriagePage() {
         </div>
         <div className="bramley-body pb-0">
           <p className="text-sm text-gray-600 mb-3">
-            {triageItems.filter(s => s.status === 'new' || s.status === 'under_consideration').length} pending · {triageItems.length} total in this view
-            {urgent.length > 0 && <span className="ml-2 text-red-600 font-semibold">· {urgent.length} urgent H&amp;S</span>}
+            {triageItems.filter(s => s.status === 'new' || s.status === 'under_consideration').length} pending Â· {triageItems.length} total in this view
+            {urgent.length > 0 && <span className="ml-2 text-red-600 font-semibold">Â· {urgent.length} urgent H&amp;S</span>}
           </p>
           <div className="flex gap-2">
             {(['triage', 'tracking', 'moderated'] as const).map((t) => (
@@ -377,8 +360,8 @@ export default function TriagePage() {
       {sessionWarning && (
         <div className="bramley-card border-2 border-amber-400 bg-amber-50">
           <div className="bramley-body flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-amber-800">⏱ Your session will expire in 10 minutes due to inactivity. Move your mouse or press a key to stay signed in.</p>
-            <button onClick={() => setSessionWarning(false)} className="text-amber-500 hover:text-amber-700 shrink-0">✕</button>
+            <p className="text-sm font-semibold text-amber-800">â± Your session will expire in 10 minutes due to inactivity. Move your mouse or press a key to stay signed in.</p>
+            <button onClick={() => setSessionWarning(false)} className="text-amber-500 hover:text-amber-700 shrink-0">âœ•</button>
           </div>
         </div>
       )}
@@ -409,12 +392,12 @@ export default function TriagePage() {
             <label className="text-xs text-gray-500 shrink-0">Flag</label>
             <select className="bramley-input text-sm py-1.5 flex-1" value={filterFlag} onChange={(e) => setFilterFlag(e.target.value)}>
               <option value="all">All flags</option>
-              <option value="quick_win">⚡ Quick wins</option>
-              <option value="h_and_s">⚠️ Health &amp; Safety</option>
-              <option value="revenue">💰 Revenue opportunity</option>
-              <option value="recurring">🔁 Recurring theme</option>
-              <option value="in_plan">📋 In plan</option>
-              <option value="cost_threshold">£ Committee approval</option>
+              <option value="quick_win">âš¡ Quick wins</option>
+              <option value="h_and_s">âš ï¸ Health &amp; Safety</option>
+              <option value="revenue">ðŸ’° Revenue opportunity</option>
+              <option value="recurring">ðŸ” Recurring theme</option>
+              <option value="in_plan">ðŸ“‹ In plan</option>
+              <option value="cost_threshold">Â£ Committee approval</option>
             </select>
           </div>
           {ownerOptions.length > 0 && (
@@ -443,23 +426,6 @@ export default function TriagePage() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 shrink-0">View</label>
-            <div className="flex rounded-[8px] overflow-hidden border border-gray-200">
-              <button
-                onClick={() => { setViewMode('card'); localStorage.setItem('triageViewMode', 'card') }}
-                title="Expanded card view"
-                className={`px-3 py-1.5 text-sm transition-colors ${viewMode === 'card' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-                style={viewMode === 'card' ? { background: 'var(--bramley-navy)' } : {}}
-              >☰</button>
-              <button
-                onClick={() => { setViewMode('grid'); setSidePanelId(null); localStorage.setItem('triageViewMode', 'grid') }}
-                title="Spreadsheet view"
-                className={`px-3 py-1.5 text-sm transition-colors border-l border-gray-200 ${viewMode === 'grid' ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-                style={viewMode === 'grid' ? { background: 'var(--bramley-navy)' } : {}}
-              >⊞</button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -468,68 +434,16 @@ export default function TriagePage() {
         <div className="bramley-card border-2 border-amber-400 bg-amber-50">
           <div className="bramley-body flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-amber-800">🏆 Recognition required</p>
+              <p className="text-sm font-semibold text-amber-800">ðŸ† Recognition required</p>
               <p className="text-sm text-amber-700 mt-1">{recognitionAlert}</p>
             </div>
-            <button onClick={() => setRecognitionAlert(null)} className="text-amber-500 hover:text-amber-700 text-lg leading-none shrink-0">✕</button>
+            <button onClick={() => setRecognitionAlert(null)} className="text-amber-500 hover:text-amber-700 text-lg leading-none shrink-0">âœ•</button>
           </div>
         </div>
       )}
 
-      {/* ── Triage tab ─────────────────────────────────────────────── */}
-      {tab === 'triage' && viewMode === 'card' && (
-        <div className="bramley-card overflow-hidden">
-          {urgent.length > 0 && (
-            <div className="border-b-2 border-red-200">
-              <div className="px-4 py-2 bg-red-50 flex items-center gap-2">
-                <span className="text-sm font-bold text-red-600">⚠️ Urgent — Health &amp; Safety</span>
-                <span className="bramley-badge bg-red-600 text-xs">{urgent.length}</span>
-              </div>
-              <TriageTable
-                subs={urgent}
-                urgent
-                expanded={expanded}
-                onToggle={toggleExpand}
-                isManager={data.isManager}
-                onUpdate={updateField}
-                onDelete={deleteImprovement}
-                updating={updating}
-                deleting={deleting}
-                formatDate={formatDate}
-                auditLog={auditLog}
-              />
-            </div>
-          )}
-          {normal.length > 0 ? (
-            <>
-              {urgent.length > 0 && (
-                <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                  <span className="text-sm font-semibold text-gray-600">Improvements ({normal.length})</span>
-                </div>
-              )}
-              <TriageTable
-                subs={normal}
-                expanded={expanded}
-                onToggle={toggleExpand}
-                isManager={data.isManager}
-                onUpdate={updateField}
-                onDelete={deleteImprovement}
-                updating={updating}
-                deleting={deleting}
-                formatDate={formatDate}
-                auditLog={auditLog}
-              />
-            </>
-          ) : urgent.length === 0 ? (
-            <p className="text-center text-gray-500 py-12 text-sm">
-              {filterCategory !== 'all' ? 'No improvements in this area.' : 'No improvements to triage.'}
-            </p>
-          ) : null}
-        </div>
-      )}
-
-      {/* ── Spreadsheet view ───────────────────────────────────────── */}
-      {tab === 'triage' && viewMode === 'grid' && (
+      {/* â”€â”€ Triage tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {tab === 'triage' && (
         <div className="flex gap-4 items-start">
           <div className="bramley-card overflow-hidden flex-1 min-w-0">
             <SpreadsheetTable
@@ -564,7 +478,7 @@ export default function TriagePage() {
         </div>
       )}
 
-      {/* ── Tracking tab ───────────────────────────────────────────── */}
+      {/* â”€â”€ Tracking tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {tab === 'tracking' && (
         <div className="bramley-card">
           <div className="bramley-body">
@@ -581,7 +495,7 @@ export default function TriagePage() {
                           {STATUS_LABELS[t.status]}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === t.category)?.label} {t.score != null ? `· Score ${Number(t.score).toFixed(1)}` : ''}</p>
+                      <p className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === t.category)?.label} {t.score != null ? `Â· Score ${Number(t.score).toFixed(1)}` : ''}</p>
                       {t.recognition !== 'anonymous' && t.member_name && (
                         <p className="text-xs text-gray-400">Submitted by {t.member_name}</p>
                       )}
@@ -629,7 +543,7 @@ export default function TriagePage() {
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-gray-500 block mb-1">Actual cost (£)</label>
+                          <label className="text-xs text-gray-500 block mb-1">Actual cost (Â£)</label>
                           <input
                             type="number"
                             step="0.01"
@@ -644,7 +558,7 @@ export default function TriagePage() {
                           <textarea
                             className="bramley-input resize-none text-sm"
                             rows={2}
-                            placeholder="Progress notes, blockers, decisions…"
+                            placeholder="Progress notes, blockers, decisionsâ€¦"
                             value={trackingEdit[t.id]?.tracking_notes ?? t.tracking_notes ?? ''}
                             onChange={(e) => editTracking(t.id, 'tracking_notes', e.target.value)}
                           />
@@ -664,7 +578,7 @@ export default function TriagePage() {
                               className="bramley-btn py-2 text-sm"
                               style={{ background: '#1e8449' }}
                             >
-                              {completing === t.id ? <span className="spinner" /> : '✓ Mark as implemented'}
+                              {completing === t.id ? <span className="spinner" /> : 'âœ“ Mark as implemented'}
                             </button>
                           </div>
                         )}
@@ -678,7 +592,7 @@ export default function TriagePage() {
         </div>
       )}
 
-      {/* ── Moderated tab ──────────────────────────────────────────── */}
+      {/* â”€â”€ Moderated tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {tab === 'moderated' && data.isManager && (
         <div className="bramley-card">
           <div className="bramley-body">
@@ -709,7 +623,7 @@ export default function TriagePage() {
   )
 }
 
-// ── Spreadsheet table ───────────────────────────────────────────────────────
+// â”€â”€ Spreadsheet table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SpreadsheetTable({
   subs, isManager, onUpdate, selectedId, onSelect, formatDate,
@@ -755,7 +669,7 @@ function SpreadsheetTable({
                     <span className="bramley-badge text-xs" style={{ background: scoreBandColor(s.score_band) }}>
                       {Number(s.score).toFixed(1)}
                     </span>
-                  ) : <span className="text-gray-300">—</span>}
+                  ) : <span className="text-gray-300">â€”</span>}
                 </td>
 
                 {/* Summary */}
@@ -776,34 +690,34 @@ function SpreadsheetTable({
                       value={s.suggested_owner ?? ''}
                       onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
                     >
-                      <option value="">— Unassigned —</option>
+                      <option value="">â€” Unassigned â€”</option>
                       {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
-                    <span className="text-gray-600">{s.suggested_owner ?? <span className="text-gray-300">—</span>}</span>
+                    <span className="text-gray-600">{s.suggested_owner ?? <span className="text-gray-300">â€”</span>}</span>
                   )}
                 </td>
 
                 {/* Cost */}
                 <td className="py-1.5 px-2 text-gray-600 hidden lg:table-cell whitespace-nowrap">
                   {s.cost_estimate_low != null && s.cost_estimate_high != null
-                    ? `£${Number(s.cost_estimate_low).toLocaleString()} – £${Number(s.cost_estimate_high).toLocaleString()}`
+                    ? `Â£${Number(s.cost_estimate_low).toLocaleString()} â€“ Â£${Number(s.cost_estimate_high).toLocaleString()}`
                     : s.cost_band
                       ? <span className="capitalize">{s.cost_band.replace('_', ' ')}</span>
-                      : <span className="text-gray-300">—</span>}
+                      : <span className="text-gray-300">â€”</span>}
                 </td>
 
                 {/* Impl */}
                 <td className="py-1.5 px-2 text-gray-600 hidden lg:table-cell whitespace-nowrap">
                   {s.impl_complexity
                     ? <span className={`capitalize ${s.quick_win_flag ? 'text-green-700 font-semibold' : ''}`}>{s.impl_complexity.replace('_', ' ')}</span>
-                    : <span className="text-gray-300">—</span>}
+                    : <span className="text-gray-300">â€”</span>}
                 </td>
 
                 {/* Date */}
                 <td className="py-1.5 px-2 hidden md:table-cell whitespace-nowrap">
                   {s.confirmed_target_date ? (
-                    <span className="text-green-700 font-semibold text-xs" title="Confirmed target date">🎯 {formatDate(s.confirmed_target_date)}</span>
+                    <span className="text-green-700 font-semibold text-xs" title="Confirmed target date">ðŸŽ¯ {formatDate(s.confirmed_target_date)}</span>
                   ) : s.suggested_target_date ? (
                     <span className="text-gray-400 text-xs" title="AI estimated target date">{formatDate(s.suggested_target_date)} <span className="text-gray-300">(est)</span></span>
                   ) : (
@@ -831,13 +745,13 @@ function SpreadsheetTable({
                 {/* Flags */}
                 <td className="py-1.5 px-2 text-center hidden sm:table-cell">
                   <div className="flex gap-0.5 justify-center flex-wrap">
-                    {s.h_and_s_flag && <span title="H&S" className="text-red-600">⚠</span>}
-                    {s.quick_win_flag && <span title="Quick win">⚡</span>}
-                    {s.revenue_opportunity && <span title="Revenue">💰</span>}
-                    {s.cost_threshold_flag && <span title="Committee approval" className="text-orange-600 font-bold text-xs">£</span>}
-                    {s.needs_external_approval && <span title="External approval">⚖</span>}
-                    {s.seasonal_window && <span title="Seasonal">📅</span>}
-                    {s.recurring_flag && <span title={`Recurring ×${s.recurring_run_count + 1}`}>🔁</span>}
+                    {s.h_and_s_flag && <span title="H&S" className="text-red-600">âš </span>}
+                    {s.quick_win_flag && <span title="Quick win">âš¡</span>}
+                    {s.revenue_opportunity && <span title="Revenue">ðŸ’°</span>}
+                    {s.cost_threshold_flag && <span title="Committee approval" className="text-orange-600 font-bold text-xs">Â£</span>}
+                    {s.needs_external_approval && <span title="External approval">âš–</span>}
+                    {s.seasonal_window && <span title="Seasonal">ðŸ“…</span>}
+                    {s.recurring_flag && <span title={`Recurring Ã—${s.recurring_run_count + 1}`}>ðŸ”</span>}
                     {s.cluster_theme && <span title={`Cluster: ${s.cluster_theme}`} className="text-blue-600 font-bold text-xs">C</span>}
                   </div>
                 </td>
@@ -877,7 +791,7 @@ function SpreadsheetDetailPanel({
             )}
             <span className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === s.category)?.label}</span>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none shrink-0">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none shrink-0">âœ•</button>
         </div>
 
         {/* Improvement text */}
@@ -894,38 +808,38 @@ function SpreadsheetDetailPanel({
 
         {/* Flags */}
         <div className="flex gap-1 flex-wrap">
-          {s.h_and_s_flag && <span className="bramley-badge text-xs bg-red-600">⚠ H&amp;S</span>}
-          {s.score_band === 'in_plan' && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>📋 In plan</span>}
-          {s.quick_win_flag && <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>}
-          {s.revenue_opportunity && <span className="bramley-badge text-xs" style={{ background: '#6c3483' }}>💰 Revenue</span>}
-          {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Committee</span>}
-          {s.needs_external_approval && <span className="bramley-badge text-xs" style={{ background: '#7d6608' }}>⚖ Approval</span>}
-          {s.suggested_owner && <span className="bramley-badge text-xs" style={{ background: '#117a65' }}>👤 {s.suggested_owner}</span>}
-          {s.seasonal_window && <span className="bramley-badge text-xs" style={{ background: '#1a5276' }}>📅 Seasonal</span>}
-          {s.recurring_flag && <span className="bramley-badge text-xs" style={{ background: '#922b21' }}>🔁 Recurring ×{s.recurring_run_count + 1}</span>}
+          {s.h_and_s_flag && <span className="bramley-badge text-xs bg-red-600">âš  H&amp;S</span>}
+          {s.score_band === 'in_plan' && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>ðŸ“‹ In plan</span>}
+          {s.quick_win_flag && <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>âš¡ Quick win</span>}
+          {s.revenue_opportunity && <span className="bramley-badge text-xs" style={{ background: '#6c3483' }}>ðŸ’° Revenue</span>}
+          {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>Â£ Committee</span>}
+          {s.needs_external_approval && <span className="bramley-badge text-xs" style={{ background: '#7d6608' }}>âš– Approval</span>}
+          {s.suggested_owner && <span className="bramley-badge text-xs" style={{ background: '#117a65' }}>ðŸ‘¤ {s.suggested_owner}</span>}
+          {s.seasonal_window && <span className="bramley-badge text-xs" style={{ background: '#1a5276' }}>ðŸ“… Seasonal</span>}
+          {s.recurring_flag && <span className="bramley-badge text-xs" style={{ background: '#922b21' }}>ðŸ” Recurring Ã—{s.recurring_run_count + 1}</span>}
           {s.cluster_theme && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>Cluster ({s.cluster_size})</span>}
         </div>
 
         {/* AI Assessment */}
         {(s.ai_narrative || s.cost_band || s.impl_complexity || s.strategic_note) && (
           <div className="rounded-[8px] border border-indigo-100 bg-indigo-50 p-3 space-y-2 text-xs">
-            <p className="font-bold text-indigo-700 uppercase tracking-wider">🤖 AI Assessment</p>
+            <p className="font-bold text-indigo-700 uppercase tracking-wider">ðŸ¤– AI Assessment</p>
             {s.ai_narrative && <p className="text-gray-700">{s.ai_narrative}</p>}
             {s.cost_estimate_low != null && s.cost_estimate_high != null && (
-              <p><span className="font-semibold text-gray-500">Cost:</span> £{Number(s.cost_estimate_low).toLocaleString()} – £{Number(s.cost_estimate_high).toLocaleString()}
+              <p><span className="font-semibold text-gray-500">Cost:</span> Â£{Number(s.cost_estimate_low).toLocaleString()} â€“ Â£{Number(s.cost_estimate_high).toLocaleString()}
                 {s.cost_confidence && <span className="text-gray-400"> ({s.cost_confidence})</span>}
               </p>
             )}
             {s.impl_complexity && (
               <p><span className="font-semibold text-gray-500">Implementation:</span> <span className="capitalize">{s.impl_complexity.replace('_', ' ')}</span>
-                {s.impl_weeks_low != null && s.impl_weeks_high != null && ` · ${s.impl_weeks_low}–${s.impl_weeks_high}w`}
+                {s.impl_weeks_low != null && s.impl_weeks_high != null && ` Â· ${s.impl_weeks_low}â€“${s.impl_weeks_high}w`}
               </p>
             )}
             {(s.confirmed_target_date || s.suggested_target_date) && (
               <p>
                 <span className="font-semibold text-gray-500">Target:</span>{' '}
                 {s.confirmed_target_date
-                  ? <><span className="text-green-700 font-semibold">{new Date(s.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span> <span className="text-green-600 text-xs">✓ confirmed</span></>
+                  ? <><span className="text-green-700 font-semibold">{new Date(s.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span> <span className="text-green-600 text-xs">âœ“ confirmed</span></>
                   : <span className="text-gray-500">{new Date(s.suggested_target_date!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} <span className="text-gray-400 text-xs">(AI estimate)</span></span>
                 }
               </p>
@@ -941,7 +855,7 @@ function SpreadsheetDetailPanel({
         {/* Committee Decision */}
         {isManager && (
           <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-2 text-xs">
-            <p className="font-bold text-amber-700 uppercase tracking-wider">📋 Committee Decision</p>
+            <p className="font-bold text-amber-700 uppercase tracking-wider">ðŸ“‹ Committee Decision</p>
             <div>
               <label className="text-gray-500 block mb-1">Status</label>
               <select
@@ -963,7 +877,7 @@ function SpreadsheetDetailPanel({
                 onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
                 disabled={updating}
               >
-                <option value="">— Unassigned —</option>
+                <option value="">â€” Unassigned â€”</option>
                 {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
@@ -984,7 +898,7 @@ function SpreadsheetDetailPanel({
               disabled={deleting}
               className="text-red-500 hover:text-red-700 text-xs font-semibold"
             >
-              {deleting ? 'Removing…' : '✕ Remove improvement'}
+              {deleting ? 'Removingâ€¦' : 'âœ• Remove improvement'}
             </button>
           </div>
         )}
@@ -1012,339 +926,7 @@ function SpreadsheetDetailPanel({
     </div>
   )
 }
-
-// ── Triage table ────────────────────────────────────────────────────────────
-
-function TriageTable({
-  subs, urgent, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, formatDate, auditLog,
-}: {
-  subs: Submission[]
-  urgent?: boolean
-  expanded: Set<number>
-  onToggle: (id: number) => void
-  isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override', value: string, extra?: Record<string, string>) => void
-  onDelete: (id: number) => void
-  updating: number | null
-  deleting: number | null
-  formatDate: (iso: string) => string
-  auditLog: Record<number, AuditEntry[]>
-}) {
-  return (
-    <table className="w-full border-collapse text-sm">
-      <thead>
-        <tr className="border-b border-gray-200 bg-gray-50">
-          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-14">Score</th>
-          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Improvement</th>
-          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-28 hidden lg:table-cell">Area</th>
-          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24 hidden md:table-cell">Date</th>
-          <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-40">Decision</th>
-          <th className="w-8"></th>
-        </tr>
-      </thead>
-      <tbody>
-        {subs.map((s) => (
-          <SubmissionTableRow
-            key={s.id}
-            s={s}
-            urgent={urgent}
-            expanded={expanded.has(s.id)}
-            onToggle={onToggle}
-            isManager={isManager}
-            onUpdate={onUpdate}
-            onDelete={onDelete}
-            updating={updating === s.id}
-            deleting={deleting === s.id}
-            formatDate={formatDate}
-            auditLog={auditLog[s.id] ?? []}
-          />
-        ))}
-      </tbody>
-    </table>
-  )
-}
-
-function SubmissionTableRow({
-  s, urgent, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, formatDate, auditLog,
-}: {
-  s: Submission
-  urgent?: boolean
-  expanded: boolean
-  onToggle: (id: number) => void
-  isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override', value: string, extra?: Record<string, string>) => void
-  onDelete: (id: number) => void
-  updating: boolean
-  deleting: boolean
-  formatDate: (iso: string) => string
-  auditLog: AuditEntry[]
-}) {
-  const categoryLabel = CATEGORIES.find(c => c.value === s.category)?.label ?? s.category
-
-  return (
-    <>
-      <tr
-        className={`border-b border-gray-100 cursor-pointer transition-colors
-          ${urgent ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}
-          ${expanded ? (urgent ? 'bg-red-100' : 'bg-gray-50') : ''}`}
-        onClick={() => onToggle(s.id)}
-      >
-        {/* Score */}
-        <td className="py-2.5 px-3 align-top">
-          {s.score != null ? (
-            <span className="bramley-badge text-xs" style={{ background: scoreBandColor(s.score_band) }}>
-              {Number(s.score).toFixed(1)}
-            </span>
-          ) : (
-            <span className="text-gray-300 text-xs">—</span>
-          )}
-        </td>
-
-        {/* Summary + flags */}
-        <td className="py-2.5 px-3 max-w-0 align-top">
-          <p className="font-medium text-gray-800 truncate">{s.ai_summary ?? s.description}</p>
-          <div className="flex gap-1 mt-0.5 flex-wrap">
-            {s.h_and_s_flag && <span className="bramley-badge text-xs bg-red-600">⚠ H&amp;S</span>}
-            {s.score_band === 'in_plan' && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>📋 In plan</span>}
-            {s.quick_win_flag && <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>}
-            {s.revenue_opportunity && <span className="bramley-badge text-xs" style={{ background: '#6c3483' }}>💰 Revenue</span>}
-            {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Committee</span>}
-            {s.needs_external_approval && <span className="bramley-badge text-xs" style={{ background: '#7d6608' }}>⚖ Approval</span>}
-            {s.suggested_owner && <span className="bramley-badge text-xs" style={{ background: '#117a65' }}>👤 {s.suggested_owner}</span>}
-            {s.seasonal_window && <span className="bramley-badge text-xs" style={{ background: '#1a5276' }}>📅 Seasonal</span>}
-            {s.recurring_flag && <span className="bramley-badge text-xs" style={{ background: '#922b21' }}>🔁 Recurring ×{s.recurring_run_count + 1}</span>}
-            {s.cluster_theme && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>Cluster ({s.cluster_size})</span>}
-          </div>
-        </td>
-
-        {/* Area */}
-        <td className="py-2.5 px-3 text-xs text-gray-500 hidden lg:table-cell align-top whitespace-nowrap">{categoryLabel}</td>
-
-        {/* Date */}
-        <td className="py-2.5 px-3 text-xs text-gray-400 hidden md:table-cell align-top whitespace-nowrap">
-          {s.confirmed_target_date ? (
-            <span className="text-green-700 font-semibold" title="Confirmed target date">🎯 {formatDate(s.confirmed_target_date)}</span>
-          ) : s.suggested_target_date ? (
-            <span className="text-gray-400" title="AI estimated target date">{formatDate(s.suggested_target_date)} <span className="text-gray-300">(est)</span></span>
-          ) : (
-            formatDate(s.created_at)
-          )}
-        </td>
-
-        {/* Status — stop click propagation so the dropdown doesn't toggle expand */}
-        <td className="py-2.5 px-3 align-top" onClick={(e) => e.stopPropagation()}>
-          {isManager ? (
-            <select
-              className="bramley-input text-xs py-1 px-2"
-              value={s.status}
-              onChange={(e) => onUpdate(s.id, 'status', e.target.value)}
-              disabled={updating}
-            >
-              {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                <option key={val} value={val}>{label}</option>
-              ))}
-            </select>
-          ) : (
-            <span className={`bramley-badge text-xs ${statusClass(s.status)}`}>{STATUS_LABELS[s.status] ?? s.status}</span>
-          )}
-        </td>
-
-        {/* Expand toggle */}
-        <td className="py-2.5 px-3 text-center text-gray-400 text-xs align-top">{expanded ? '▲' : '▼'}</td>
-      </tr>
-
-      {/* Expanded detail row */}
-      {expanded && (
-        <tr className={urgent ? 'bg-red-50' : 'bg-gray-50'}>
-          <td colSpan={6} className="px-5 py-4 border-b border-gray-200">
-            <div className="max-w-4xl space-y-4">
-
-              {/* ── Submission text ── */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Improvement</p>
-                  <p className="text-sm text-gray-800">{s.description}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Perceived benefit</p>
-                  <p className="text-sm text-gray-700">{s.benefit}</p>
-                </div>
-              </div>
-
-              {/* ── AI Assessment section ── */}
-              <div className="rounded-[10px] border border-indigo-100 bg-indigo-50 p-4 space-y-3">
-                <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider">🤖 AI Assessment</p>
-
-                {s.ai_narrative && (
-                  <p className="text-sm text-gray-700">{s.ai_narrative}</p>
-                )}
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                  {(s.cost_estimate_low != null || s.cost_band) && (
-                    <div className={`rounded-[8px] px-3 py-2 col-span-2 ${s.cost_threshold_flag ? 'bg-orange-50 border border-orange-200' : 'bg-white border border-gray-200'}`}>
-                      <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">
-                        Cost estimate {s.cost_confidence && <span className="normal-case font-normal text-gray-400">({s.cost_confidence} confidence)</span>}
-                      </span>
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        {s.cost_estimate_low != null && s.cost_estimate_high != null ? (
-                          <span className="text-gray-900 font-semibold text-sm">
-                            £{Number(s.cost_estimate_low).toLocaleString()} – £{Number(s.cost_estimate_high).toLocaleString()}
-                          </span>
-                        ) : (
-                          <span className="text-gray-800 capitalize">{s.cost_band?.replace('_', ' ')}</span>
-                        )}
-                        {s.cost_threshold_flag && <span className="text-orange-600 font-semibold">⚠ Exceeds committee threshold</span>}
-                      </div>
-                      {s.cost_rationale && <p className="text-gray-500 mt-0.5">{s.cost_rationale}</p>}
-                    </div>
-                  )}
-
-                  {s.impl_complexity && (
-                    <div className={`rounded-[8px] px-3 py-2 ${s.quick_win_flag ? 'bg-green-50 border border-green-200' : 'bg-white border border-gray-200'}`}>
-                      <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-1">Implementation</span>
-                      <span className={`font-semibold capitalize ${s.quick_win_flag ? 'text-green-700' : 'text-gray-800'}`}>
-                        {s.impl_complexity.replace('_', ' ')}
-                      </span>
-                      {s.impl_weeks_low != null && s.impl_weeks_high != null && (
-                        <p className="text-gray-500 mt-0.5">
-                          {s.impl_weeks_low === s.impl_weeks_high ? `~${s.impl_weeks_low}w` : `${s.impl_weeks_low}–${s.impl_weeks_high}w`}
-                        </p>
-                      )}
-                      {(s.confirmed_target_date || s.suggested_target_date) && (
-                        <p className={`mt-0.5 text-xs ${s.confirmed_target_date ? 'text-green-600 font-semibold' : 'text-gray-400'}`}>
-                          By {new Date(s.confirmed_target_date ?? s.suggested_target_date!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          {s.confirmed_target_date && ' ✓'}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {s.suggested_owner && (
-                    <div className="bg-white border border-gray-200 rounded-[8px] px-3 py-2">
-                      <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Suggested owner</span>
-                      <span className="text-gray-800 font-medium">{s.suggested_owner}</span>
-                    </div>
-                  )}
-
-                  {s.strategic_note && (
-                    <div className="bg-white border border-gray-200 rounded-[8px] px-3 py-2 col-span-2">
-                      <span className="font-semibold text-gray-500 uppercase tracking-wide block mb-0.5">Strategic alignment</span>
-                      <span className="text-gray-800">{s.strategic_note}</span>
-                    </div>
-                  )}
-
-                  {s.cluster_theme && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-[8px] px-3 py-2 col-span-2">
-                      <span className="font-semibold text-blue-600 uppercase tracking-wide block mb-0.5">Cluster theme</span>
-                      <span className="text-blue-800">{s.cluster_theme} ({s.cluster_size} submission{s.cluster_size !== 1 ? 's' : ''})</span>
-                    </div>
-                  )}
-
-                  {s.recurring_flag && (
-                    <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#fdf2f8', border: '1px solid #e8b4d0' }}>
-                      <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#922b21' }}>🔁 Recurring theme</span>
-                      <span className="text-gray-700">This theme has appeared in {s.recurring_run_count} previous triage run{s.recurring_run_count !== 1 ? 's' : ''}. Persistent member pressure.</span>
-                    </div>
-                  )}
-
-                  {s.needs_external_approval && s.approval_body && (
-                    <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#fef9e7', border: '1px solid #d4ac0d' }}>
-                      <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#7d6608' }}>⚖ External approval required</span>
-                      <span className="text-gray-700">{s.approval_body}</span>
-                    </div>
-                  )}
-
-                  {s.seasonal_window && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-[8px] px-3 py-2 col-span-2">
-                      <span className="font-semibold text-blue-700 uppercase tracking-wide block mb-0.5">📅 Seasonal window</span>
-                      <span className="text-blue-800">{s.seasonal_window}</span>
-                    </div>
-                  )}
-
-                  {s.revenue_opportunity && s.revenue_note && (
-                    <div className="rounded-[8px] px-3 py-2 col-span-2" style={{ background: '#f5eef8', border: '1px solid #c39bd3' }}>
-                      <span className="font-semibold uppercase tracking-wide block mb-0.5" style={{ color: '#6c3483' }}>💰 Revenue opportunity</span>
-                      <span className="text-gray-700">{s.revenue_note}</span>
-                    </div>
-                  )}
-                </div>
-
-                {s.recognition !== 'anonymous' && s.member_name && (
-                  <p className="text-xs text-indigo-400">Submitted by <span className="font-medium">{s.member_name}</span></p>
-                )}
-              </div>
-
-              {/* ── Committee Decision section ── */}
-              {isManager && (
-                <div className="rounded-[10px] border border-amber-200 bg-amber-50 p-4 space-y-3">
-                  <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">📋 Committee Decision</p>
-                  <div className="flex gap-3 flex-wrap items-end">
-                    <div className="min-w-[160px]">
-                      <label className="text-xs text-gray-600 block mb-1">Assign owner</label>
-                      <select
-                        className="bramley-input text-sm py-1.5"
-                        value={s.suggested_owner ?? ''}
-                        onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
-                        disabled={updating}
-                      >
-                        <option value="">— Unassigned —</option>
-                        {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </div>
-                    <div className="min-w-[160px]">
-                      <label className="text-xs text-gray-600 block mb-1">Reassign area</label>
-                      <select
-                        className="bramley-input text-sm py-1.5"
-                        value={s.category}
-                        onChange={(e) => onUpdate(s.id, 'category', e.target.value)}
-                        disabled={updating}
-                      >
-                        {CATEGORIES.map((c) => (
-                          <option key={c.value} value={c.value}>{c.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <TargetDateField s={s} onUpdate={onUpdate} updating={updating} />
-                    {s.status !== 'approved' && s.status !== 'implemented' && (
-                      <button
-                        onClick={() => onDelete(s.id)}
-                        disabled={deleting}
-                        className="text-xs text-red-400 hover:text-red-600 transition-colors pb-1.5"
-                      >
-                        {deleting ? 'Removing…' : 'Remove improvement'}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Score override */}
-                  <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} />
-
-                  {/* Director notes */}
-                  <NotesPanel s={s} onUpdate={onUpdate} updating={updating} />
-                </div>
-              )}
-
-              {/* Audit trail */}
-              {auditLog.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Activity log</p>
-                  <div className="space-y-1">
-                    {auditLog.map((entry, i) => (
-                      <AuditRow key={i} entry={entry} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
-  )
-}
-
-// ── Shared sub-components ───────────────────────────────────────────────────
+// â”€â”€ Shared sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function TargetDateField({ s, onUpdate, updating }: {
   s: Submission
@@ -1363,7 +945,7 @@ function TargetDateField({ s, onUpdate, updating }: {
     <div className="min-w-[180px]">
       <label className="text-xs text-gray-600 block mb-1">
         Target date
-        {s.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
+        {s.confirmed_target_date && <span className="ml-1 text-green-600">âœ“ confirmed</span>}
       </label>
       <div className="flex gap-1 items-center flex-wrap">
         <input
@@ -1386,7 +968,7 @@ function TargetDateField({ s, onUpdate, updating }: {
             disabled={updating}
             className="text-xs text-gray-400 hover:text-red-500"
             title="Clear date"
-          >✕</button>
+          >âœ•</button>
         )}
       </div>
       {aiDate && !s.confirmed_target_date && (
@@ -1426,10 +1008,10 @@ function ScoreOverridePanel({ s, onUpdate, updating }: {
       </div>
       <div className="flex items-center gap-2">
         <span className="text-gray-500">AI score:</span>
-        <span className="font-semibold">{s.score != null ? Number(s.score).toFixed(1) : '—'}</span>
+        <span className="font-semibold">{s.score != null ? Number(s.score).toFixed(1) : 'â€”'}</span>
         {s.score_override != null && (
           <>
-            <span className="text-gray-400">→</span>
+            <span className="text-gray-400">â†’</span>
             <span className="font-semibold text-amber-700">{Number(s.score_override).toFixed(1)} (override)</span>
           </>
         )}
@@ -1437,7 +1019,7 @@ function ScoreOverridePanel({ s, onUpdate, updating }: {
       {editing && (
         <div className="space-y-2 pt-1">
           <div className="flex items-center gap-2">
-            <label className="text-gray-500 shrink-0">New score (0–10):</label>
+            <label className="text-gray-500 shrink-0">New score (0â€“10):</label>
             <input
               type="number" min="0" max="10" step="0.1"
               className="bramley-input text-xs py-0.5 w-20"
@@ -1510,7 +1092,7 @@ function NotesPanel({ s, onUpdate, updating }: {
           <textarea
             rows={3}
             className="bramley-input text-xs py-1 w-full resize-none"
-            placeholder="Add committee notes visible to all managers…"
+            placeholder="Add committee notes visible to all managersâ€¦"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
           />
@@ -1533,15 +1115,15 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
   const isScoreOverride = entry.note?.startsWith('Score overridden')
   return (
     <div className="flex items-start gap-2 text-xs text-gray-500">
-      <span className="shrink-0 mt-0.5">{isScoreOverride ? '🎯' : '↻'}</span>
+      <span className="shrink-0 mt-0.5">{isScoreOverride ? 'ðŸŽ¯' : 'â†»'}</span>
       <div>
         <span className="font-medium text-gray-700">{entry.changed_by}</span>
         {isScoreOverride
           ? <span> {entry.note}</span>
           : <span> changed status to <span className="font-medium text-gray-700">{STATUS_LABELS[entry.new_status] ?? entry.new_status}</span></span>
         }
-        {entry.note && !isScoreOverride && <span className="text-gray-400"> · {entry.note}</span>}
-        <span className="text-gray-400 ml-1">· {fmt(entry.changed_at)}</span>
+        {entry.note && !isScoreOverride && <span className="text-gray-400"> Â· {entry.note}</span>}
+        <span className="text-gray-400 ml-1">Â· {fmt(entry.changed_at)}</span>
       </div>
     </div>
   )

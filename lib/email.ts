@@ -147,6 +147,36 @@ export async function sendSubmitterUpdate(to: string, submission: {
   })
 }
 
+export async function sendSubmissionConfirmation(to: string, description: string) {
+  await send({
+    from: FROM,
+    to,
+    subject: `We've received your improvement idea — Bramley GC`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">Thank you for submitting an improvement idea. We've received it and it will be assessed by the committee.</p>
+
+          <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:16px 0">
+            <p style="margin:0 0 8px;font-size:13px;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;font-family:sans-serif">Your improvement</p>
+            <p style="margin:0;color:#333;font-family:sans-serif">${description}</p>
+          </div>
+
+          <p style="color:#555;line-height:1.6;font-family:sans-serif">Our committee reviews and scores all submissions weekly. You'll receive an email update once your idea has been assessed — typically within a few days.</p>
+
+          <p style="color:#555;line-height:1.6;font-family:sans-serif">You can track the status of all your submissions at any time by signing in.</p>
+
+          ${emailButton(`${APP_URL}/my-improvements`, 'View my improvements →')}
+
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
+          <p style="color:#aaa;font-size:12px;font-family:sans-serif">If you would prefer not to receive these emails, you can opt out when submitting future improvements.</p>
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendBackupEmail(to: string, filename: string, csvContent: string) {
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const now = new Date()

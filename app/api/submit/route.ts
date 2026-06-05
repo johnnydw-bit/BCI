@@ -4,7 +4,7 @@ import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { moderateSubmission } from '@/lib/ai'
 import { CATEGORIES } from '@/lib/categories'
-import { sendModerationRejectionEmail } from '@/lib/email'
+import { sendModerationRejectionEmail, sendSubmissionConfirmation } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -79,6 +79,11 @@ export async function POST(req: NextRequest) {
       ${emailOptOut ? true : false}
     )
   `
+
+  if (session.memberEmail && !emailOptOut) {
+    void sendSubmissionConfirmation(session.memberEmail, description.trim())
+      .catch((e) => console.error('[submit] Confirmation email failed:', e))
+  }
 
   return NextResponse.json({
     ok: true,

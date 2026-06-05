@@ -7,17 +7,19 @@ import BramleyHeader from '@/components/BramleyHeader'
 export default function CommitteeLoginPage() {
   const router = useRouter()
 
-  useEffect(() => {
-    fetch('/api/session').then((r) => r.json()).then((s) => {
-      if (s.authenticated && s.type === 'director') router.replace('/triage')
-      if (s.authenticated && s.type === 'member') router.replace('/submit')
-    })
-  }, [router])
-
   const [pin, setPin] = useState('')
   const [showPin, setShowPin] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/session').then((r) => r.json()).then((s) => {
+      if (s.authenticated && s.type === 'director') { router.replace('/triage'); return }
+      if (s.authenticated && s.type === 'member') { router.replace('/submit'); return }
+      setChecking(false)
+    })
+  }, [router])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -38,6 +40,8 @@ export default function CommitteeLoginPage() {
       setLoading(false)
     }
   }
+
+  if (checking) return null
 
   return (
     <div className="bramley-wide-page">

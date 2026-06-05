@@ -76,6 +76,9 @@ export async function initDb() {
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS member_email TEXT`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS email_opt_out BOOLEAN NOT NULL DEFAULT FALSE`
 
+  // Test data flag — allows bulk seeding and clearing for testing
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS test_data BOOLEAN NOT NULL DEFAULT FALSE`
+
   // Member preferences — stores verified email against member ID
   await sql`
     CREATE TABLE IF NOT EXISTS member_preferences (

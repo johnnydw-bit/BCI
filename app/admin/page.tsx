@@ -70,6 +70,9 @@ export default function AdminPage() {
   const [initStatus, setInitStatus] = useState('')
   const [triageStatus, setTriageStatus] = useState('')
   const [runningTriage, setRunningTriage] = useState(false)
+  const [seedStatus, setSeedStatus] = useState('')
+  const [seedingData, setSeedingData] = useState(false)
+  const [clearingData, setClearingData] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -178,6 +181,26 @@ export default function AdminPage() {
     setInitStatus('Initialising…')
     const res = await fetch('/api/admin/init-db', { method: 'POST' })
     setInitStatus(res.ok ? '✓ Database initialised successfully' : '✗ Error — check logs')
+  }
+
+  async function seedTestData() {
+    if (!confirm('Insert 12 test submissions into the database? Run triage afterwards to score them.')) return
+    setSeedingData(true)
+    setSeedStatus('Inserting test data…')
+    const res = await fetch('/api/admin/seed-test-data', { method: 'POST' })
+    const json = await res.json().catch(() => ({}))
+    setSeedStatus(res.ok ? `✓ ${json.inserted} test submissions inserted — run triage to score them` : `✗ Error: ${json.error ?? 'check logs'}`)
+    setSeedingData(false)
+  }
+
+  async function clearTestData() {
+    if (!confirm('Delete all test submissions? This cannot be undone.')) return
+    setClearingData(true)
+    setSeedStatus('Clearing test data…')
+    const res = await fetch('/api/admin/clear-test-data', { method: 'DELETE' })
+    const json = await res.json().catch(() => ({}))
+    setSeedStatus(res.ok ? `✓ ${json.deleted} test submissions removed` : `✗ Error: ${json.error ?? 'check logs'}`)
+    setClearingData(false)
   }
 
   async function runTriage() {
@@ -376,6 +399,36 @@ export default function AdminPage() {
                 {runningTriage ? <><span className="spinner" /> Running…</> : '▶ Run triage now'}
               </button>
               {triageStatus && <p className="text-sm mt-2 text-gray-700">{triageStatus}</p>}
+            </div>
+
+            <hr className="border-gray-200" />
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-1">Test data</h3>
+              <p className="text-sm text-gray-500 mb-3">
+                Insert 12 pre-written test submissions covering all scenarios: high-priority, H&amp;S, quick wins,
+                cluster pair, high-cost, low-priority, and more. Emails during triage will still go to DEBUG_EMAIL only.
+                Use <strong>Clear test data</strong> to remove them cleanly when done.
+              </p>
+              <div className="flex gap-3 flex-wrap">
+                <button
+                  onClick={seedTestData}
+                  disabled={seedingData || clearingData}
+                  className="bramley-btn"
+                  style={{ background: '#2471a3' }}
+                >
+                  {seedingData ? <><span className="spinner" /> Seeding…</> : '⬇ Seed test data'}
+                </button>
+                <button
+                  onClick={clearTestData}
+                  disabled={seedingData || clearingData}
+                  className="bramley-btn"
+                  style={{ background: '#c0392b' }}
+                >
+                  {clearingData ? <><span className="spinner" /> Clearing…</> : '✕ Clear test data'}
+                </button>
+              </div>
+              {seedStatus && <p className="text-sm mt-2 text-gray-700">{seedStatus}</p>}
             </div>
           </div>
         </div>

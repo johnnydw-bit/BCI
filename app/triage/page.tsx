@@ -325,10 +325,12 @@ export default function TriagePage() {
           <BramleyHeader
             subtitle={`${data.directorName} — ${data.role}`}
             right={
-              <div className="flex gap-3 items-center">
-                {data.isManager && (
-                  <button onClick={() => router.push('/admin')} className="text-xs opacity-70 hover:opacity-100">Admin</button>
-                )}
+              <div className="flex items-center justify-between w-full gap-4">
+                <div className="flex gap-3 items-center">
+                  {data.isManager && (
+                    <button onClick={() => router.push('/admin')} className="text-xs opacity-70 hover:opacity-100">Admin</button>
+                  )}
+                </div>
                 <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
               </div>
             }

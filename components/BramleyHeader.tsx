@@ -21,7 +21,7 @@ export default function BramleyHeader({ subtitle, right }: BramleyHeaderProps) {
           {subtitle && <p className="text-sm opacity-80 leading-tight">{subtitle}</p>}
         </div>
       </div>
-      {right && <div className="shrink-0">{right}</div>}
+      {right && <div className="flex-1 flex justify-end">{right}</div>}
     </div>
   )
 }

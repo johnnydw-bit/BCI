@@ -610,7 +610,7 @@ export default function TriagePage() {
                             Target date
                             {t.suggested_target_date && !t.target_date && (
                               <button
-                                onClick={() => editTracking(t.id, 'target_date', t.suggested_target_date)}
+                                onClick={() => editTracking(t.id, 'target_date', t.suggested_target_date!.substring(0, 10))}
                                 className="ml-2 text-blue-500 hover:text-blue-700 underline normal-case font-normal"
                               >
                                 Use AI suggestion ({new Date(t.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
@@ -817,7 +817,15 @@ function SpreadsheetTable({
                 </td>
 
                 {/* Date */}
-                <td className="py-1.5 px-2 text-gray-400 hidden md:table-cell whitespace-nowrap">{formatDate(s.created_at)}</td>
+                <td className="py-1.5 px-2 hidden md:table-cell whitespace-nowrap">
+                  {s.confirmed_target_date ? (
+                    <span className="text-green-700 font-semibold text-xs" title="Confirmed target date">🎯 {formatDate(s.confirmed_target_date)}</span>
+                  ) : s.suggested_target_date ? (
+                    <span className="text-gray-400 text-xs" title="AI estimated target date">{formatDate(s.suggested_target_date)} <span className="text-gray-300">(est)</span></span>
+                  ) : (
+                    <span className="text-gray-400 text-xs">{formatDate(s.created_at)}</span>
+                  )}
+                </td>
 
                 {/* Decision */}
                 <td className="py-1.5 px-2" onClick={(e) => e.stopPropagation()}>
@@ -1128,7 +1136,15 @@ function SubmissionTableRow({
         <td className="py-2.5 px-3 text-xs text-gray-500 hidden lg:table-cell align-top whitespace-nowrap">{categoryLabel}</td>
 
         {/* Date */}
-        <td className="py-2.5 px-3 text-xs text-gray-400 hidden md:table-cell align-top whitespace-nowrap">{formatDate(s.created_at)}</td>
+        <td className="py-2.5 px-3 text-xs text-gray-400 hidden md:table-cell align-top whitespace-nowrap">
+          {s.confirmed_target_date ? (
+            <span className="text-green-700 font-semibold" title="Confirmed target date">🎯 {formatDate(s.confirmed_target_date)}</span>
+          ) : s.suggested_target_date ? (
+            <span className="text-gray-400" title="AI estimated target date">{formatDate(s.suggested_target_date)} <span className="text-gray-300">(est)</span></span>
+          ) : (
+            formatDate(s.created_at)
+          )}
+        </td>
 
         {/* Status — stop click propagation so the dropdown doesn't toggle expand */}
         <td className="py-2.5 px-3 align-top" onClick={(e) => e.stopPropagation()}>

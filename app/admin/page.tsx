@@ -419,7 +419,7 @@ export default function AdminPage() {
             <div>
               <h3 className="font-semibold text-gray-800 mb-1">Database initialisation</h3>
               <p className="text-sm text-gray-500 mb-3">Run once on first deployment to create all tables and seed default configuration values. Safe to run again — existing data is preserved.</p>
-              <button onClick={initDb} className="bramley-btn">Initialise database</button>
+              <button onClick={initDb} className="bramley-btn">⚙ Initialise database</button>
               {initStatus && <p className="text-sm mt-2 text-gray-700">{initStatus}</p>}
             </div>
 

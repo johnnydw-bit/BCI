@@ -564,7 +564,7 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
                     { label: 'Total scored', value: dashboard.totalScored },
-                    { label: 'Average score', value: dashboard.avgScore != null ? dashboard.avgScore.toFixed(1) : '—' },
+                    { label: 'Average score', value: dashboard.avgScore != null ? Number(dashboard.avgScore).toFixed(1) : '—' },
                     { label: 'Quick wins', value: dashboard.quickWins },
                     { label: 'In plan / approved', value: (dashboard.byStatus.find((s) => s.status === 'in_plan')?.count ?? 0) + (dashboard.byStatus.find((s) => s.status === 'approved')?.count ?? 0) },
                   ].map((stat) => (

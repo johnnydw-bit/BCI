@@ -54,9 +54,13 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Not authorised' }, { status: 403 })
   }
 
-  const { id, status, category } = await req.json()
+  const { id, status, category, suggested_owner } = await req.json()
 
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+  if (suggested_owner !== undefined) {
+    await sql`UPDATE submissions SET suggested_owner = ${suggested_owner || null} WHERE id = ${id}`
+  }
 
   if (status) {
     const validStatuses = ['new', 'under_consideration', 'approved', 'implemented', 'rejected']

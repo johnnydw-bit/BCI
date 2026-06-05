@@ -170,7 +170,7 @@ export default function TriagePage() {
     })
   }
 
-  async function updateField(id: number, field: 'status' | 'category', value: string) {
+  async function updateField(id: number, field: 'status' | 'category' | 'suggested_owner', value: string) {
     setUpdating(id)
     await fetch('/api/triage', {
       method: 'PATCH',
@@ -633,7 +633,7 @@ function SpreadsheetTable({
 }: {
   subs: Submission[]
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category', value: string) => void
+  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner', value: string) => void
   selectedId: number | null
   onSelect: (id: number | null) => void
   formatDate: (iso: string) => string
@@ -686,8 +686,19 @@ function SpreadsheetTable({
                 </td>
 
                 {/* Owner */}
-                <td className="py-1.5 px-2 text-gray-600 hidden xl:table-cell whitespace-nowrap">
-                  {s.suggested_owner ?? <span className="text-gray-300">—</span>}
+                <td className="py-1.5 px-2 hidden xl:table-cell" onClick={(e) => e.stopPropagation()}>
+                  {isManager ? (
+                    <select
+                      className="bramley-input text-xs py-0.5 px-1.5 w-full"
+                      value={s.suggested_owner ?? ''}
+                      onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
+                    >
+                      <option value="">— Unassigned —</option>
+                      {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <span className="text-gray-600">{s.suggested_owner ?? <span className="text-gray-300">—</span>}</span>
+                  )}
                 </td>
 
                 {/* Cost */}
@@ -753,7 +764,7 @@ function SpreadsheetDetailPanel({
 }: {
   s: Submission
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category', value: string) => void
+  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner', value: string) => void
   onDelete: (id: number) => void
   onClose: () => void
   updating: boolean
@@ -845,6 +856,18 @@ function SpreadsheetDetailPanel({
               </select>
             </div>
             <div>
+              <label className="text-gray-500 block mb-1">Owner</label>
+              <select
+                className="bramley-input text-xs py-1 w-full"
+                value={s.suggested_owner ?? ''}
+                onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
+                disabled={updating}
+              >
+                <option value="">— Unassigned —</option>
+                {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
               <label className="text-gray-500 block mb-1">Area</label>
               <select
                 className="bramley-input text-xs py-1 w-full"
@@ -883,7 +906,7 @@ function TriageTable({
   expanded: Set<number>
   onToggle: (id: number) => void
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category', value: string) => void
+  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner', value: string) => void
   onDelete: (id: number) => void
   updating: number | null
   deleting: number | null
@@ -930,7 +953,7 @@ function SubmissionTableRow({
   expanded: boolean
   onToggle: (id: number) => void
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category', value: string) => void
+  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner', value: string) => void
   onDelete: (id: number) => void
   updating: boolean
   deleting: boolean
@@ -1126,6 +1149,18 @@ function SubmissionTableRow({
                   <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">📋 Committee Decision</p>
                   <div className="flex gap-3 flex-wrap items-end">
                     <div className="min-w-[160px]">
+                      <label className="text-xs text-gray-600 block mb-1">Assign owner</label>
+                      <select
+                        className="bramley-input text-sm py-1.5"
+                        value={s.suggested_owner ?? ''}
+                        onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
+                        disabled={updating}
+                      >
+                        <option value="">— Unassigned —</option>
+                        {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div className="min-w-[160px]">
                       <label className="text-xs text-gray-600 block mb-1">Reassign area</label>
                       <select
                         className="bramley-input text-sm py-1.5"
@@ -1158,6 +1193,15 @@ function SubmissionTableRow({
     </>
   )
 }
+
+const OWNER_OPTIONS = [
+  'Golf Director',
+  'Estate Director',
+  'F&B Director',
+  'Commercial Director',
+  'Club Manager',
+  'Chairman',
+]
 
 function scoreBandColor(band: string | null): string {
   const map: Record<string, string> = {

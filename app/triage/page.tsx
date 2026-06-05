@@ -42,6 +42,18 @@ interface Submission {
   seasonal_window: string | null
   revenue_opportunity: boolean
   revenue_note: string | null
+  notes: string | null
+  score_override: number | null
+  score_override_reason: string | null
+  score_override_by: string | null
+}
+
+interface AuditEntry {
+  old_status: string | null
+  new_status: string
+  changed_by: string
+  note: string | null
+  changed_at: string
 }
 
 interface TrackedImprovement {
@@ -97,6 +109,42 @@ export default function TriagePage() {
       .finally(() => setLoading(false))
   }, [router])
 
+  // Session inactivity timeout — warn at 110 min, log out at 120 min
+  useEffect(() => {
+    const WARN_MS = 110 * 60 * 1000
+    const LOGOUT_MS = 120 * 60 * 1000
+    let warnTimer: ReturnType<typeof setTimeout>
+    let logoutTimer: ReturnType<typeof setTimeout>
+
+    function resetTimers() {
+      setSessionWarning(false)
+      clearTimeout(warnTimer)
+      clearTimeout(logoutTimer)
+      warnTimer = setTimeout(() => setSessionWarning(true), WARN_MS)
+      logoutTimer = setTimeout(async () => {
+        await fetch('/api/auth/logout', { method: 'POST' })
+        router.push('/?reason=timeout')
+      }, LOGOUT_MS)
+    }
+
+    const events = ['mousemove', 'keydown', 'click', 'scroll']
+    events.forEach((e) => window.addEventListener(e, resetTimers))
+    resetTimers()
+
+    return () => {
+      clearTimeout(warnTimer)
+      clearTimeout(logoutTimer)
+      events.forEach((e) => window.removeEventListener(e, resetTimers))
+    }
+  }, [router])
+
+  async function fetchAuditLog(id: number) {
+    if (auditLog[id]) return
+    const res = await fetch(`/api/triage/audit?id=${id}`)
+    const data = await res.json()
+    setAuditLog((prev) => ({ ...prev, [id]: data.log ?? [] }))
+  }
+
   function refreshTracking() {
     fetch('/api/tracking').then((r) => r.json()).then((d) => setTracked(d.improvements ?? []))
   }
@@ -133,6 +181,8 @@ export default function TriagePage() {
     (typeof window !== 'undefined' ? localStorage.getItem('triageViewMode') : null) as 'card' | 'grid' ?? 'card'
   )
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
+  const [auditLog, setAuditLog] = useState<Record<number, AuditEntry[]>>({})
+  const [sessionWarning, setSessionWarning] = useState(false)
 
   async function deleteImprovement(id: number) {
     if (!confirm('Remove this improvement? This cannot be undone.')) return
@@ -167,22 +217,32 @@ export default function TriagePage() {
   function toggleExpand(id: number) {
     setExpanded((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+        fetchAuditLog(id)
+      }
       return next
     })
   }
 
-  async function updateField(id: number, field: 'status' | 'category' | 'suggested_owner', value: string) {
+  async function updateField(id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override', value: string, extra?: Record<string, string>) {
     setUpdating(id)
     await fetch('/api/triage', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, [field]: value }),
+      body: JSON.stringify({ id, [field]: value, ...extra }),
     })
     setData((prev) => prev ? {
       ...prev,
-      submissions: prev.submissions.map((s) => s.id === id ? { ...s, [field]: value } : s),
+      submissions: prev.submissions.map((s) => s.id === id ? { ...s, [field]: value, ...extra } : s),
     } : prev)
+    // Refresh audit log after status or score override changes
+    if (field === 'status' || field === 'score_override') {
+      setAuditLog((prev) => { const n = { ...prev }; delete n[id]; return n })
+      fetchAuditLog(id)
+    }
     setUpdating(null)
     if (field === 'status' && (value === 'approved' || value === 'implemented')) {
       refreshTracking()
@@ -306,6 +366,16 @@ export default function TriagePage() {
         </div>
       </div>
 
+      {/* Session timeout warning */}
+      {sessionWarning && (
+        <div className="bramley-card border-2 border-amber-400 bg-amber-50">
+          <div className="bramley-body flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-amber-800">⏱ Your session will expire in 10 minutes due to inactivity. Move your mouse or press a key to stay signed in.</p>
+            <button onClick={() => setSessionWarning(false)} className="text-amber-500 hover:text-amber-700 shrink-0">✕</button>
+          </div>
+        </div>
+      )}
+
       {/* Filter & sort bar */}
       <div className="bramley-card">
         <div className="bramley-body py-3 flex flex-wrap gap-3 items-center">
@@ -419,6 +489,7 @@ export default function TriagePage() {
                 updating={updating}
                 deleting={deleting}
                 formatDate={formatDate}
+                auditLog={auditLog}
               />
             </div>
           )}
@@ -439,6 +510,7 @@ export default function TriagePage() {
                 updating={updating}
                 deleting={deleting}
                 formatDate={formatDate}
+                auditLog={auditLog}
               />
             </>
           ) : urgent.length === 0 ? (
@@ -477,6 +549,8 @@ export default function TriagePage() {
                 onClose={() => setSidePanelId(null)}
                 updating={updating === s.id}
                 deleting={deleting === s.id}
+                auditLog={auditLog[s.id] ?? []}
+                onOpen={() => fetchAuditLog(s.id)}
               />
             )
           })()}
@@ -762,16 +836,19 @@ function SpreadsheetTable({
 }
 
 function SpreadsheetDetailPanel({
-  s, isManager, onUpdate, onDelete, onClose, updating, deleting,
+  s, isManager, onUpdate, onDelete, onClose, updating, deleting, auditLog, onOpen,
 }: {
   s: Submission
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner', value: string) => void
+  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override', value: string, extra?: Record<string, string>) => void
   onDelete: (id: number) => void
   onClose: () => void
   updating: boolean
   deleting: boolean
+  auditLog: AuditEntry[]
+  onOpen: () => void
 }) {
+  useEffect(() => { onOpen() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="bramley-card w-80 xl:w-96 2xl:w-[440px] shrink-0 sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
       <div className="bramley-body space-y-4 text-sm">
@@ -890,6 +967,22 @@ function SpreadsheetDetailPanel({
           </div>
         )}
 
+        {isManager && (
+          <>
+            <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} />
+            <NotesPanel s={s} onUpdate={onUpdate} updating={updating} />
+          </>
+        )}
+
+        {auditLog.length > 0 && (
+          <div className="pt-3 border-t border-gray-200">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Activity log</p>
+            <div className="space-y-1">
+              {auditLog.map((entry, i) => <AuditRow key={i} entry={entry} />)}
+            </div>
+          </div>
+        )}
+
         {s.recognition !== 'anonymous' && s.member_name && (
           <p className="text-xs text-gray-400">Submitted by {s.member_name}</p>
         )}
@@ -901,18 +994,19 @@ function SpreadsheetDetailPanel({
 // ── Triage table ────────────────────────────────────────────────────────────
 
 function TriageTable({
-  subs, urgent, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, formatDate,
+  subs, urgent, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, formatDate, auditLog,
 }: {
   subs: Submission[]
   urgent?: boolean
   expanded: Set<number>
   onToggle: (id: number) => void
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner', value: string) => void
+  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override', value: string, extra?: Record<string, string>) => void
   onDelete: (id: number) => void
   updating: number | null
   deleting: number | null
   formatDate: (iso: string) => string
+  auditLog: Record<number, AuditEntry[]>
 }) {
   return (
     <table className="w-full border-collapse text-sm">
@@ -940,6 +1034,7 @@ function TriageTable({
             updating={updating === s.id}
             deleting={deleting === s.id}
             formatDate={formatDate}
+            auditLog={auditLog[s.id] ?? []}
           />
         ))}
       </tbody>
@@ -948,18 +1043,19 @@ function TriageTable({
 }
 
 function SubmissionTableRow({
-  s, urgent, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, formatDate,
+  s, urgent, expanded, onToggle, isManager, onUpdate, onDelete, updating, deleting, formatDate, auditLog,
 }: {
   s: Submission
   urgent?: boolean
   expanded: boolean
   onToggle: (id: number) => void
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner', value: string) => void
+  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override', value: string, extra?: Record<string, string>) => void
   onDelete: (id: number) => void
   updating: boolean
   deleting: boolean
   formatDate: (iso: string) => string
+  auditLog: AuditEntry[]
 }) {
   const categoryLabel = CATEGORIES.find(c => c.value === s.category)?.label ?? s.category
 
@@ -1185,6 +1281,24 @@ function SubmissionTableRow({
                       </button>
                     )}
                   </div>
+
+                  {/* Score override */}
+                  <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} />
+
+                  {/* Director notes */}
+                  <NotesPanel s={s} onUpdate={onUpdate} updating={updating} />
+                </div>
+              )}
+
+              {/* Audit trail */}
+              {auditLog.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Activity log</p>
+                  <div className="space-y-1">
+                    {auditLog.map((entry, i) => (
+                      <AuditRow key={i} entry={entry} />
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -1193,6 +1307,154 @@ function SubmissionTableRow({
         </tr>
       )}
     </>
+  )
+}
+
+// ── Shared sub-components ───────────────────────────────────────────────────
+
+function ScoreOverridePanel({ s, onUpdate, updating }: {
+  s: Submission
+  onUpdate: (id: number, field: 'score_override', value: string, extra?: Record<string, string>) => void
+  updating: boolean
+}) {
+  const [overrideVal, setOverrideVal] = useState(s.score_override != null ? String(s.score_override) : '')
+  const [reason, setReason] = useState(s.score_override_reason ?? '')
+  const [editing, setEditing] = useState(false)
+  const effectiveScore = s.score_override ?? s.score
+
+  return (
+    <div className="mt-2 rounded-[8px] border border-gray-200 bg-white p-3 text-xs space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-gray-500 uppercase tracking-wide">Score override</span>
+        {s.score_override != null && (
+          <span className="text-gray-400 italic">Overridden by {s.score_override_by}</span>
+        )}
+        {!editing && (
+          <button onClick={() => setEditing(true)} className="text-blue-500 hover:text-blue-700">
+            {s.score_override != null ? 'Edit' : '+ Override'}
+          </button>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-gray-500">AI score:</span>
+        <span className="font-semibold">{s.score != null ? Number(s.score).toFixed(1) : '—'}</span>
+        {s.score_override != null && (
+          <>
+            <span className="text-gray-400">→</span>
+            <span className="font-semibold text-amber-700">{Number(s.score_override).toFixed(1)} (override)</span>
+          </>
+        )}
+      </div>
+      {editing && (
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center gap-2">
+            <label className="text-gray-500 shrink-0">New score (0–10):</label>
+            <input
+              type="number" min="0" max="10" step="0.1"
+              className="bramley-input text-xs py-0.5 w-20"
+              value={overrideVal}
+              onChange={(e) => setOverrideVal(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-gray-500 block mb-1">Reason (required):</label>
+            <input
+              type="text"
+              className="bramley-input text-xs py-0.5 w-full"
+              placeholder="Why is the AI score being overridden?"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              disabled={updating || !reason.trim() || overrideVal === ''}
+              onClick={() => {
+                onUpdate(s.id, 'score_override', overrideVal, { score_override_reason: reason })
+                setEditing(false)
+              }}
+              className="bramley-btn py-1 text-xs"
+            >Save override</button>
+            {s.score_override != null && (
+              <button
+                disabled={updating}
+                onClick={() => {
+                  onUpdate(s.id, 'score_override', '', { score_override_reason: '' })
+                  setOverrideVal('')
+                  setReason('')
+                  setEditing(false)
+                }}
+                className="text-red-500 hover:text-red-700 text-xs"
+              >Remove override</button>
+            )}
+            <button onClick={() => setEditing(false)} className="text-gray-400 hover:text-gray-600 text-xs">Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NotesPanel({ s, onUpdate, updating }: {
+  s: Submission
+  onUpdate: (id: number, field: 'notes', value: string) => void
+  updating: boolean
+}) {
+  const [draft, setDraft] = useState(s.notes ?? '')
+  const [editing, setEditing] = useState(false)
+  const dirty = draft !== (s.notes ?? '')
+
+  return (
+    <div className="mt-2 rounded-[8px] border border-gray-200 bg-white p-3 text-xs space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-gray-500 uppercase tracking-wide">Committee notes</span>
+        {!editing && (
+          <button onClick={() => setEditing(true)} className="text-blue-500 hover:text-blue-700">
+            {s.notes ? 'Edit' : '+ Add note'}
+          </button>
+        )}
+      </div>
+      {!editing && s.notes && <p className="text-gray-700 whitespace-pre-wrap">{s.notes}</p>}
+      {!editing && !s.notes && <p className="text-gray-400 italic">No notes yet</p>}
+      {editing && (
+        <div className="space-y-2">
+          <textarea
+            rows={3}
+            className="bramley-input text-xs py-1 w-full resize-none"
+            placeholder="Add committee notes visible to all managers…"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <button
+              disabled={updating || !dirty}
+              onClick={() => { onUpdate(s.id, 'notes', draft); setEditing(false) }}
+              className="bramley-btn py-1 text-xs"
+            >Save</button>
+            <button onClick={() => { setDraft(s.notes ?? ''); setEditing(false) }} className="text-gray-400 hover:text-gray-600 text-xs">Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AuditRow({ entry }: { entry: AuditEntry }) {
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const isScoreOverride = entry.note?.startsWith('Score overridden')
+  return (
+    <div className="flex items-start gap-2 text-xs text-gray-500">
+      <span className="shrink-0 mt-0.5">{isScoreOverride ? '🎯' : '↻'}</span>
+      <div>
+        <span className="font-medium text-gray-700">{entry.changed_by}</span>
+        {isScoreOverride
+          ? <span> {entry.note}</span>
+          : <span> changed status to <span className="font-medium text-gray-700">{STATUS_LABELS[entry.new_status] ?? entry.new_status}</span></span>
+        }
+        {entry.note && !isScoreOverride && <span className="text-gray-400"> · {entry.note}</span>}
+        <span className="text-gray-400 ml-1">· {fmt(entry.changed_at)}</span>
+      </div>
+    </div>
   )
 }
 

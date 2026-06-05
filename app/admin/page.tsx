@@ -71,6 +71,7 @@ export default function AdminPage() {
   const [triageStatus, setTriageStatus] = useState('')
   const [runningTriage, setRunningTriage] = useState(false)
   const [exportingCsv, setExportingCsv] = useState(false)
+  const [exportingFull, setExportingFull] = useState(false)
   const [importStatus, setImportStatus] = useState('')
   const [importingCsv, setImportingCsv] = useState(false)
   const [seedStatus, setSeedStatus] = useState('')
@@ -207,6 +208,19 @@ export default function AdminPage() {
     a.click()
     URL.revokeObjectURL(url)
     setExportingCsv(false)
+  }
+
+  async function exportFull() {
+    setExportingFull(true)
+    const res = await fetch('/api/admin/export-full')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `bramley-full-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    setExportingFull(false)
   }
 
   async function importCsv(e: React.ChangeEvent<HTMLInputElement>) {
@@ -479,6 +493,15 @@ export default function AdminPage() {
                   style={{ background: '#1e8449' }}
                 >
                   {exportingCsv ? <><span className="spinner" /> Exporting…</> : '⬇ Export CSV'}
+                </button>
+                <button
+                  onClick={exportFull}
+                  disabled={exportingFull}
+                  className="bramley-btn"
+                  style={{ background: '#1a5276' }}
+                  title="Exports all tables (submissions, clusters, config, directors, audit log) as JSON"
+                >
+                  {exportingFull ? <><span className="spinner" /> Exporting…</> : '⬇ Full backup (JSON)'}
                 </button>
                 <label className={`bramley-btn text-center cursor-pointer ${importingCsv ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ background: '#2471a3' }}>
                   {importingCsv ? 'Restoring…' : '⬆ Restore from CSV'}

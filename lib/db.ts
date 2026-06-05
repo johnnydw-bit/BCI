@@ -198,6 +198,14 @@ export async function initDb() {
   await sql`
     ALTER TABLE config ADD COLUMN IF NOT EXISTS label TEXT
   `
+
+  // Director notes per submission
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS notes TEXT`
+
+  // Score override
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS score_override NUMERIC(4,2)`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS score_override_reason TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS score_override_by TEXT`
   for (const [key, _value, label] of defaults) {
     await sql`UPDATE config SET label = ${label} WHERE key = ${key} AND label IS NULL`
   }

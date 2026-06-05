@@ -29,6 +29,7 @@ export async function GET() {
       s.suggested_owner, s.needs_external_approval, s.approval_body,
       s.recurring_flag, s.recurring_run_count,
       s.seasonal_window, s.revenue_opportunity, s.revenue_note,
+      s.notes, s.score_override, s.score_override_reason, s.score_override_by,
       c.theme AS cluster_theme, c.size AS cluster_size
     FROM submissions s
     LEFT JOIN clusters c ON c.id = s.cluster_id
@@ -54,12 +55,34 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Not authorised' }, { status: 403 })
   }
 
-  const { id, status, category, suggested_owner } = await req.json()
+  const { id, status, category, suggested_owner, notes, score_override, score_override_reason } = await req.json()
 
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
   if (suggested_owner !== undefined) {
     await sql`UPDATE submissions SET suggested_owner = ${suggested_owner || null} WHERE id = ${id}`
+  }
+
+  if (notes !== undefined) {
+    await sql`UPDATE submissions SET notes = ${notes || null} WHERE id = ${id}`
+  }
+
+  if (score_override !== undefined) {
+    const overrideVal = score_override !== null ? Math.min(10, Math.max(0, Number(score_override))) : null
+    await sql`
+      UPDATE submissions
+      SET score_override = ${overrideVal},
+          score_override_reason = ${score_override_reason || null},
+          score_override_by = ${overrideVal !== null ? session.directorName : null}
+      WHERE id = ${id}
+    `
+    if (overrideVal !== null) {
+      await sql`
+        INSERT INTO status_log (submission_id, old_status, new_status, changed_by, note)
+        SELECT id, status, status, ${session.directorName}, ${'Score overridden to ' + overrideVal + ': ' + (score_override_reason ?? '')}
+        FROM submissions WHERE id = ${id}
+      `
+    }
   }
 
   if (status) {
@@ -97,7 +120,6 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
-  // Only allow delete of non-approved, non-implemented items
   const row = await sql`SELECT status FROM submissions WHERE id = ${id}`
   const status = (row[0] as { status: string })?.status
   if (status === 'approved' || status === 'implemented') {

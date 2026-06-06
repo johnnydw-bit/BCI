@@ -381,71 +381,63 @@ export default function AdminPage() {
 
       {/* Config tab */}
       {tab === 'config' && (
-        <div className="bramley-card overflow-hidden">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr style={{ background: 'var(--bramley-primary)' }}>
-                <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80">Setting</th>
-                <th className="text-right px-4 py-2.5 text-xs font-semibold text-white opacity-80 w-36">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {CONFIG_GROUPS.map((group) => {
-                const isWeights = group.title === 'Scoring Weights'
-                const weightsTotal = isWeights
-                  ? WEIGHT_KEYS.reduce((sum, k) => sum + (parseFloat(configValue(k)) || 0), 0)
-                  : 0
-                const weightsOk = Math.abs(weightsTotal - 1) < 0.001
-                return (
-                  <>
-                    {/* Group header row */}
-                    <tr key={`${group.title}-header`} className="bg-gray-100 border-b border-gray-200">
-                      <td colSpan={2} className="px-4 py-2">
-                        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{group.title}</span>
-                        {group.note && <span className="text-xs text-gray-400 ml-2">— {group.note}</span>}
-                      </td>
-                    </tr>
-
-                    {/* Config rows */}
-                    {group.keys.map((key, i) => {
-                      const row = config.find((r) => r.key === key)
-                      const dirty = edits[key] !== undefined
-                      return (
-                        <tr key={key} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                          <td className="px-4 py-2 text-gray-600">
-                            {shortLabel(row?.label ?? key)}
-                            {dirty && <span className="ml-2 text-xs text-amber-500">●</span>}
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            <input
-                              type="number"
-                              step="any"
-                              className="bramley-input !w-28 text-right py-1 text-sm"
-                              value={configValue(key)}
-                              onChange={(e) => handleEdit(key, e.target.value)}
-                            />
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {CONFIG_GROUPS.map((group) => {
+              const isWeights = group.title === 'Scoring Weights'
+              const weightsTotal = isWeights
+                ? WEIGHT_KEYS.reduce((sum, k) => sum + (parseFloat(configValue(k)) || 0), 0)
+                : 0
+              const weightsOk = Math.abs(weightsTotal - 1) < 0.001
+              return (
+                <div key={group.title} className="bramley-card overflow-hidden p-0">
+                  {/* Group header */}
+                  <div className="px-3 py-2 border-b border-gray-200" style={{ background: 'var(--bramley-primary)' }}>
+                    <p className="text-xs font-semibold text-white">{group.title}</p>
+                    {group.note && <p className="text-xs text-white opacity-60 mt-0.5">{group.note}</p>}
+                  </div>
+                  {/* Spreadsheet rows */}
+                  <table className="w-full text-sm border-collapse">
+                    <tbody>
+                      {group.keys.map((key, i) => {
+                        const row = config.find((r) => r.key === key)
+                        const dirty = edits[key] !== undefined
+                        return (
+                          <tr key={key} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                            <td className="px-3 py-1.5 text-xs text-gray-600 leading-tight">
+                              {shortLabel(row?.label ?? key)}
+                              {dirty && <span className="ml-1 text-amber-500">●</span>}
+                            </td>
+                            <td className="px-2 py-1 text-right w-24">
+                              <input
+                                type="number"
+                                step="any"
+                                className="w-full border border-gray-200 rounded px-2 py-0.5 text-right text-xs text-gray-800 focus:outline-none focus:border-blue-400 bg-white"
+                                value={configValue(key)}
+                                onChange={(e) => handleEdit(key, e.target.value)}
+                              />
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {/* Weights total */}
+                      {isWeights && (
+                        <tr className="bg-gray-50 border-t border-gray-200">
+                          <td className="px-3 py-1.5 text-xs font-semibold text-gray-500">Total</td>
+                          <td className={`px-3 py-1.5 text-right text-xs font-bold ${weightsOk ? 'text-green-600' : 'text-red-600'}`}>
+                            {weightsTotal.toFixed(2)} {weightsOk ? '✓' : '✗'}
                           </td>
                         </tr>
-                      )
-                    })}
-
-                    {/* Weights total row */}
-                    {isWeights && (
-                      <tr key="weights-total" className="border-b border-gray-200 bg-gray-50">
-                        <td className="px-4 py-2 text-sm font-semibold text-gray-600">Total</td>
-                        <td className={`px-4 py-2 text-right text-sm font-bold pr-5 ${weightsOk ? 'text-green-600' : 'text-red-600'}`}>
-                          {weightsTotal.toFixed(2)} {weightsOk ? '✓' : '✗'}
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                )
-              })}
-            </tbody>
-          </table>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            })}
+          </div>
 
           {/* Save bar */}
-          <div className="flex items-center gap-3 p-4 border-t border-gray-100">
+          <div className="bramley-card flex items-center gap-3 py-3 px-4">
             <button onClick={saveConfig} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={saving || Object.keys(edits).length === 0}>
               {saving ? <span className="spinner" /> : 'Save changes'}
             </button>

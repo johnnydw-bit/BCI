@@ -381,9 +381,15 @@ export default function AdminPage() {
 
       {/* Config tab */}
       {tab === 'config' && (
-        <div className="bramley-card">
-          <div className="bramley-body">
-            <div className="max-w-2xl space-y-3">
+        <div className="bramley-card overflow-hidden">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr style={{ background: 'var(--bramley-primary)' }}>
+                <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80">Setting</th>
+                <th className="text-right px-4 py-2.5 text-xs font-semibold text-white opacity-80 w-36">Value</th>
+              </tr>
+            </thead>
+            <tbody>
               {CONFIG_GROUPS.map((group) => {
                 const isWeights = group.title === 'Scoring Weights'
                 const weightsTotal = isWeights
@@ -391,45 +397,60 @@ export default function AdminPage() {
                   : 0
                 const weightsOk = Math.abs(weightsTotal - 1) < 0.001
                 return (
-                  <div key={group.title} className="rounded-[8px] border border-gray-100 bg-gray-50 p-4">
-                    <h3 className="font-semibold text-gray-800 text-sm mb-1">{group.title}</h3>
-                    {group.note && <p className="text-xs text-gray-500 mb-3">{group.note}</p>}
-                    <div className="space-y-2">
-                      {group.keys.map((key) => {
-                        const row = config.find((r) => r.key === key)
-                        return (
-                          <div key={key} className="flex items-center gap-3">
-                            <label className="text-sm text-gray-600 flex-1">{shortLabel(row?.label ?? key)}</label>
+                  <>
+                    {/* Group header row */}
+                    <tr key={`${group.title}-header`} className="bg-gray-100 border-b border-gray-200">
+                      <td colSpan={2} className="px-4 py-2">
+                        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{group.title}</span>
+                        {group.note && <span className="text-xs text-gray-400 ml-2">— {group.note}</span>}
+                      </td>
+                    </tr>
+
+                    {/* Config rows */}
+                    {group.keys.map((key, i) => {
+                      const row = config.find((r) => r.key === key)
+                      const dirty = edits[key] !== undefined
+                      return (
+                        <tr key={key} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                          <td className="px-4 py-2 text-gray-600">
+                            {shortLabel(row?.label ?? key)}
+                            {dirty && <span className="ml-2 text-xs text-amber-500">●</span>}
+                          </td>
+                          <td className="px-4 py-2 text-right">
                             <input
                               type="number"
                               step="any"
-                              className="bramley-input !w-28 text-right py-1.5 text-sm"
+                              className="bramley-input !w-28 text-right py-1 text-sm"
                               value={configValue(key)}
                               onChange={(e) => handleEdit(key, e.target.value)}
                             />
-                          </div>
-                        )
-                      })}
-                      {isWeights && (
-                        <div className="flex items-center gap-3 pt-2 border-t border-gray-200 mt-1">
-                          <span className="text-sm font-semibold text-gray-600 flex-1">Total</span>
-                          <span className={`text-sm font-bold w-28 text-right pr-1 ${weightsOk ? 'text-green-600' : 'text-red-600'}`}>
-                            {weightsTotal.toFixed(2)} {weightsOk ? '✓' : '✗ must equal 1.0'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+
+                    {/* Weights total row */}
+                    {isWeights && (
+                      <tr key="weights-total" className="border-b border-gray-200 bg-gray-50">
+                        <td className="px-4 py-2 text-sm font-semibold text-gray-600">Total</td>
+                        <td className={`px-4 py-2 text-right text-sm font-bold pr-5 ${weightsOk ? 'text-green-600' : 'text-red-600'}`}>
+                          {weightsTotal.toFixed(2)} {weightsOk ? '✓' : '✗'}
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 )
               })}
-              <div className="flex items-center gap-3 pt-1">
-                <button onClick={saveConfig} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={saving || Object.keys(edits).length === 0}>
-                  {saving ? <span className="spinner" /> : 'Save changes'}
-                </button>
-                {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
-                {Object.keys(edits).length > 0 && !saved && <span className="text-xs text-amber-600">{Object.keys(edits).length} unsaved change{Object.keys(edits).length !== 1 ? 's' : ''}</span>}
-              </div>
-            </div>
+            </tbody>
+          </table>
+
+          {/* Save bar */}
+          <div className="flex items-center gap-3 p-4 border-t border-gray-100">
+            <button onClick={saveConfig} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={saving || Object.keys(edits).length === 0}>
+              {saving ? <span className="spinner" /> : 'Save changes'}
+            </button>
+            {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
+            {Object.keys(edits).length > 0 && !saved && <span className="text-xs text-amber-600">{Object.keys(edits).length} unsaved change{Object.keys(edits).length !== 1 ? 's' : ''}</span>}
           </div>
         </div>
       )}

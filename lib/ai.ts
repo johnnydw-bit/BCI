@@ -39,7 +39,7 @@ Check for ALL of the following:
 4. political — targets specific individuals, committee members, staff, or other members by name or clear implication; constitutes a grievance or complaint rather than an improvement; is motivated by personal agenda rather than club benefit
 5. personal_attack — criticism directed at a named or clearly identifiable individual
 6. out_of_scope — has nothing to do with the golf club or its operations
-7. complaint_only — expresses dissatisfaction but contains no specific actionable improvement. Ask yourself: if the club acted on this, what would they actually do differently? If the answer is unclear or absent, it is complaint_only. A valid improvement must suggest or clearly imply a specific change.
+7. complaint_only — expresses dissatisfaction with NO implied action whatsoever. The bar here is deliberately low: if the club could reasonably infer ANY change to make (even a broad one like "renovate the kitchen", "improve car park lighting", "review the food menu"), it passes. Only reject if the submission is pure venting with zero implied improvement — e.g. "everything is terrible" or "the club is badly run". The triage scoring system will handle vague or low-specificity suggestions appropriately — moderation should not.
 
 Respond with exactly this JSON:
 {

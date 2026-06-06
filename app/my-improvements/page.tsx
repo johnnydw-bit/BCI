@@ -48,6 +48,14 @@ export default function MyImprovementsPage() {
   const [withdrawingId, setWithdrawingId] = useState<number | null>(null)
   const [expandedId, setExpandedId] = useState<number | null>(null)
 
+  // Redirect directors to triage — they need a member session for this page
+  useEffect(() => {
+    fetch('/api/session').then((r) => r.json()).then((s) => {
+      if (!s.authenticated) router.replace('/')
+      if (s.type === 'director') router.replace('/triage')
+    })
+  }, [router])
+
   // Session timeout
   useEffect(() => {
     let warnTimer: ReturnType<typeof setTimeout>

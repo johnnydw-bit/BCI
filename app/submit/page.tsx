@@ -16,11 +16,13 @@ export default function SubmitPage() {
 
   const [sessionWarning, setSessionWarning] = useState(false)
 
-  // Redirect directors to triage, unauthenticated users to login
+  const [isDirector, setIsDirector] = useState(false)
+
+  // Redirect unauthenticated users to login; warn directors they need a member session
   useEffect(() => {
     fetch('/api/session').then((r) => r.json()).then((s) => {
       if (!s.authenticated) router.replace('/')
-      if (s.type === 'director') router.replace('/triage')
+      if (s.type === 'director') setIsDirector(true)
     })
   }, [router])
 
@@ -146,6 +148,12 @@ export default function SubmitPage() {
   return (
     <div className="bramley-wide-page"><div className="bramley-card">
       <BramleyHeader subtitle="Continuous Improvement Programme" />
+      {isDirector && (
+        <div className="mx-4 mt-4 bg-amber-50 border border-amber-300 rounded-[8px] px-4 py-3 text-sm text-amber-800 flex items-center justify-between gap-4">
+          <span>⚠️ You're signed in as a committee member. To submit an improvement, please sign out and sign in with your member account.</span>
+          <button onClick={() => router.push('/triage')} className="text-xs font-semibold underline shrink-0">Go to triage →</button>
+        </div>
+      )}
       {sessionWarning && (
         <div className="mx-4 mt-4 bg-amber-50 border border-amber-300 rounded-[8px] px-4 py-3 text-sm text-amber-800">
           ⚠️ Your session will expire in 10 minutes due to inactivity.

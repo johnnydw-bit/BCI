@@ -9,10 +9,6 @@ const ROLES = ['Club Manager', 'Super Admin', 'Operations Manager', 'Chairman', 
 
 const CONFIG_GROUPS = [
   {
-    title: 'Triage Schedule',
-    keys: ['TRIAGE_INTERVAL_DAYS'],
-  },
-  {
     title: 'Scoring Weights',
     note: 'Should sum to 1.0',
     keys: ['WEIGHT_MEMBER_IMPACT', 'WEIGHT_STRATEGIC', 'WEIGHT_FEASIBILITY', 'WEIGHT_COST_BENEFIT', 'WEIGHT_NOVELTY', 'WEIGHT_EXPERIENCE_DELTA'],

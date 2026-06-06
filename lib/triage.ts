@@ -219,7 +219,7 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
 
     // If the AI scored this as a quick win, ensure the member message reflects that
     // regardless of the score band (avoids contradiction like "longer timeframe" + quick win badge)
-    let memberMsg = r.memberMsg
+    let memberMsg = r.memberNarrative || r.memberMsg
     if (quickWinFlag && !['priority', 'active'].includes(r.scoreBand)) {
       memberMsg = 'Your improvement has been identified as a potential quick win and may be actioned ahead of the standard review cycle.'
     }

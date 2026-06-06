@@ -436,11 +436,11 @@ export default function AdminPage() {
 
       {/* Directors tab */}
       {tab === 'directors' && (
-        <div className="bramley-card">
-          <div className="bramley-body space-y-4">
+        <div className="bramley-card overflow-hidden">
+          <div className="space-y-0">
             {/* PIN reveal alerts */}
             {newlyGeneratedPin && (
-              <div className="bg-amber-50 border border-amber-300 rounded-[8px] p-4">
+              <div className="mx-4 mt-4 bg-amber-50 border border-amber-300 rounded-[8px] p-4">
                 <p className="text-sm font-semibold text-amber-800 mb-1">✓ Director added — note their PIN</p>
                 <p className="text-sm text-amber-700">
                   <strong>{newlyGeneratedPin.name}</strong> has been added. Their login PIN is: <strong className="font-mono text-lg tracking-widest">{newlyGeneratedPin.pin}</strong>
@@ -450,7 +450,7 @@ export default function AdminPage() {
               </div>
             )}
             {resetPinResult && (
-              <div className="bg-amber-50 border border-amber-300 rounded-[8px] p-4">
+              <div className="mx-4 mt-4 bg-amber-50 border border-amber-300 rounded-[8px] p-4">
                 <p className="text-sm font-semibold text-amber-800 mb-1">✓ PIN reset — note the new PIN</p>
                 <p className="text-sm text-amber-700">
                   <strong>{resetPinResult.name}</strong>'s new PIN is: <strong className="font-mono text-lg tracking-widest">{resetPinResult.pin}</strong>
@@ -460,69 +460,88 @@ export default function AdminPage() {
               </div>
             )}
 
-            {directors.map((d) => (
-              <div key={d.id} className="border border-gray-200 rounded-[10px] overflow-hidden">
-                {/* Summary row */}
-                <div className="flex items-center gap-3 p-3 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800">{d.name}</p>
-                    <p className="text-xs text-gray-500">{d.role} · {d.email}</p>
-                  </div>
-                  <button
-                    onClick={() => toggleDirector(d.id, !d.active)}
-                    className={`text-xs px-2 py-1 rounded-[6px] font-semibold ${d.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
-                  >
-                    {d.active ? 'Active' : 'Inactive'}
-                  </button>
-                  <button
-                    onClick={() => toggleEmailReports(d.id, !d.email_reports)}
-                    className={`text-xs px-2 py-1 rounded-[6px] font-semibold ${d.email_reports ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}
-                    title="Toggle triage report emails"
-                  >
-                    {d.email_reports ? '✉ Emails on' : '✉ Emails off'}
-                  </button>
-                  <button
-                    onClick={() => editingId === d.id ? setEditingId(null) : startEdit(d)}
-                    className="text-xs text-blue-500 hover:text-blue-700"
-                  >
-                    {editingId === d.id ? 'Cancel' : 'Edit'}
-                  </button>
-                  <span className="text-gray-200 select-none">|</span>
-                  <button onClick={() => deleteDirector(d.id)} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove</button>
-                </div>
+            {/* Directors table */}
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr style={{ background: 'var(--bramley-primary)' }}>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80">Name</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 hidden sm:table-cell">Role</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 hidden md:table-cell">Email</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 w-24">Active</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 w-28">Reports</th>
+                  <th className="px-4 py-2.5 w-28"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {directors.map((d, i) => (
+                  <>
+                    <tr
+                      key={d.id}
+                      className={`border-b border-gray-100 cursor-pointer transition-colors ${
+                        editingId === d.id ? 'bg-blue-50' : i % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'
+                      }`}
+                      onClick={() => editingId === d.id ? setEditingId(null) : startEdit(d)}
+                    >
+                      <td className="px-4 py-2.5 font-semibold text-gray-800">{d.name}</td>
+                      <td className="px-4 py-2.5 text-gray-500 hidden sm:table-cell">{d.role}</td>
+                      <td className="px-4 py-2.5 text-gray-400 text-xs hidden md:table-cell">{d.email}</td>
+                      <td className="px-4 py-2.5" onClick={(e) => { e.stopPropagation(); toggleDirector(d.id, !d.active) }}>
+                        <span className={`text-xs px-2 py-0.5 rounded-[6px] font-semibold cursor-pointer ${d.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                          {d.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5" onClick={(e) => { e.stopPropagation(); toggleEmailReports(d.id, !d.email_reports) }}>
+                        <span className={`text-xs px-2 py-0.5 rounded-[6px] font-semibold cursor-pointer ${d.email_reports ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                          {d.email_reports ? '✉ On' : '✉ Off'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => deleteDirector(d.id)} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove</button>
+                      </td>
+                    </tr>
 
-                {/* Inline edit form */}
-                {editingId === d.id && (
-                  <div className="border-t border-gray-100 p-3 bg-gray-50 space-y-2">
-                    <input className="bramley-input text-sm py-2" placeholder="Full name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
-                    <input className="bramley-input text-sm py-2" placeholder="Email" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
-                    <select className="bramley-input text-sm py-2" value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}>
-                      {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                    {editError && <p className="bramley-error">{editError}</p>}
-                    <div className="flex gap-2">
-                      <button onClick={() => saveEdit(d.id, false)} className="bramley-btn py-2 text-sm">Save changes</button>
-                      <button
-                        onClick={() => { if (confirm(`Reset PIN for ${d.name}? A new PIN will be generated.`)) saveEdit(d.id, true) }}
-                        className="bramley-btn py-2 text-sm"
-                        style={{ background: '#7d3c98' }}
-                      >
-                        🔑 Reset PIN
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                    {/* Inline edit row */}
+                    {editingId === d.id && (
+                      <tr key={`${d.id}-edit`} className="bg-blue-50 border-b border-blue-100">
+                        <td colSpan={6} className="px-6 py-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
+                            <input className="bramley-input text-sm py-2" placeholder="Full name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                            <input className="bramley-input text-sm py-2" placeholder="Email" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                            <select className="bramley-input text-sm py-2" value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}>
+                              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                          </div>
+                          {editError && <p className="bramley-error mt-2">{editError}</p>}
+                          <div className="flex gap-2 mt-3">
+                            <button onClick={() => saveEdit(d.id, false)} style={{ width: 'auto' }} className="bramley-btn px-6 py-2 text-sm">Save</button>
+                            <button
+                              onClick={() => { if (confirm(`Reset PIN for ${d.name}?`)) saveEdit(d.id, true) }}
+                              style={{ width: 'auto', background: '#7d3c98' }}
+                              className="bramley-btn px-6 py-2 text-sm"
+                            >
+                              🔑 Reset PIN
+                            </button>
+                            <button onClick={() => setEditingId(null)} className="text-xs text-gray-400 hover:text-gray-600 px-3">Cancel</button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                ))}
+              </tbody>
+            </table>
 
-            <div className="border-t border-gray-100 pt-4 space-y-3">
+            {/* Add director form */}
+            <div className="border-t border-gray-100 p-4 space-y-3">
               <h3 className="font-semibold text-gray-800 text-sm">Add director / committee member</h3>
               <p className="text-xs text-gray-500">A secure 6-digit PIN will be automatically generated and shown once after adding.</p>
-              <input className="bramley-input" placeholder="Full name" value={newDir.name} onChange={(e) => setNewDir({ ...newDir, name: e.target.value })} />
-              <input className="bramley-input" placeholder="Email address" type="email" value={newDir.email} onChange={(e) => setNewDir({ ...newDir, email: e.target.value })} />
-              <select className="bramley-input" value={newDir.role} onChange={(e) => setNewDir({ ...newDir, role: e.target.value })}>
-                {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
+                <input className="bramley-input text-sm py-2" placeholder="Full name" value={newDir.name} onChange={(e) => setNewDir({ ...newDir, name: e.target.value })} />
+                <input className="bramley-input text-sm py-2" placeholder="Email address" type="email" value={newDir.email} onChange={(e) => setNewDir({ ...newDir, email: e.target.value })} />
+                <select className="bramley-input text-sm py-2" value={newDir.role} onChange={(e) => setNewDir({ ...newDir, role: e.target.value })}>
+                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
               {dirError && <p className="bramley-error">{dirError}</p>}
               <button onClick={addDirector} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={addingDir}>
                 {addingDir ? <span className="spinner" /> : 'Add director'}

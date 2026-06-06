@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
       void sendModerationRejectionEmail(session.memberEmail, {
         description: description.trim(),
         message: moderation.message,
+        memberName: session.memberName,
       }).catch((e) => console.error('[submit] Moderation rejection email failed:', e))
     }
     return NextResponse.json({ ok: false, rejected: true, message: moderation.message })
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (session.memberEmail && !emailOptOut) {
-    void sendSubmissionConfirmation(session.memberEmail, description.trim())
+    void sendSubmissionConfirmation(session.memberEmail, description.trim(), session.memberName)
       .catch((e) => console.error('[submit] Confirmation email failed:', e))
   }
 

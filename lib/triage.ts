@@ -81,7 +81,7 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
   // Fetch unscored submissions
   const unscoredRows = await sql`
     SELECT s.id, s.description, s.benefit, s.category, s.impact, s.member_id,
-           s.member_email,
+           s.member_email, s.member_name,
            COALESCE(s.email_opt_out, FALSE) AS email_opt_out,
            s.ai_assessed_at,
            s.score, s.score_band, s.member_msg, s.h_and_s_flag,
@@ -100,7 +100,7 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
   const unscored = unscoredRows as Array<{
     id: number; description: string; benefit: string
     category: string; impact: number; member_id: string
-    member_email: string | null; email_opt_out: boolean
+    member_email: string | null; member_name: string | null; email_opt_out: boolean
     ai_assessed_at: string | null
     score: number | null; score_band: string | null; member_msg: string | null
     h_and_s_flag: boolean; ai_summary: string | null; ai_narrative: string | null
@@ -329,6 +329,7 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
             implComplexity: r.implComplexity,
             suggestedTargetDate,
             quickWinFlag,
+            memberName: sub!.member_name,
           })
         } catch (e) {
           console.error(`Submitter email failed for submission ${r.submissionId}:`, e)

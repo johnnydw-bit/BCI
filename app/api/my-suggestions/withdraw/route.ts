@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   // Email the member (if they have an email and haven't opted out)
   if (sub.member_email) {
     try {
-      await sendWithdrawalConfirmationEmail(sub.member_email, sub.description)
+      await sendWithdrawalConfirmationEmail(sub.member_email, sub.description, sub.member_name)
     } catch (e) {
       console.error('[withdraw] Failed to send member confirmation email:', e)
     }

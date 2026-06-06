@@ -119,13 +119,14 @@ export async function PATCH(req: NextRequest) {
     }
 
     const current = await sql`
-      SELECT status, description, member_email, email_opt_out, confirmed_target_date
+      SELECT status, description, member_email, member_name, email_opt_out, confirmed_target_date
       FROM submissions WHERE id = ${id}
     `
     const row = current[0] as {
       status: string
       description: string
       member_email: string | null
+      member_name: string | null
       email_opt_out: boolean
       confirmed_target_date: string | null
     }
@@ -166,6 +167,7 @@ export async function PATCH(req: NextRequest) {
             description: row.description,
             statusLabel: STATUS_LABELS[status] ?? status,
             emailBody,
+            memberName: row.member_name,
           })
         } catch (e) {
           console.error('[triage PATCH] Failed to send status change email:', e)

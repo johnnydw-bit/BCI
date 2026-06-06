@@ -9,6 +9,11 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bramley-bci.vercel.a
 // Use this while Resend domain verification is pending.
 const DEBUG_EMAIL = process.env.DEBUG_EMAIL
 
+function firstName(fullName: string | null | undefined): string {
+  if (!fullName) return 'Member'
+  return fullName.trim().split(/\s+/)[0]
+}
+
 function resolveRecipient(to: string | string[]): string | string[] {
   if (DEBUG_EMAIL) {
     console.log(`[email] DEBUG_EMAIL active — redirecting to ${DEBUG_EMAIL} (was: ${JSON.stringify(to)})`)
@@ -95,6 +100,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
   implComplexity: string | null
   suggestedTargetDate: string | null
   quickWinFlag: boolean
+  memberName?: string | null
 }) {
   const bandLabels: Record<string, string> = {
     priority:       'Priority — high likelihood of implementation',
@@ -119,6 +125,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">Dear ${firstName(submission.memberName)},</p>
           <p style="color:#333;font-family:sans-serif">Thank you for taking the time to submit an improvement idea. Our committee has now assessed it.</p>
 
           <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:16px 0">
@@ -147,7 +154,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
   })
 }
 
-export async function sendSubmissionConfirmation(to: string, description: string) {
+export async function sendSubmissionConfirmation(to: string, description: string, memberName?: string | null) {
   await send({
     from: FROM,
     to,
@@ -156,6 +163,7 @@ export async function sendSubmissionConfirmation(to: string, description: string
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">Dear ${firstName(memberName)},</p>
           <p style="color:#333;font-family:sans-serif">Thank you for submitting an improvement idea. This email is your confirmation that we've received it.</p>
 
           <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:16px 0">
@@ -206,6 +214,7 @@ export async function sendStatusChangeEmail(to: string, opts: {
   description: string
   statusLabel: string
   emailBody: string
+  memberName?: string | null
 }) {
   await send({
     from: FROM,
@@ -215,6 +224,7 @@ export async function sendStatusChangeEmail(to: string, opts: {
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">Dear ${firstName(opts.memberName)},</p>
           <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:0 0 20px">
             <p style="margin:0 0 6px;font-size:12px;color:#888;font-family:sans-serif;text-transform:uppercase;letter-spacing:0.05em">Your idea</p>
             <p style="margin:0;color:#333;font-family:sans-serif">${opts.description}</p>
@@ -233,6 +243,7 @@ export async function sendStatusChangeEmail(to: string, opts: {
 export async function sendModerationRejectionEmail(to: string, opts: {
   description: string
   message: string
+  memberName?: string | null
 }) {
   await send({
     from: FROM,
@@ -242,6 +253,7 @@ export async function sendModerationRejectionEmail(to: string, opts: {
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">Dear ${firstName(opts.memberName)},</p>
           <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:0 0 20px">
             <p style="margin:0 0 6px;font-size:12px;color:#888;font-family:sans-serif;text-transform:uppercase;letter-spacing:0.05em">Your submission</p>
             <p style="margin:0;color:#333;font-family:sans-serif">${opts.description}</p>
@@ -286,7 +298,7 @@ export async function sendHighScoreAlert(to: string, submission: {
 }
 
 /** Confirmation email to a member who withdraws a submission. */
-export async function sendWithdrawalConfirmationEmail(to: string, description: string) {
+export async function sendWithdrawalConfirmationEmail(to: string, description: string, memberName?: string | null) {
   await send({
     from: FROM,
     to,
@@ -295,6 +307,7 @@ export async function sendWithdrawalConfirmationEmail(to: string, description: s
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">Dear ${firstName(memberName)},</p>
           <p style="color:#333;font-family:sans-serif">We've received your withdrawal request and the following improvement idea has been removed from the programme.</p>
           <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:16px 0">
             <p style="margin:0;color:#333;font-family:sans-serif">${description}</p>

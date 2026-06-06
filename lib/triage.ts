@@ -82,7 +82,15 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
   const unscoredRows = await sql`
     SELECT s.id, s.description, s.benefit, s.category, s.impact, s.member_id,
            s.member_email,
-           COALESCE(s.email_opt_out, FALSE) AS email_opt_out
+           COALESCE(s.email_opt_out, FALSE) AS email_opt_out,
+           s.ai_assessed_at,
+           s.score, s.score_band, s.member_msg, s.h_and_s_flag,
+           s.ai_summary, s.ai_narrative, s.cost_band,
+           s.cost_estimate_low, s.cost_estimate_high, s.cost_confidence, s.cost_rationale,
+           s.impl_weeks_low, s.impl_weeks_high, s.impl_complexity,
+           s.suggested_target_date, s.strategic_note, s.suggested_owner,
+           s.needs_external_approval, s.approval_body,
+           s.seasonal_window, s.revenue_opportunity, s.revenue_note
     FROM submissions s
     WHERE s.scored_at IS NULL
       AND s.deleted_at IS NULL
@@ -93,9 +101,22 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
     id: number; description: string; benefit: string
     category: string; impact: number; member_id: string
     member_email: string | null; email_opt_out: boolean
+    ai_assessed_at: string | null
+    score: number | null; score_band: string | null; member_msg: string | null
+    h_and_s_flag: boolean; ai_summary: string | null; ai_narrative: string | null
+    cost_band: string | null; cost_estimate_low: number | null; cost_estimate_high: number | null
+    cost_confidence: string | null; cost_rationale: string | null
+    impl_weeks_low: number | null; impl_weeks_high: number | null; impl_complexity: string | null
+    suggested_target_date: string | null; strategic_note: string | null; suggested_owner: string | null
+    needs_external_approval: boolean; approval_body: string | null
+    seasonal_window: string | null; revenue_opportunity: boolean; revenue_note: string | null
   }>
 
-  const scoringInput = unscored.map((s) => ({
+  // Submissions already AI-assessed at submission time — skip re-scoring, just cluster them
+  const preAssessed = unscored.filter((s) => s.ai_assessed_at !== null)
+  const needsScoring = unscored.filter((s) => s.ai_assessed_at === null)
+
+  const scoringInput = needsScoring.map((s) => ({
     id: s.id,
     description: s.description,
     benefit: s.benefit,
@@ -104,7 +125,38 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
     categoryCeiling: ceilingMap[s.category] ?? CATEGORIES.find((c) => c.value === s.category)?.ceiling ?? 10,
   }))
 
-  const results: ScoringResult[] = scoringInput.length > 0 ? await scoreBatch(scoringInput, weights) : []
+  const freshResults: ScoringResult[] = scoringInput.length > 0 ? await scoreBatch(scoringInput, weights) : []
+
+  // Reconstruct ScoringResult shape for pre-assessed submissions so clustering logic is unified
+  const preAssessedResults: ScoringResult[] = preAssessed.map((s) => ({
+    submissionId: s.id,
+    score: s.score ?? 0,
+    scoreBand: s.score_band ?? 'low',
+    memberMsg: s.member_msg ?? '',
+    hAndSFlag: s.h_and_s_flag,
+    aiSummary: s.ai_summary,
+    aiNarrative: s.ai_narrative,
+    costBand: s.cost_band,
+    costEstimateLow: s.cost_estimate_low,
+    costEstimateHigh: s.cost_estimate_high,
+    costConfidence: s.cost_confidence,
+    costRationale: s.cost_rationale,
+    implWeeksLow: s.impl_weeks_low,
+    implWeeksHigh: s.impl_weeks_high,
+    implComplexity: s.impl_complexity,
+    suggestedTargetDate: s.suggested_target_date,
+    strategicNote: s.strategic_note,
+    suggestedOwner: s.suggested_owner,
+    needsExternalApproval: s.needs_external_approval,
+    approvalBody: s.approval_body,
+    seasonalWindow: s.seasonal_window,
+    revenueOpportunity: s.revenue_opportunity,
+    revenueNote: s.revenue_note,
+    clusterTheme: null,
+    alreadyInPlan: false,
+  }))
+
+  const results: ScoringResult[] = [...freshResults, ...preAssessedResults]
 
   const clusterMap = new Map<string, number>()
   // Track which submissions reused a pre-existing cluster (= recurring theme)
@@ -253,35 +305,39 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
 
     const sub = unscored.find((s) => s.id === r.submissionId)
 
-    // Resolve submitter email — prefer the stored column, fall back to member_preferences
-    let emailTo: string | null = sub?.member_email ?? null
-    if (!emailTo && sub?.member_id) {
-      console.log(`[triage] member_email null for submission ${r.submissionId}, looking up member_preferences for ${sub.member_id}`)
-      const pref = await sql`SELECT email FROM member_preferences WHERE member_id = ${sub.member_id}`
-      emailTo = (pref[0] as { email: string } | undefined)?.email ?? null
-      if (emailTo) {
-        console.log(`[triage] Found email in member_preferences: ${emailTo}`)
-        // Also store it back so future runs don't need the lookup
-        await sql`UPDATE submissions SET member_email = ${emailTo} WHERE id = ${r.submissionId}`
+    // Skip member email if already sent at submission time (ai_assessed_at is set)
+    if (!sub?.ai_assessed_at) {
+      // Resolve submitter email — prefer the stored column, fall back to member_preferences
+      let emailTo: string | null = sub?.member_email ?? null
+      if (!emailTo && sub?.member_id) {
+        console.log(`[triage] member_email null for submission ${r.submissionId}, looking up member_preferences for ${sub.member_id}`)
+        const pref = await sql`SELECT email FROM member_preferences WHERE member_id = ${sub.member_id}`
+        emailTo = (pref[0] as { email: string } | undefined)?.email ?? null
+        if (emailTo) {
+          console.log(`[triage] Found email in member_preferences: ${emailTo}`)
+          await sql`UPDATE submissions SET member_email = ${emailTo} WHERE id = ${r.submissionId}`
+        }
       }
-    }
 
-    if (emailTo && !sub?.email_opt_out) {
-      try {
-        await sendSubmitterUpdate(emailTo, {
-          description: sub!.description,
-          scoreBand: r.scoreBand,
-          memberMsg,
-          costBand: r.costBand,
-          implComplexity: r.implComplexity,
-          suggestedTargetDate,
-          quickWinFlag,
-        })
-      } catch (e) {
-        console.error(`Submitter email failed for submission ${r.submissionId}:`, e)
+      if (emailTo && !sub?.email_opt_out) {
+        try {
+          await sendSubmitterUpdate(emailTo, {
+            description: sub!.description,
+            scoreBand: r.scoreBand,
+            memberMsg,
+            costBand: r.costBand,
+            implComplexity: r.implComplexity,
+            suggestedTargetDate,
+            quickWinFlag,
+          })
+        } catch (e) {
+          console.error(`Submitter email failed for submission ${r.submissionId}:`, e)
+        }
+      } else {
+        console.log(`[triage] No submitter email for submission ${r.submissionId}: emailTo=${emailTo}, opt_out=${sub?.email_opt_out}`)
       }
     } else {
-      console.log(`[triage] No submitter email for submission ${r.submissionId}: emailTo=${emailTo}, opt_out=${sub?.email_opt_out}`)
+      console.log(`[triage] Skipping member email for submission ${r.submissionId} — already sent at submission time`)
     }
   }
 

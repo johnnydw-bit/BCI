@@ -54,6 +54,7 @@ export default function SubmitPage() {
   const [recognition, setRecognition] = useState('named')
   const [emailOptOut, setEmailOptOut] = useState(false)
   const [message, setMessage] = useState('')
+  const [memberMsg, setMemberMsg] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -66,7 +67,8 @@ export default function SubmitPage() {
       })
       if (res.status === 401) { router.push('/'); return }
       const data = await res.json()
-      setMessage(data.message)
+      setMessage(data.message ?? '')
+      setMemberMsg(data.memberMsg ?? null)
       setStep(data.rejected ? 'rejected' : 'success')
     } catch {
       setMessage('Something went wrong. Please try again.')
@@ -86,6 +88,7 @@ export default function SubmitPage() {
         <div className="bramley-body flex flex-col items-center py-12 gap-4">
           <span className="spinner" style={{ borderColor: 'var(--bramley-navy)', borderTopColor: 'transparent' }} />
           <p className="text-gray-600">Reviewing your improvement…</p>
+          <p className="text-gray-400 text-sm">This may take a few seconds</p>
         </div>
       </div></div>
     )
@@ -97,10 +100,24 @@ export default function SubmitPage() {
         <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-[10px] p-4">
-            <p className="text-green-800 font-semibold text-sm">✓ Improvement received</p>
-            <p className="text-green-700 text-sm mt-1">{message}</p>
+            <p className="text-green-800 font-semibold">✓ Thank you — your improvement has been received</p>
           </div>
-          <button onClick={() => { setStep('form'); setDescription(''); setBenefit(''); setCategory(''); setImpact('') }} className="bramley-btn">
+
+          {memberMsg && (
+            <div className="rounded-[10px] border border-gray-200 overflow-hidden">
+              <div className="px-4 py-3 text-white text-sm font-semibold" style={{ background: 'var(--bramley-primary)' }}>
+                Initial thoughts
+              </div>
+              <div className="p-4 space-y-3">
+                <p className="text-gray-800 leading-relaxed">{memberMsg}</p>
+                <p className="text-xs text-gray-400 leading-relaxed border-t border-gray-100 pt-3">
+                  This is a preliminary assessment only. Your idea will be fully evaluated overnight — scored for feasibility, cost and member impact, and considered alongside all other current priorities before the committee reviews it.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <button onClick={() => { setStep('form'); setDescription(''); setBenefit(''); setCategory(''); setImpact(''); setMemberMsg(null) }} className="bramley-btn">
             Submit another improvement
           </button>
           <button onClick={() => router.push('/my-improvements')} className="bramley-btn-secondary">

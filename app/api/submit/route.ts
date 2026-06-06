@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
-import { moderateSubmission } from '@/lib/ai'
+import { moderateSubmission, scoreBatch } from '@/lib/ai'
 import { CATEGORIES } from '@/lib/categories'
 import { sendModerationRejectionEmail, sendSubmissionConfirmation } from '@/lib/email'
 
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, rejected: true, message: moderation.message })
   }
 
-  await sql`
+  const inserted = await sql`
     INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, member_email, email_opt_out)
     VALUES (
       ${session.memberId},
@@ -78,15 +78,67 @@ export async function POST(req: NextRequest) {
       ${session.memberEmail ?? null},
       ${emailOptOut ? true : false}
     )
+    RETURNING id
   `
+  const submissionId = (inserted[0] as { id: number }).id
+
+  // Run AI assessment immediately — store results and include memberMsg in confirmation email.
+  // Clustering, director reports, and full triage happen overnight.
+  let memberMsg: string | undefined
+  try {
+    const categoryCeiling = cat.ceiling ?? 10
+    const [result] = await scoreBatch([{
+      id: submissionId,
+      description: description.trim(),
+      benefit: benefit.trim(),
+      category,
+      impact: Number(impact),
+      categoryCeiling,
+    }])
+    if (result) {
+      memberMsg = result.memberMsg
+      const suggestedTargetDate = result.implWeeksHigh != null
+        ? new Date(Date.now() + result.implWeeksHigh * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        : null
+      await sql`
+        UPDATE submissions SET
+          score                   = ${result.score},
+          score_band              = ${result.scoreBand},
+          member_msg              = ${result.memberMsg},
+          h_and_s_flag            = ${result.hAndSFlag},
+          ai_summary              = ${result.aiSummary},
+          ai_narrative            = ${result.aiNarrative},
+          cost_band               = ${result.costBand},
+          cost_estimate_low       = ${result.costEstimateLow},
+          cost_estimate_high      = ${result.costEstimateHigh},
+          cost_confidence         = ${result.costConfidence},
+          cost_rationale          = ${result.costRationale},
+          impl_weeks_low          = ${result.implWeeksLow},
+          impl_weeks_high         = ${result.implWeeksHigh},
+          impl_complexity         = ${result.implComplexity},
+          suggested_target_date   = ${suggestedTargetDate},
+          strategic_note          = ${result.strategicNote},
+          suggested_owner         = ${result.suggestedOwner},
+          needs_external_approval = ${result.needsExternalApproval},
+          approval_body           = ${result.approvalBody},
+          seasonal_window         = ${result.seasonalWindow},
+          revenue_opportunity     = ${result.revenueOpportunity},
+          revenue_note            = ${result.revenueNote},
+          ai_assessed_at          = NOW()
+        WHERE id = ${submissionId}
+      `
+    }
+  } catch (e) {
+    console.error('[submit] AI assessment failed — will be picked up by nightly triage:', e)
+  }
 
   if (session.memberEmail && !emailOptOut) {
-    void sendSubmissionConfirmation(session.memberEmail, description.trim())
+    void sendSubmissionConfirmation(session.memberEmail, description.trim(), memberMsg)
       .catch((e) => console.error('[submit] Confirmation email failed:', e))
   }
 
   return NextResponse.json({
     ok: true,
-    message: `Thank you — your improvement has been received. It will be assessed overnight and you'll receive an email update within 24 hours.`,
+    memberMsg: memberMsg ?? null,
   })
 }

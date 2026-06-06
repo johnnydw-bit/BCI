@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
         UPDATE submissions SET
           score                   = ${result.score},
           score_band              = ${result.scoreBand},
-          member_msg              = ${result.memberMsg},
+          member_msg              = ${memberMsg},
           h_and_s_flag            = ${result.hAndSFlag},
           ai_summary              = ${result.aiSummary},
           ai_narrative            = ${result.aiNarrative},

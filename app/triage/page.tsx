@@ -598,28 +598,46 @@ export default function TriagePage() {
 
       {/* ── Moderated tab ──────────────────────────────────────────── */}
       {tab === 'moderated' && data.isManager && (
-        <div className="bramley-card">
-          <div className="bramley-body">
-            {moderated.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-8">No moderated submissions.</p>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-gray-500">These submissions were silently rejected by the AI moderation gate. Members received a neutral response.</p>
-                {moderated.map((s) => (
-                  <div key={s.id} className="border border-amber-200 bg-amber-50 rounded-[10px] p-4 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
-                        {s.moderation_reason?.replace('_', ' ')}
+        <div className="bramley-card overflow-hidden">
+          {moderated.length === 0 ? (
+            <div className="flex justify-center py-12">
+              <p className="text-gray-500 text-sm">No moderated submissions.</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr style={{ background: 'var(--bramley-primary)' }}>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 w-28">Date</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80">Description</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 hidden sm:table-cell w-36">Category</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 w-36">Reason</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 hidden md:table-cell">Member</th>
+                </tr>
+              </thead>
+              <tbody>
+                {moderated.map((s, i) => (
+                  <tr key={s.id} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                    <td className="px-4 py-2.5 text-xs text-gray-400 whitespace-nowrap">{formatDate(s.created_at)}</td>
+                    <td className="px-4 py-2.5">
+                      <p className="text-sm text-gray-800 font-medium line-clamp-2">{s.description}</p>
+                      {s.benefit && <p className="text-xs text-gray-400 italic mt-0.5 line-clamp-1">"{s.benefit}"</p>}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-gray-500 hidden sm:table-cell">
+                      {CATEGORIES.find(c => c.value === s.category)?.label ?? s.category}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 whitespace-nowrap">
+                        {s.moderation_reason?.replace(/_/g, ' ') ?? '—'}
                       </span>
-                      <span className="text-xs text-gray-400">{formatDate(s.created_at)}</span>
-                    </div>
-                    <p className="text-sm text-gray-800">{s.description}</p>
-                    {s.benefit && <p className="text-xs text-gray-600 italic">"{s.benefit}"</p>}
-                    <p className="text-xs text-gray-400">{CATEGORIES.find(c => c.value === s.category)?.label}</p>
-                  </div>
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-gray-400 hidden md:table-cell">{s.member_name}</td>
+                  </tr>
                 ))}
-              </div>
-            )}
+              </tbody>
+            </table>
+          )}
+          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-400">Submissions silently rejected by the AI moderation gate — members received a neutral response.</p>
           </div>
         </div>
       )}

@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       categoryCeiling,
     }])
     if (result) {
-      memberMsg = result.memberMsg
+      memberMsg = result.aiNarrative || result.memberMsg
       const suggestedTargetDate = result.implWeeksHigh != null
         ? new Date(Date.now() + result.implWeeksHigh * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         : null

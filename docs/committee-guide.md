@@ -9,23 +9,24 @@
 
 1. [Programme overview](#1-programme-overview)
 2. [Roles and access levels](#2-roles-and-access-levels)
-3. [Signing in](#3-signing-in)
-4. [The triage report](#4-the-triage-report)
-5. [Understanding scores and bands](#5-understanding-scores-and-bands)
-6. [Views — Card view and Spreadsheet view](#6-views--card-view-and-spreadsheet-view)
-7. [Filters and search](#7-filters-and-search)
-8. [Managing submissions](#8-managing-submissions)
-9. [Target dates](#9-target-dates)
-10. [Director notes](#10-director-notes)
-11. [Score override](#11-score-override)
-12. [Audit trail](#12-audit-trail)
-13. [Owner assignment](#13-owner-assignment)
-14. [Tracking approved improvements](#14-tracking-approved-improvements)
-15. [Email reports](#15-email-reports)
-16. [My Improvements — the member view](#16-my-improvements--the-member-view)
-17. [Session security](#17-session-security)
-18. [Super Admin — Admin panel](#18-super-admin--admin-panel)
-19. [Frequently asked questions](#19-frequently-asked-questions)
+3. [Installing the app](#3-installing-the-app)
+4. [Signing in](#4-signing-in)
+5. [The triage report](#5-the-triage-report)
+6. [Understanding scores and bands](#6-understanding-scores-and-bands)
+7. [Views — Card view and Spreadsheet view](#7-views--card-view-and-spreadsheet-view)
+8. [Filters and search](#8-filters-and-search)
+9. [Managing submissions](#9-managing-submissions)
+10. [Target dates](#10-target-dates)
+11. [Director notes](#11-director-notes)
+12. [Score override](#12-score-override)
+13. [Audit trail](#13-audit-trail)
+14. [Owner assignment](#14-owner-assignment)
+15. [Tracking approved improvements](#15-tracking-approved-improvements)
+16. [Email reports](#16-email-reports)
+17. [My Improvements — the member view](#17-my-improvements--the-member-view)
+18. [Session security](#18-session-security)
+19. [Super Admin — Admin panel](#19-super-admin--admin-panel)
+20. [Frequently asked questions](#20-frequently-asked-questions)
 
 ---
 
@@ -61,15 +62,44 @@ The system is designed to ensure every submission is treated fairly and consiste
 
 ---
 
-## 3. Signing in
+## 3. Installing the app
+
+The committee portal can be installed on your device so it opens like a native app — no browser address bar or tabs.
+
+**The committee URL is:** `https://bcg-cip.vercel.app/committee`
+
+**Chrome (Desktop — Windows or Mac)**
+1. Open Chrome and go to `https://bcg-cip.vercel.app/committee`
+2. Look for the install icon (⊕) in the address bar, far right
+3. Click it and select **Install**
+4. The app will open in its own window and appear in your taskbar / applications
+
+**Android (Chrome)**
+1. Open Chrome and navigate to `https://bcg-cip.vercel.app/committee`
+2. Tap the three-dot menu (⋮) in the top right
+3. Tap **Add to Home screen**
+4. Confirm the name and tap **Add**
+5. The app icon will appear on your home screen
+
+**iPhone / iPad (Safari)**
+1. Open Safari and navigate to `https://bcg-cip.vercel.app/committee`
+2. Tap the Share button (the box with an arrow pointing up) at the bottom of the screen
+3. Scroll down and tap **Add to Home Screen**
+4. Confirm the name and tap **Add**
+5. The app icon will appear on your home screen
+
+> **Tip:** Installing the app gives the best experience — it opens full screen with no browser chrome, ideal for use on a tablet during committee meetings.
+
+---
+
+## 4. Signing in
 
 Directors sign in using a **6-digit PIN** assigned by the Club Manager.
 
 **Steps:**
-1. Go to the programme website
-2. Click **Committee / Directors**
-3. Enter your PIN
-4. Click **Sign in**
+1. Open the app or go to `https://bcg-cip.vercel.app/committee`
+2. Enter your PIN
+3. Click **Sign in**
 
 > **Forgotten your PIN?** Contact the Club Manager who can reset your PIN from the Admin panel. A new PIN will be generated and communicated to you.
 
@@ -79,7 +109,7 @@ Directors sign in using a **6-digit PIN** assigned by the Club Manager.
 
 ---
 
-## 4. The triage report
+## 5. The triage report
 
 After signing in, you are taken directly to the **Triage Report** — the main working view for directors.
 
@@ -109,7 +139,7 @@ Click a card to expand it and see full detail, including the AI narrative, sugge
 
 ---
 
-## 5. Understanding scores and bands
+## 6. Understanding scores and bands
 
 ### Score dimensions
 
@@ -157,7 +187,7 @@ When multiple submissions address the same specific issue, they are grouped into
 
 ---
 
-## 6. Views — Card view and Spreadsheet view
+## 7. Views — Card view and Spreadsheet view
 
 The triage report offers two views, switchable via the toggle buttons (☰ / ⊞) in the top right of the report. Your preference is saved automatically.
 
@@ -176,7 +206,7 @@ The spreadsheet view is better for:
 
 ---
 
-## 7. Filters and search
+## 8. Filters and search
 
 ### Search
 
@@ -210,7 +240,7 @@ Withdrawn submissions are hidden by default. Tick **Show withdrawn** to include 
 
 ---
 
-## 8. Managing submissions
+## 9. Managing submissions
 
 > Only the **Club Manager** and **Super Admin** can perform the actions in this section.
 
@@ -243,7 +273,7 @@ If a submission has been placed in the wrong category, use the **Category** drop
 
 ---
 
-## 9. Target dates
+## 10. Target dates
 
 Target dates represent the committee's committed timeline for a submission.
 
@@ -255,7 +285,7 @@ To set or update a target date without changing status, open the submission deta
 
 ---
 
-## 10. Director notes
+## 11. Director notes
 
 Each submission has a **Notes** field visible only to directors — never to members.
 
@@ -269,7 +299,7 @@ Notes are saved automatically when you click away from the text field. They are 
 
 ---
 
-## 11. Score override
+## 12. Score override
 
 The Club Manager can override the AI-generated score for any submission if the committee believes the automated assessment doesn't reflect the full picture.
 
@@ -284,7 +314,7 @@ The override score replaces the AI score for display and filtering purposes. The
 
 ---
 
-## 12. Audit trail
+## 13. Audit trail
 
 Every submission has a complete audit trail recording every status change and score override. To view it:
 
@@ -302,7 +332,7 @@ The audit trail cannot be edited or deleted.
 
 ---
 
-## 13. Owner assignment
+## 14. Owner assignment
 
 The AI scoring process recommends a suggested owner for each submission — the director role best placed to lead on implementation. This is shown as a 👤 badge on the submission card.
 
@@ -322,7 +352,7 @@ Available owner roles:
 
 ---
 
-## 14. Tracking approved improvements
+## 15. Tracking approved improvements
 
 The **Tracking** tab in the triage report shows all submissions with status **Approved** or **Implemented**. It provides a lightweight project tracking view with additional fields:
 
@@ -338,7 +368,7 @@ Click the edit icon on any tracked improvement to update these fields.
 
 ---
 
-## 15. Email reports
+## 16. Email reports
 
 ### Weekly triage report
 
@@ -360,7 +390,7 @@ Each director's email report preference can be toggled in the Admin panel (Direc
 
 ---
 
-## 16. My Improvements — the member view
+## 17. My Improvements — the member view
 
 The member-facing **My Improvements** page shows each member their own submissions and their current status, score band, target date, and status history. Members can also withdraw submissions from this page.
 
@@ -373,7 +403,7 @@ As a director, it is useful to understand what members see so you can set expect
 
 ---
 
-## 17. Session security
+## 18. Session security
 
 - Director sessions last **8 hours** from sign-in
 - In the triage report, an inactivity warning appears after **110 minutes** of no mouse or keyboard activity
@@ -382,7 +412,7 @@ As a director, it is useful to understand what members see so you can set expect
 
 ---
 
-## 18. Super Admin — Admin panel
+## 19. Super Admin — Admin panel
 
 The Admin panel is accessible to the **Club Manager** and **Super Admin** roles. It is reached via the **Admin** link in the triage report header.
 
@@ -521,7 +551,7 @@ This is useful if you have changed scoring weights and want to re-score everythi
 
 ---
 
-## 19. Frequently asked questions
+## 20. Frequently asked questions
 
 **A member says they never received an email — what should I check?**
 First ask them to check their spam or junk folder for emails from `noreply@bramleygolfclub.co.uk`. If they opted out of emails at submission time, they won't receive updates for that submission. Opt-out is per submission, not global.

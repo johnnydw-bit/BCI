@@ -14,17 +14,18 @@ The Continuous Improvement Programme (CIP) gives every member a direct voice in 
 ## Contents
 
 1. [What is the Continuous Improvement Programme?](#1-what-is-the-continuous-improvement-programme)
-2. [Signing in](#2-signing-in)
-3. [Submitting an improvement idea](#3-submitting-an-improvement-idea)
-4. [Categories](#4-categories)
-5. [Impact levels](#5-impact-levels)
-6. [Recognition](#6-recognition)
-7. [What happens after you submit](#7-what-happens-after-you-submit)
-8. [Tracking your ideas — My Improvements](#8-tracking-your-ideas--my-improvements)
-9. [Email updates](#9-email-updates)
-10. [Withdrawing a submission](#10-withdrawing-a-submission)
-11. [Privacy and data](#11-privacy-and-data)
-12. [Frequently asked questions](#12-frequently-asked-questions)
+2. [Saving the portal to your device](#2-saving-the-portal-to-your-device)
+3. [Signing in](#3-signing-in)
+4. [Submitting an improvement idea](#4-submitting-an-improvement-idea)
+5. [Categories](#5-categories)
+6. [Impact levels](#6-impact-levels)
+7. [Recognition](#7-recognition)
+8. [What happens after you submit](#8-what-happens-after-you-submit)
+9. [Tracking your ideas — My Improvements](#9-tracking-your-ideas--my-improvements)
+10. [Email updates](#10-email-updates)
+11. [Withdrawing a submission](#11-withdrawing-a-submission)
+12. [Privacy and data](#12-privacy-and-data)
+13. [Frequently asked questions](#13-frequently-asked-questions)
 
 ---
 
@@ -41,7 +42,35 @@ The CIP is a structured way for members to suggest improvements to any aspect of
 
 ---
 
-## 2. Signing in
+## 2. Saving the portal to your device
+
+You can save the Bramley CIP portal to your phone or tablet home screen so it opens like an app — no need to find the link each time.
+
+**The portal address is:** `https://bcg-cip.vercel.app`
+
+**iPhone / iPad (Safari)**
+1. Open Safari and go to `https://bcg-cip.vercel.app`
+2. Tap the Share button (the box with an arrow pointing up) at the bottom of the screen
+3. Scroll down and tap **Add to Home Screen**
+4. Confirm the name and tap **Add**
+5. The icon will appear on your home screen — tap it to open the portal
+
+**Android (Chrome)**
+1. Open Chrome and go to `https://bcg-cip.vercel.app`
+2. Tap the three-dot menu (⋮) in the top right
+3. Tap **Add to Home screen**
+4. Confirm the name and tap **Add**
+5. The icon will appear on your home screen
+
+**Desktop (Chrome — Windows or Mac)**
+1. Open Chrome and go to `https://bcg-cip.vercel.app`
+2. Look for the install icon (⊕) in the address bar, far right
+3. Click it and select **Install**
+4. The app will open in its own window
+
+---
+
+## 3. Signing in
 
 Before you can submit an idea or track your improvements, you need to sign in using your **club membership credentials**.
 
@@ -63,7 +92,7 @@ Before you can submit an idea or track your improvements, you need to sign in us
 
 ---
 
-## 3. Submitting an improvement idea
+## 4. Submitting an improvement idea
 
 Once signed in, click **Submit an improvement** to open the submission form.
 
@@ -135,7 +164,7 @@ If your submission does not pass, you will receive a message explaining why and,
 
 ---
 
-## 4. Categories
+## 5. Categories
 
 Choose the category that best fits your idea. If your idea spans multiple areas, choose the most relevant one.
 
@@ -153,7 +182,7 @@ Choose the category that best fits your idea. If your idea spans multiple areas,
 
 ---
 
-## 5. Impact levels
+## 6. Impact levels
 
 Select the option that best describes how many members your idea would benefit.
 
@@ -168,7 +197,7 @@ Select the option that best describes how many members your idea would benefit.
 
 ---
 
-## 6. Recognition
+## 7. Recognition
 
 You can choose whether to be named if your idea is implemented.
 
@@ -180,7 +209,7 @@ You can submit some ideas anonymously and others with your name — the choice i
 
 ---
 
-## 7. What happens after you submit
+## 8. What happens after you submit
 
 ### Step 1 — Moderation (immediate)
 Your idea is automatically checked to ensure it meets the programme guidelines. If it passes, it enters the assessment queue. If not, you receive an explanation.
@@ -221,7 +250,7 @@ After assessment, your idea is placed in one of the following bands (visible in 
 
 ---
 
-## 8. Tracking your ideas — My Improvements
+## 9. Tracking your ideas — My Improvements
 
 Sign in and click **My improvements** to see all the ideas you have submitted and their current status.
 
@@ -248,7 +277,7 @@ Each card shows:
 
 ---
 
-## 9. Email updates
+## 10. Email updates
 
 You will receive an email in the following circumstances (unless you have opted out):
 
@@ -264,7 +293,7 @@ To opt out of emails, tick the opt-out box when submitting future ideas. Note th
 
 ---
 
-## 10. Withdrawing a submission
+## 11. Withdrawing a submission
 
 You can withdraw any of your submitted ideas from the **My Improvements** page, provided it has not already been **Implemented**.
 
@@ -284,7 +313,7 @@ Withdrawal cannot be undone. If you change your mind, you can resubmit your idea
 
 ---
 
-## 11. Privacy and data
+## 12. Privacy and data
 
 - Your name and email address are stored securely against your member ID
 - Your email address is used only for programme communications — it is never shared with third parties
@@ -295,7 +324,7 @@ Withdrawal cannot be undone. If you change your mind, you can resubmit your idea
 
 ---
 
-## 12. Frequently asked questions
+## 13. Frequently asked questions
 
 **Can I submit more than one idea?**
 Yes. There is no limit on the number of ideas you can submit. Each is assessed independently.

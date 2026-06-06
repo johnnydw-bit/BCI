@@ -109,7 +109,7 @@ export default function SubmitPage() {
               </div>
               <div className="p-4 space-y-3">
                 <p className="text-gray-800 leading-relaxed">{memberMsg}</p>
-                <p className="text-xs text-gray-400 leading-relaxed border-t border-gray-100 pt-3">
+                <p className="text-sm text-gray-500 leading-relaxed border-t border-gray-100 pt-3">
                   This is a preliminary assessment only. Your idea will be fully evaluated overnight — scored for feasibility, cost and member impact, and considered alongside all other current priorities before the committee reviews it.
                 </p>
               </div>

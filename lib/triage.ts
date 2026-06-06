@@ -153,6 +153,7 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
     revenueNote: s.revenue_note,
     clusterTheme: undefined,
     alreadyInPlan: false,
+    memberNarrative: null,
   }))
 
   const results: ScoringResult[] = [...freshResults, ...preAssessedResults]

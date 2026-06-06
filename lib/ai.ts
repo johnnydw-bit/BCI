@@ -114,6 +114,7 @@ export interface ScoringResult {
   seasonalWindow: string | null
   revenueOpportunity: boolean
   revenueNote: string | null
+  memberNarrative: string | null
 }
 
 export interface ScoringWeights {
@@ -292,7 +293,8 @@ Return a JSON array with one object per improvement in the same order:
     "approval_body": "<description or null>",
     "seasonal_window": "<description or null>",
     "revenue_opportunity": true/false,
-    "revenue_note": "<brief explanation or null>"
+    "revenue_note": "<brief explanation or null>",
+    "member_narrative": "<2-3 sentences written directly to the member in plain, warm English. Acknowledge their idea genuinely, explain what makes it interesting or challenging without any scoring or technical language, and set realistic expectations about next steps. Never mention scores, bands, ceilings, multipliers, weights, or committee process. Write as if a thoughtful club official is speaking directly to the member.>"
   }
 ]`,
     }],
@@ -322,6 +324,7 @@ Return a JSON array with one object per improvement in the same order:
     seasonal_window: string | null
     revenue_opportunity: boolean
     revenue_note: string | null
+    member_narrative: string | null
   }>
   try {
     const jsonMatch = text.match(/\[[\s\S]*\]/)
@@ -378,6 +381,7 @@ Return a JSON array with one object per improvement in the same order:
       seasonalWindow: r.seasonal_window ?? null,
       revenueOpportunity: r.revenue_opportunity ?? false,
       revenueNote: r.revenue_note ?? null,
+      memberNarrative: r.member_narrative ?? null,
     }
   })
 }

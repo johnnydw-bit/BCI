@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { CATEGORIES, IMPACT_OPTIONS } from '@/lib/categories'
 import BramleyHeader from '@/components/BramleyHeader'
+import InstallPrompt from '@/components/InstallPrompt'
 
 const DESC_MAX = 200
 const BENEFIT_MAX = 500
@@ -144,6 +145,7 @@ export default function SubmitPage() {
 
   return (
     <div className="bramley-wide-page"><div className="bramley-card">
+      <InstallPrompt />
       <BramleyHeader subtitle="Continuous Improvement Programme" />
       {sessionWarning && (
         <div className="mx-4 mt-4 bg-amber-50 border border-amber-300 rounded-[8px] px-4 py-3 text-sm text-amber-800">

@@ -44,29 +44,22 @@ The CIP is a structured way for members to suggest improvements to any aspect of
 
 ## 2. Saving the portal to your device
 
-You can save the Bramley CIP portal to your phone or tablet home screen so it opens like an app — no need to find the link each time.
+You can save the Bramley CIP portal to your home screen so it opens like an app — no need to find the link each time.
 
 **The portal address is:** `https://bcg-cip.vercel.app`
 
-**iPhone / iPad (Safari)**
-1. Open Safari and go to `https://bcg-cip.vercel.app`
-2. Tap the Share button (the box with an arrow pointing up) at the bottom of the screen
-3. Scroll down and tap **Add to Home Screen**
-4. Confirm the name and tap **Add**
-5. The icon will appear on your home screen — tap it to open the portal
+**Android &amp; desktop Chrome — automatic prompt**
 
-**Android (Chrome)**
-1. Open Chrome and go to `https://bcg-cip.vercel.app`
-2. Tap the three-dot menu (⋮) in the top right
-3. Tap **Add to Home screen**
-4. Confirm the name and tap **Add**
-5. The icon will appear on your home screen
+After signing in, the portal will offer to install itself. A banner appears at the bottom of the screen with an **Install** button. Tap it, confirm in the dialog that appears, and the app icon is added to your home screen automatically.
 
-**Desktop (Chrome — Windows or Mac)**
-1. Open Chrome and go to `https://bcg-cip.vercel.app`
-2. Look for the install icon (⊕) in the address bar, far right
-3. Click it and select **Install**
-4. The app will open in its own window
+**iPhone / iPad (Safari) — manual steps required**
+
+Apple does not support automatic install prompts. Instead, a banner will appear with instructions:
+1. Tap the **Share** button (the box with an arrow pointing up) at the bottom of your screen
+2. Scroll down and tap **Add to Home Screen**
+3. Confirm the name and tap **Add**
+
+> **Tip:** The install prompt appears 2 seconds after you sign in. If you tap "Not now" it won't appear again on that device — but you can always install manually using the steps above.
 
 ---
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CATEGORIES, STATUS_LABELS } from '@/lib/categories'
 import BramleyHeader from '@/components/BramleyHeader'
+import InstallPrompt from '@/components/InstallPrompt'
 
 interface HistoryEntry {
   new_status: string
@@ -122,6 +123,7 @@ export default function MyImprovementsPage() {
 
   return (
     <div className="bramley-wide-page space-y-4">
+      <InstallPrompt />
       <div className="bramley-card">
         <BramleyHeader
           subtitle="My improvements"

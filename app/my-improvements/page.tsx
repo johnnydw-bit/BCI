@@ -48,10 +48,10 @@ export default function MyImprovementsPage() {
   const [withdrawingId, setWithdrawingId] = useState<number | null>(null)
   const [expandedId, setExpandedId] = useState<number | null>(null)
 
-  // Redirect unauthenticated users to login
+  // Require member session — unauthenticated or director sessions go to member login
   useEffect(() => {
     fetch('/api/session').then((r) => r.json()).then((s) => {
-      if (!s.authenticated) router.replace('/')
+      if (!s.authenticated || s.type !== 'member') router.replace('/')
     })
   }, [router])
 

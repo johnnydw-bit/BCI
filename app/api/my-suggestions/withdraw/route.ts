@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const token = cookieStore.get('bci_session')?.value
   const session = token ? await verifySession(token) : null
 
-  if (!session || session.type !== 'member') {
+  if (!session) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 

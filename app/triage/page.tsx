@@ -99,6 +99,7 @@ export default function TriagePage() {
   const [tab, setTab] = useState<'triage' | 'tracking' | 'moderated'>('triage')
   const [tracked, setTracked] = useState<TrackedImprovement[]>([])
   const [trackingEdit, setTrackingEdit] = useState<Record<number, Partial<TrackedImprovement>>>({})
+  const [expandedTrackingId, setExpandedTrackingId] = useState<number | null>(null)
   const [savingTracking, setSavingTracking] = useState<number | null>(null)
 
   useEffect(() => {
@@ -484,115 +485,153 @@ export default function TriagePage() {
 
       {/* ── Tracking tab ───────────────────────────────────────────── */}
       {tab === 'tracking' && (
-        <div className="bramley-card">
-          <div className="bramley-body">
-            {filteredTracked.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-8">{filterCategory === 'all' ? 'No approved or implemented improvements yet.' : 'No items in this area.'}</p>
-            ) : (
-              <div className="space-y-4">
-                {filteredTracked.map((t) => (
-                  <div key={t.id} className="border border-gray-200 rounded-[10px] overflow-hidden">
-                    <div className="p-4 space-y-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-semibold text-gray-800">{t.ai_summary ?? t.description}</p>
-                        <span className={`bramley-badge shrink-0 ${t.status === 'implemented' ? 'status-implemented' : 'status-approved'}`}>
-                          {STATUS_LABELS[t.status]}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === t.category)?.label} {t.score != null ? `· Score ${Number(t.score).toFixed(1)}` : ''}</p>
-                      {t.recognition !== 'anonymous' && t.member_name && (
-                        <p className="text-xs text-gray-400">Submitted by {t.member_name}</p>
-                      )}
-                    </div>
+        <div className="bramley-card overflow-hidden">
+          {filteredTracked.length === 0 ? (
+            <div className="flex justify-center py-12">
+              <p className="text-gray-500 text-sm">{filterCategory === 'all' ? 'No approved or implemented improvements yet.' : 'No items in this area.'}</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr style={{ background: 'var(--bramley-primary)' }}>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 w-28">Status</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80">Improvement</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 hidden sm:table-cell w-36">Category</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 hidden md:table-cell w-28">Target date</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 hidden lg:table-cell w-36">Responsible</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-white opacity-80 hidden lg:table-cell w-24">Actual cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTracked.map((t, i) => {
+                  const isExpanded = expandedTrackingId === t.id
+                  return (
+                    <>
+                      <tr
+                        key={t.id}
+                        onClick={() => setExpandedTrackingId(isExpanded ? null : t.id)}
+                        className={`border-b border-gray-100 cursor-pointer transition-colors ${
+                          isExpanded ? 'bg-blue-50' : i % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'
+                        }`}
+                      >
+                        <td className="px-4 py-2.5">
+                          <span className={`bramley-badge ${t.status === 'implemented' ? 'status-implemented' : 'status-approved'}`}>
+                            {STATUS_LABELS[t.status]}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <p className="text-gray-800 font-medium line-clamp-2">{t.ai_summary ?? t.description}</p>
+                          {t.recognition !== 'anonymous' && t.member_name && (
+                            <p className="text-xs text-gray-400 mt-0.5">{t.member_name}</p>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-500 hidden sm:table-cell">
+                          {CATEGORIES.find(c => c.value === t.category)?.label}
+                          {t.score != null && <span className="block text-gray-400">Score {Number(t.score).toFixed(1)}</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-500 hidden md:table-cell whitespace-nowrap">
+                          {t.target_date ? formatDate(t.target_date) : <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-500 hidden lg:table-cell">
+                          {t.responsible_person ?? <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-500 hidden lg:table-cell">
+                          {t.actual_cost != null ? `£${Number(t.actual_cost).toLocaleString()}` : <span className="text-gray-300">—</span>}
+                        </td>
+                      </tr>
 
-                    {data.isManager && (
-                      <div className="border-t border-gray-100 p-4 bg-gray-50 grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">
-                            Target date
-                            {t.suggested_target_date && !t.target_date && (
-                              <button
-                                onClick={() => editTracking(t.id, 'target_date', t.suggested_target_date!.substring(0, 10))}
-                                className="ml-2 text-blue-500 hover:text-blue-700 underline normal-case font-normal"
-                              >
-                                Use AI suggestion ({new Date(t.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
-                              </button>
-                            )}
-                          </label>
-                          <input
-                            type="date"
-                            className="bramley-input text-sm py-1.5"
-                            value={trackingEdit[t.id]?.target_date ?? t.target_date ?? ''}
-                            onChange={(e) => editTracking(t.id, 'target_date', e.target.value || null)}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">Responsible person</label>
-                          <input
-                            type="text"
-                            className="bramley-input text-sm py-1.5"
-                            placeholder="Name or role"
-                            value={trackingEdit[t.id]?.responsible_person ?? t.responsible_person ?? ''}
-                            onChange={(e) => editTracking(t.id, 'responsible_person', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">Budget year</label>
-                          <input
-                            type="number"
-                            className="bramley-input text-sm py-1.5"
-                            placeholder={new Date().getFullYear().toString()}
-                            value={trackingEdit[t.id]?.budget_year ?? t.budget_year ?? ''}
-                            onChange={(e) => editTracking(t.id, 'budget_year', parseInt(e.target.value) || null)}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">Actual cost (£)</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            className="bramley-input text-sm py-1.5"
-                            placeholder="0.00"
-                            value={trackingEdit[t.id]?.actual_cost ?? t.actual_cost ?? ''}
-                            onChange={(e) => editTracking(t.id, 'actual_cost', parseFloat(e.target.value) || null)}
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-xs text-gray-500 block mb-1">Notes</label>
-                          <textarea
-                            className="bramley-input resize-none text-sm"
-                            rows={2}
-                            placeholder="Progress notes, blockers, decisions…"
-                            value={trackingEdit[t.id]?.tracking_notes ?? t.tracking_notes ?? ''}
-                            onChange={(e) => editTracking(t.id, 'tracking_notes', e.target.value)}
-                          />
-                        </div>
-                        {trackingEdit[t.id] && (
-                          <div className="col-span-2">
-                            <button onClick={() => saveTracking(t.id)} className="bramley-btn py-2 text-sm" disabled={savingTracking === t.id}>
-                              {savingTracking === t.id ? <span className="spinner" /> : 'Save'}
-                            </button>
-                          </div>
-                        )}
-                        {t.status === 'approved' && (
-                          <div className="col-span-2 pt-1 border-t border-gray-200">
-                            <button
-                              onClick={() => markComplete(t.id)}
-                              disabled={completing === t.id}
-                              className="bramley-btn py-2 text-sm"
-                              style={{ background: '#1e8449' }}
-                            >
-                              {completing === t.id ? <span className="spinner" /> : '✓ Mark as implemented'}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                      {isExpanded && data.isManager && (
+                        <tr key={`${t.id}-edit`} className="bg-blue-50 border-b border-blue-100">
+                          <td colSpan={6} className="px-6 py-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl">
+                              <div>
+                                <label className="text-xs text-gray-500 block mb-1">
+                                  Target date
+                                  {t.suggested_target_date && !t.target_date && (
+                                    <button
+                                      onClick={() => editTracking(t.id, 'target_date', t.suggested_target_date!.substring(0, 10))}
+                                      className="ml-1 text-blue-500 hover:text-blue-700 underline"
+                                    >
+                                      Use AI ({formatDate(t.suggested_target_date)})
+                                    </button>
+                                  )}
+                                </label>
+                                <input
+                                  type="date"
+                                  className="bramley-input text-sm py-1.5"
+                                  value={trackingEdit[t.id]?.target_date ?? t.target_date ?? ''}
+                                  onChange={(e) => editTracking(t.id, 'target_date', e.target.value || null)}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 block mb-1">Responsible person</label>
+                                <input
+                                  type="text"
+                                  className="bramley-input text-sm py-1.5"
+                                  placeholder="Name or role"
+                                  value={trackingEdit[t.id]?.responsible_person ?? t.responsible_person ?? ''}
+                                  onChange={(e) => editTracking(t.id, 'responsible_person', e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 block mb-1">Budget year</label>
+                                <input
+                                  type="number"
+                                  className="bramley-input text-sm py-1.5"
+                                  placeholder={new Date().getFullYear().toString()}
+                                  value={trackingEdit[t.id]?.budget_year ?? t.budget_year ?? ''}
+                                  onChange={(e) => editTracking(t.id, 'budget_year', parseInt(e.target.value) || null)}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 block mb-1">Actual cost (£)</label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  className="bramley-input text-sm py-1.5"
+                                  placeholder="0.00"
+                                  value={trackingEdit[t.id]?.actual_cost ?? t.actual_cost ?? ''}
+                                  onChange={(e) => editTracking(t.id, 'actual_cost', parseFloat(e.target.value) || null)}
+                                />
+                              </div>
+                              <div className="col-span-2 md:col-span-4">
+                                <label className="text-xs text-gray-500 block mb-1">Notes</label>
+                                <textarea
+                                  className="bramley-input resize-none text-sm"
+                                  rows={2}
+                                  placeholder="Progress notes, blockers, decisions…"
+                                  value={trackingEdit[t.id]?.tracking_notes ?? t.tracking_notes ?? ''}
+                                  onChange={(e) => editTracking(t.id, 'tracking_notes', e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2 mt-3 flex-wrap">
+                              {trackingEdit[t.id] && (
+                                <button onClick={() => saveTracking(t.id)} style={{ width: 'auto' }} className="bramley-btn px-6 py-2 text-sm" disabled={savingTracking === t.id}>
+                                  {savingTracking === t.id ? <span className="spinner" /> : 'Save'}
+                                </button>
+                              )}
+                              {t.status === 'approved' && (
+                                <button
+                                  onClick={() => markComplete(t.id)}
+                                  disabled={completing === t.id}
+                                  style={{ width: 'auto', background: '#1e8449' }}
+                                  className="bramley-btn px-6 py-2 text-sm"
+                                >
+                                  {completing === t.id ? <span className="spinner" /> : '✓ Mark as implemented'}
+                                </button>
+                              )}
+                              <button onClick={() => setExpandedTrackingId(null)} className="text-xs text-gray-400 hover:text-gray-600 px-3">Close</button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 

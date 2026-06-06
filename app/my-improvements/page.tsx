@@ -237,6 +237,9 @@ export default function MyImprovementsPage() {
                                     {s.confirmed_target_date && <span className="ml-1 text-green-600 font-semibold">✓ confirmed</span>}
                                   </p>
                                 )}
+                                <p className="text-sm text-gray-500 leading-relaxed border-t border-gray-100 mt-3 pt-3">
+                                  This is a preliminary assessment only. Your idea will be fully evaluated overnight — scored for feasibility, cost and member impact, and considered alongside all other current priorities before the committee reviews it.
+                                </p>
                               </div>
                             )}
 

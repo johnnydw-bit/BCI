@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (session.memberEmail && !emailOptOut) {
-    void sendSubmissionConfirmation(session.memberEmail, description.trim(), memberMsg)
+    void sendSubmissionConfirmation(session.memberEmail, description.trim())
       .catch((e) => console.error('[submit] Confirmation email failed:', e))
   }
 

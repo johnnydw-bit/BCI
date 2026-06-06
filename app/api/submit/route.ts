@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
   const existing = await sql`
     SELECT description FROM submissions
     WHERE member_id = ${session.memberId}
+      AND deleted_at IS NULL
     ORDER BY created_at DESC
     LIMIT 10
   `

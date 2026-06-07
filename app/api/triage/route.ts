@@ -43,9 +43,11 @@ export async function GET() {
       s.seasonal_window, s.revenue_opportunity, s.revenue_note,
       s.notes, s.score_override, s.score_override_reason, s.score_override_by,
       s.confirmed_cost,
-      c.theme AS cluster_theme, c.size AS cluster_size
+      c.theme AS cluster_theme, c.size AS cluster_size,
+      (d.email IS NOT NULL) AS from_board
     FROM submissions s
     LEFT JOIN clusters c ON c.id = s.cluster_id
+    LEFT JOIN director_roles d ON d.email = s.member_email AND d.active = TRUE
     WHERE s.category = ANY(${allowedCategories})
       AND s.deleted_at IS NULL
       AND s.withdrawn_at IS NULL

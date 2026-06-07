@@ -43,6 +43,7 @@ interface Submission {
   seasonal_window: string | null
   revenue_opportunity: boolean
   revenue_note: string | null
+  from_board: boolean
   notes: string | null
   score_override: number | null
   score_override_reason: string | null
@@ -293,7 +294,8 @@ export default function TriagePage() {
       if (filterFlag === 'recurring' && !s.recurring_flag) return false
       if (filterFlag === 'in_plan' && s.status !== 'in_plan') return false
       if (filterFlag === 'cost_threshold' && !s.cost_threshold_flag) return false
-      if (filterOwner !== 'all' && s.suggested_owner !== filterOwner) return false
+      if (filterOwner === 'board_members' && !s.from_board) return false
+      if (filterOwner !== 'all' && filterOwner !== 'board_members' && s.suggested_owner !== filterOwner) return false
       return true
     })
   }
@@ -410,6 +412,7 @@ export default function TriagePage() {
               <label className="text-xs text-gray-500 shrink-0">Owner</label>
               <select className="bramley-input text-sm py-1.5 flex-1" value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)}>
                 <option value="all">All owners</option>
+                <option value="board_members">🏛 Board submissions</option>
                 {ownerOptions.map((o) => (
                   <option key={o} value={o}>{o}</option>
                 ))}

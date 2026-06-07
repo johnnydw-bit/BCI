@@ -222,7 +222,7 @@ export default function TriagePage() {
 
   const TARGET_DATE_STATUSES = new Set(['under_consideration', 'approved', 'in_plan'])
 
-  async function updateField(id: number, field: 'score_override', value: string, extra?: Record<string, string>) {
+  async function updateField(id: number, field: 'score_override' | 'status' | 'category' | 'suggested_owner', value: string, extra?: Record<string, string>) {
     setUpdating(id)
     await fetch('/api/triage', {
       method: 'PATCH',

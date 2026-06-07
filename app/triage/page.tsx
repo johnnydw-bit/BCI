@@ -145,7 +145,6 @@ export default function TriagePage() {
   }, [router])
 
   async function fetchAuditLog(id: number) {
-    if (auditLog[id]) return
     const res = await fetch(`/api/triage/audit?id=${id}`)
     const data = await res.json()
     setAuditLog((prev) => ({ ...prev, [id]: data.log ?? [] }))

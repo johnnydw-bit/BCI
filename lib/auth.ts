@@ -100,8 +100,23 @@ export async function loginMember(
       return { success: false, error: 'Invalid member ID or PIN' }
     }
 
-    const nameMatch = homeHtml.match(/Welcome[,\s]+([^<\n]+)/i)
-    const memberName = nameMatch ? nameMatch[1].trim() : memberId
+    // Try several greeting patterns the Bramley site might use
+    const namePatterns = [
+      /Welcome\s+back[,\s]+([A-Za-z][A-Za-z\s\-']+?)(?:\s*[<!\n]|$)/i,
+      /Welcome[,\s]+([A-Za-z][A-Za-z\s\-']+?)(?:\s*[<!\n]|$)/i,
+      /Hello[,\s]+([A-Za-z][A-Za-z\s\-']+?)(?:\s*[<!\n]|$)/i,
+      /Hi[,\s]+([A-Za-z][A-Za-z\s\-']+?)(?:\s*[<!\n]|$)/i,
+      /Logged in as[:\s]+([A-Za-z][A-Za-z\s\-']+?)(?:\s*[<!\n]|$)/i,
+    ]
+    let scrapedName: string | undefined
+    for (const pattern of namePatterns) {
+      const m = homeHtml.match(pattern)
+      if (m) { scrapedName = m[1].trim(); break }
+    }
+    // Discard scraped value if it looks like an ID, email, or is implausibly short
+    const looksValid = (s: string) =>
+      s.length >= 2 && !s.includes('@') && !/^\d+$/.test(s)
+    const memberName = scrapedName && looksValid(scrapedName) ? scrapedName : undefined
 
     return { success: true, memberName }
   } catch {

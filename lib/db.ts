@@ -89,7 +89,7 @@ export async function initDb() {
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS revenue_opportunity BOOLEAN NOT NULL DEFAULT FALSE`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS revenue_note TEXT`
 
-  // Member preferences — stores verified email against member ID
+  // Member preferences — stores verified email and name against member ID
   await sql`
     CREATE TABLE IF NOT EXISTS member_preferences (
       member_id   TEXT PRIMARY KEY,
@@ -98,6 +98,7 @@ export async function initDb() {
       updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `
+  await sql`ALTER TABLE member_preferences ADD COLUMN IF NOT EXISTS member_name TEXT`
 
   await sql`
     CREATE TABLE IF NOT EXISTS clusters (

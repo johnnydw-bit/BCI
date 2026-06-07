@@ -34,27 +34,40 @@ export async function POST(req: NextRequest) {
 
   // Check if we have a stored email for this member
   const existing = await sql`
-    SELECT email FROM member_preferences WHERE member_id = ${memberId.trim()}
+    SELECT email, member_name FROM member_preferences WHERE member_id = ${memberId.trim()}
   `
 
   if (existing.length > 0) {
-    const storedEmail = (existing[0] as { email: string }).email
-    if (storedEmail !== emailNorm) {
+    const row = existing[0] as { email: string; member_name: string | null }
+    if (row.email !== emailNorm) {
       await recordFailedAttempt(ip, identifier)
       return NextResponse.json({ error: 'Email address does not match our records for this member' }, { status: 401 })
     }
+    // Update stored name if we scraped a better one; keep existing if scrape failed
+    if (result.memberName) {
+      await sql`
+        UPDATE member_preferences SET member_name = ${result.memberName}, updated_at = NOW()
+        WHERE member_id = ${memberId.trim()}
+      `
+    }
   } else {
-    // First login — store their email
+    // First login — store their email and name
     await sql`
-      INSERT INTO member_preferences (member_id, email)
-      VALUES (${memberId.trim()}, ${emailNorm})
+      INSERT INTO member_preferences (member_id, email, member_name)
+      VALUES (${memberId.trim()}, ${emailNorm}, ${result.memberName ?? null})
     `
   }
+
+  // Resolve best available name: scraped > stored > member ID
+  const storedName = existing.length > 0
+    ? (existing[0] as { member_name: string | null }).member_name
+    : null
+  const resolvedName = result.memberName ?? storedName ?? memberId.trim()
 
   const token = await signSession({
     type: 'member',
     memberId: memberId.trim(),
-    memberName: result.memberName ?? memberId,
+    memberName: resolvedName,
     memberEmail: emailNorm,
   })
 
@@ -67,5 +80,5 @@ export async function POST(req: NextRequest) {
     path: '/',
   })
 
-  return NextResponse.json({ ok: true, memberName: result.memberName })
+  return NextResponse.json({ ok: true, memberName: resolvedName })
 }

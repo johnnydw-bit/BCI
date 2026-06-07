@@ -52,8 +52,8 @@ The app runs at: **`https://bramley-bci.vercel.app`** (or a custom domain if one
 
 ### Automatic operations
 
-The system runs two automatic tasks every week:
-- **Monday 07:00** — scores all new member submissions and emails directors
+The system runs automatic tasks on a schedule:
+- **Every night** — scores all new member submissions (if any), applies cluster bonuses, and emails directors if new items have been scored
 - **Sunday 06:00** — emails a data backup to the Club Manager
 
 These run without anyone doing anything.

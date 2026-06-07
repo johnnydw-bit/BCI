@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { isManager } from '@/lib/categories'
@@ -7,7 +7,7 @@ import { parseCsvRows } from '@/lib/backup'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
-  const token = cookieStore.get('bci_session')?.value
+  const token = cookieStore.get('bci_director_session')?.value
   const session = token ? await verifySession(token) : null
 
   if (!session || session.type !== 'director' || !isManager(session.role)) {
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   let upserted = 0
   for (const r of rows) {
-    // Only restore core fields — don't overwrite AI-scored fields if already scored
+    // Only restore core fields â€” don't overwrite AI-scored fields if already scored
     await sql`
       INSERT INTO submissions (
         id, member_id, member_name, recognition,
@@ -106,3 +106,4 @@ function bool(v: unknown): boolean {
   if (v === 'true' || v === true || v === '1' || v === 1) return true
   return false
 }
+

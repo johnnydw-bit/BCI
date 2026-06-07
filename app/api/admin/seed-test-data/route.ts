@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { isManager } from '@/lib/categories'
@@ -6,7 +6,7 @@ import { sql } from '@/lib/db'
 import { moderateSubmission } from '@/lib/ai'
 
 // Submissions designed to trigger each moderation reason.
-// They go through the real AI gate — results may surprise you.
+// They go through the real AI gate â€” results may surprise you.
 const MODERATED_CANDIDATES = [
   {
     member_id: 'TEST_M1', member_name: 'Test Member', recognition: 'anonymous',
@@ -57,7 +57,7 @@ const TEST_SUBMISSIONS = [
   },
   {
     member_id: 'TEST002', member_name: 'Bob Birdie', recognition: 'named',
-    description: 'Introduce a Saturday morning beginners\' group with a PGA professional — structured 6-week course for new members.',
+    description: 'Introduce a Saturday morning beginners\' group with a PGA professional â€” structured 6-week course for new members.',
     benefit: 'Retention of new members is a known challenge for all golf clubs. A structured introduction programme builds confidence, creates social bonds and reduces early dropout. Directly supports the strategic priority of growing membership.',
     category: 'competitions', impact: 8,
     member_email: 'test-bob@example.com',
@@ -76,19 +76,19 @@ const TEST_SUBMISSIONS = [
   {
     member_id: 'TEST004', member_name: 'David Eagle', recognition: 'named',
     description: 'Add a whiteboard or digital display in the locker room showing today\'s competition starting sheet and results.',
-    benefit: 'Members frequently ask at the bar about who is playing and results. A simple display would reduce pressure on staff and keep everyone informed. Very low cost — a whiteboard would suffice as a first step.',
+    benefit: 'Members frequently ask at the bar about who is playing and results. A simple display would reduce pressure on staff and keep everyone informed. Very low cost â€” a whiteboard would suffice as a first step.',
     category: 'clubhouse', impact: 4,
     member_email: 'test-david@example.com',
   },
   {
     member_id: 'TEST005', member_name: 'Emma Putt', recognition: 'anonymous',
-    description: 'Provide a basic phone charging station in the bar area — a multi-plug unit on the bar or nearby shelf.',
-    benefit: 'Members increasingly rely on phone for GPS and scoring apps during a round. Arriving at the 19th hole with a flat battery is a common frustration. A £30 charging unit would resolve this completely.',
+    description: 'Provide a basic phone charging station in the bar area â€” a multi-plug unit on the bar or nearby shelf.',
+    benefit: 'Members increasingly rely on phone for GPS and scoring apps during a round. Arriving at the 19th hole with a flat battery is a common frustration. A Â£30 charging unit would resolve this completely.',
     category: 'bar', impact: 2,
     member_email: 'test-emma@example.com',
   },
 
-  // --- Cluster pair (same issue — shower temperature) ---
+  // --- Cluster pair (same issue â€” shower temperature) ---
   {
     member_id: 'TEST006', member_name: 'Frank Bogey', recognition: 'named',
     description: 'The hot water in the men\'s changing room showers runs out after approximately 4 players have showered. There is rarely adequate hot water after a busy morning.',
@@ -116,7 +116,7 @@ const TEST_SUBMISSIONS = [
   // --- Active / medium band ---
   {
     member_id: 'TEST009', member_name: 'Isla Driver', recognition: 'named',
-    description: 'Introduce a halfway house or drinks trolley service on the course — at minimum a cold drinks and snacks stop at the 9th hole.',
+    description: 'Introduce a halfway house or drinks trolley service on the course â€” at minimum a cold drinks and snacks stop at the 9th hole.',
     benefit: 'Most comparable clubs offer some form of on-course catering. Members playing 18 holes have no food or drink option after leaving the clubhouse. A simple kiosk at the 9th would generate revenue and significantly improve the playing experience, especially in summer.',
     category: 'refreshments', impact: 6,
     member_email: 'test-isla@example.com',
@@ -134,8 +134,8 @@ const TEST_SUBMISSIONS = [
   // --- Restaurant / medium ---
   {
     member_id: 'TEST011', member_name: 'Karen Chip', recognition: 'named',
-    description: 'Offer a post-round set-price two-course meal deal — £15 to include a main and dessert — available from 12:00–3:00 pm on weekdays.',
-    benefit: 'Many members leave after their round without eating at the club. A visible, affordable set price option would encourage members to stay longer and increase food revenue. Weekday lunchtimes are currently very quiet — this would help fill that slot.',
+    description: 'Offer a post-round set-price two-course meal deal â€” Â£15 to include a main and dessert â€” available from 12:00â€“3:00 pm on weekdays.',
+    benefit: 'Many members leave after their round without eating at the club. A visible, affordable set price option would encourage members to stay longer and increase food revenue. Weekday lunchtimes are currently very quiet â€” this would help fill that slot.',
     category: 'restaurant', impact: 4,
     member_email: 'test-karen@example.com',
   },
@@ -152,7 +152,7 @@ const TEST_SUBMISSIONS = [
 
 export async function POST() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('bci_session')?.value
+  const token = cookieStore.get('bci_director_session')?.value
   const session = token ? await verifySession(token) : null
 
   if (!session || session.type !== 'director' || !isManager(session.role)) {
@@ -164,7 +164,7 @@ export async function POST() {
 
   let inserted = 0
 
-  // Normal submissions — unscored, picked up by triage run
+  // Normal submissions â€” unscored, picked up by triage run
   for (const s of TEST_SUBMISSIONS) {
     await sql`
       INSERT INTO submissions
@@ -176,7 +176,7 @@ export async function POST() {
     inserted++
   }
 
-  // Moderated candidates — run through the real AI gate
+  // Moderated candidates â€” run through the real AI gate
   const moderationResults: Array<{ description: string; expected: string; actual: string; passed: boolean }> = []
   for (const s of MODERATED_CANDIDATES) {
     const result = await moderateSubmission(s.description, s.benefit, [])
@@ -187,7 +187,7 @@ export async function POST() {
       passed: result.pass,
     })
     if (!result.pass && result.silentReject) {
-      // political / personal_attack — store silently as the real gate does
+      // political / personal_attack â€” store silently as the real gate does
       await sql`
         INSERT INTO submissions
           (member_id, member_name, recognition, description, benefit, category, impact,
@@ -199,7 +199,7 @@ export async function POST() {
       `
       inserted++
     } else if (!result.pass) {
-      // Visible rejection — store so it shows in moderated tab
+      // Visible rejection â€” store so it shows in moderated tab
       await sql`
         INSERT INTO submissions
           (member_id, member_name, recognition, description, benefit, category, impact,
@@ -211,8 +211,8 @@ export async function POST() {
       `
       inserted++
     } else {
-      // AI let it through — insert as normal unscored submission so you can see it passed
-      console.warn(`[seed] Moderation MISSED: expected=${s.expectedReason} — "${s.description.slice(0, 60)}"`)
+      // AI let it through â€” insert as normal unscored submission so you can see it passed
+      console.warn(`[seed] Moderation MISSED: expected=${s.expectedReason} â€” "${s.description.slice(0, 60)}"`)
       await sql`
         INSERT INTO submissions
           (member_id, member_name, recognition, description, benefit, category, impact, test_data)
@@ -226,3 +226,4 @@ export async function POST() {
 
   return NextResponse.json({ ok: true, inserted, moderationResults })
 }
+

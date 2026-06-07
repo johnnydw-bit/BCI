@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -14,7 +14,7 @@ export default function BoardLoginPage() {
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    fetch('/api/session').then((r) => r.json()).then((s) => {
+    fetch('/api/director-session').then((r) => r.json()).then((s) => {
       if (s.authenticated && s.type === 'director') { router.replace('/triage'); return }
       setChecking(false)
     })
@@ -88,3 +88,4 @@ export default function BoardLoginPage() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
@@ -17,7 +17,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export async function GET() {
   const cookieStore = await cookies()
-  const token = cookieStore.get('bci_session')?.value
+  const token = cookieStore.get('bci_director_session')?.value
   const session = token ? await verifySession(token) : null
 
   if (!session || session.type !== 'director') {
@@ -64,7 +64,7 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   const cookieStore = await cookies()
-  const token = cookieStore.get('bci_session')?.value
+  const token = cookieStore.get('bci_director_session')?.value
   const session = token ? await verifySession(token) : null
 
   if (!session || session.type !== 'director' || !isManager(session.role)) {
@@ -147,7 +147,7 @@ export async function PATCH(req: NextRequest) {
 
     // Send AI-generated email to member if they have email and haven't opted out
     if (row?.member_email && !row.email_opt_out) {
-      // Run email async — don't block the response
+      // Run email async â€” don't block the response
       void (async () => {
         try {
           const configRows = await sql`SELECT key, value FROM config WHERE key IN ('COMMS_TONE', 'COMMS_SIGNOFF')`
@@ -187,7 +187,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const cookieStore = await cookies()
-  const token = cookieStore.get('bci_session')?.value
+  const token = cookieStore.get('bci_director_session')?.value
   const session = token ? await verifySession(token) : null
 
   if (!session || session.type !== 'director' || !isManager(session.role)) {
@@ -211,3 +211,4 @@ export async function DELETE(req: NextRequest) {
 
   return NextResponse.json({ ok: true })
 }
+

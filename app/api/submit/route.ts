@@ -8,8 +8,11 @@ import { sendModerationRejectionEmail, sendSubmissionConfirmation } from '@/lib/
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
-  const token = cookieStore.get('bci_session')?.value
-  const session = token ? await verifySession(token) : null
+  const memberToken   = cookieStore.get('bci_session')?.value
+  const directorToken = cookieStore.get('bci_director_session')?.value
+  const session = memberToken
+    ? await verifySession(memberToken)
+    : directorToken ? await verifySession(directorToken) : null
 
   if (!session || (session.type !== 'member' && session.type !== 'director')) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })

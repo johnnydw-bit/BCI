@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies()
-  const token = cookieStore.get('bci_session')?.value
+  const token = cookieStore.get('bci_director_session')?.value
   const session = token ? await verifySession(token) : null
 
   if (!session || session.type !== 'director') {
@@ -25,3 +25,4 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ log: rows })
 }
+

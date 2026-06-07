@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { signSession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { cookies } from 'next/headers'
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   })
 
   const cookieStore = await cookies()
-  cookieStore.set('bci_session', token, {
+  cookieStore.set('bci_director_session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -57,3 +57,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true, role: director.role, name: director.name })
 }
+

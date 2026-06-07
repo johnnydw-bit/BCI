@@ -63,25 +63,88 @@ Respond with exactly this JSON:
     return { pass: true, message: '' }
   }
 
-  // Political and personal attacks get a neutral message — don't signal the detection
+  // Political and personal attacks get a neutral static message — don't signal the detection
   const silentReasons = ['political', 'personal_attack']
   const isSilent = silentReasons.includes(result.reason ?? '')
 
-  const messages: Record<string, string> = {
-    profanity:       'We were unable to process your submission as it contains language that does not meet our community standards. Please resubmit.',
-    incoherent:      'We were unable to identify a specific actionable improvement. Please try again with a clearer description of what you\'d like to see improved.',
-    duplicate:       'It looks like you\'ve already submitted a very similar improvement. We\'ve recorded your original submission and it will be reviewed at our next assessment.',
+  const staticMessages: Record<string, string> = {
     political:       'Thank you for taking the time to submit. We\'re unable to progress this particular submission through the improvement programme. If you have a concern you\'d like to raise directly, please contact the Club Manager.',
     personal_attack: 'Thank you for taking the time to submit. We\'re unable to progress this particular submission through the improvement programme. If you have a concern you\'d like to raise directly, please contact the Club Manager.',
-    out_of_scope:    'This submission doesn\'t appear to relate to Bramley Golf Club\'s operations. If you feel this is an error please resubmit with more context.',
-    complaint_only:  'Thank you for your feedback. To progress through the improvement programme, submissions need to suggest a specific change rather than express general dissatisfaction. Please resubmit describing what you would like the club to do differently.',
   }
+
+  if (isSilent) {
+    return {
+      pass: false,
+      reason: result.reason,
+      silentReject: true,
+      message: staticMessages[result.reason ?? ''],
+    }
+  }
+
+  // For all other rejection reasons, generate a diplomatic, evidence-based AI response
+  const message = await generateRejectionMessage(description, benefit, result.reason ?? '', existingMemberSubmissions)
 
   return {
     pass: false,
     reason: result.reason,
-    silentReject: isSilent,
-    message: messages[result.reason ?? ''] ?? 'We were unable to process your submission. Please try again.',
+    silentReject: false,
+    message,
+  }
+}
+
+/**
+ * Generate a diplomatic, evidence-based rejection message for a member
+ * whose submission did not pass moderation.
+ */
+export async function generateRejectionMessage(
+  description: string,
+  benefit: string,
+  reason: string,
+  existingSubmissions: string[] = []
+): Promise<string> {
+  const reasonGuidance: Record<string, string> = {
+    profanity:      'The submission contains language that does not meet the club\'s community standards. Acknowledge this diplomatically without being preachy, and invite a resubmission with the same idea expressed respectfully.',
+    incoherent:     'The submission does not contain a clear, actionable improvement that the club could act on. Explain specifically what is missing — a concrete proposed change — and invite resubmission with more detail.',
+    duplicate:      `The submission is substantially the same as a previous submission from this member: "${existingSubmissions[0] ?? 'a prior submission'}". Acknowledge that the member clearly cares about this issue, confirm their original submission is already in the system and will be reviewed, and reassure them it has not been overlooked.`,
+    out_of_scope:   'The submission does not relate to Bramley Golf Club\'s operations or facilities. Politely explain that the programme is for improvements to the club\'s own services, and invite resubmission if they have a golf club related idea.',
+    complaint_only: 'The submission expresses dissatisfaction but does not propose a specific change the club could act on. Acknowledge the underlying concern, explain what a valid submission looks like (a concrete proposed improvement), and encourage resubmission with a specific suggestion.',
+  }
+
+  const guidance = reasonGuidance[reason] ?? 'The submission could not be progressed. Politely explain this and invite resubmission if appropriate.'
+
+  const fallbacks: Record<string, string> = {
+    profanity:      'We were unable to process your submission as it contains language that does not meet our community standards. Please resubmit.',
+    incoherent:     'We were unable to identify a specific actionable improvement. Please try again with a clearer description of what you\'d like to see changed.',
+    duplicate:      'It looks like you\'ve already submitted a very similar improvement. We\'ve recorded your original submission and it will be reviewed at our next assessment.',
+    out_of_scope:   'This submission doesn\'t appear to relate to Bramley Golf Club\'s operations. If you feel this is an error please resubmit with more context.',
+    complaint_only: 'To progress through the improvement programme, submissions need to suggest a specific change rather than express general dissatisfaction. Please resubmit describing what you would like the club to do differently.',
+  }
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      system: `You write short, diplomatic member communications for Bramley Golf Club's Continuous Improvement Programme.
+Tone: warm, respectful, and constructive — like a thoughtful club secretary. Never condescending or preachy.
+Reference specific details from what the member actually wrote so they feel genuinely heard.
+Keep to 3–5 sentences. Output plain text only — no bullet points, no markdown, no subject line.`,
+      messages: [{
+        role: 'user',
+        content: `A member submitted the following improvement idea, which we are unable to progress:
+
+IMPROVEMENT: ${description}
+RATIONALE: ${benefit}
+
+Reason it cannot be progressed: ${guidance}
+
+Write a diplomatic, evidence-based response to this member. Reference their specific idea so they know it was read. Be constructive and, where appropriate, invite resubmission.`,
+      }],
+    })
+
+    return (response.content[0] as { text: string }).text.trim()
+  } catch (e) {
+    console.error('[rejection] AI message generation failed, using fallback:', e)
+    return fallbacks[reason] ?? 'We were unable to process your submission. Please try again.'
   }
 }
 

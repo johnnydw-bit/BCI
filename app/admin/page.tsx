@@ -73,6 +73,8 @@ export default function AdminPage() {
   const [editForm, setEditForm] = useState({ name: '', email: '', role: '' })
   const [editError, setEditError] = useState('')
   const [resetPinResult, setResetPinResult] = useState<{ name: string; pin: string } | null>(null)
+  const [resetAllPins, setResetAllPins] = useState<Array<{ name: string; role: string; pin: string }> | null>(null)
+  const [resettingAllPins, setResettingAllPins] = useState(false)
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [dashLoading, setDashLoading] = useState(false)
   const [initStatus, setInitStatus] = useState('')
@@ -543,6 +545,52 @@ export default function AdminPage() {
                 ))}
               </tbody>
             </table>
+
+            {/* Reset all PINs */}
+            <div className="border-t border-gray-100 p-4 space-y-3">
+              <h3 className="font-semibold text-gray-800 text-sm">Reset all PINs</h3>
+              <p className="text-xs text-gray-500">Generates new PINs for all active directors at once. New PINs are shown below — distribute them securely. This cannot be undone.</p>
+              <button
+                onClick={async () => {
+                  if (!confirm('Reset PINs for ALL active directors? They will need their new PINs to sign in.')) return
+                  setResettingAllPins(true)
+                  setResetAllPins(null)
+                  const res = await fetch('/api/admin/directors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resetAll: true }) })
+                  const data = await res.json().catch(() => ({}))
+                  if (res.ok) setResetAllPins(data.pins)
+                  setResettingAllPins(false)
+                }}
+                style={{ width: 'auto', background: '#7d3c98' }}
+                className="bramley-btn px-8 py-2.5 text-sm"
+                disabled={resettingAllPins}
+              >
+                {resettingAllPins ? <span className="spinner" /> : '🔒 Reset all PINs'}
+              </button>
+              {resetAllPins && (
+                <div className="bg-amber-50 border border-amber-300 rounded-[8px] p-4 max-w-lg">
+                  <p className="text-sm font-semibold text-amber-800 mb-3">✓ All PINs reset — distribute securely</p>
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="text-left text-xs text-amber-700 pb-1">Name</th>
+                        <th className="text-left text-xs text-amber-700 pb-1">Role</th>
+                        <th className="text-right text-xs text-amber-700 pb-1">New PIN</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {resetAllPins.map((d) => (
+                        <tr key={d.name} className="border-t border-amber-200">
+                          <td className="py-1.5 text-amber-900 font-medium">{d.name}</td>
+                          <td className="py-1.5 text-amber-700 text-xs">{d.role}</td>
+                          <td className="py-1.5 text-right font-mono font-bold text-lg tracking-widest text-amber-900">{d.pin}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <button onClick={() => setResetAllPins(null)} className="text-xs text-amber-600 underline mt-3">Dismiss</button>
+                </div>
+              )}
+            </div>
 
             {/* Add director form */}
             <div className="border-t border-gray-100 p-4 space-y-3">

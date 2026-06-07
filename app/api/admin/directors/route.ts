@@ -27,7 +27,22 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const { role, name, email } = await req.json()
+  const body = await req.json()
+
+  // Reset all active director PINs at once
+  if (body.resetAll) {
+    const rows = await sql`SELECT id, name, role FROM director_roles WHERE active = TRUE ORDER BY name`
+    const results: Array<{ name: string; role: string; pin: string }> = []
+    for (const row of rows as Array<{ id: number; name: string; role: string }>) {
+      const pin = generatePin()
+      const pinHash = createHash('sha256').update(pin).digest('hex')
+      await sql`UPDATE director_roles SET pin_hash = ${pinHash} WHERE id = ${row.id}`
+      results.push({ name: row.name, role: row.role, pin })
+    }
+    return NextResponse.json({ ok: true, pins: results })
+  }
+
+  const { role, name, email } = body
   if (!role || !name || !email) {
     return NextResponse.json({ error: 'Role, name and email are required' }, { status: 400 })
   }

@@ -251,8 +251,8 @@
   }
 
   .nav button {
-    background: rgba(255,255,255,.15);
-    border: 1px solid rgba(255,255,255,.2);
+    background: var(--navy);
+    border: 1px solid rgba(255,255,255,.15);
     color: #fff;
     width: 40px;
     height: 40px;
@@ -263,15 +263,20 @@
     align-items: center;
     justify-content: center;
     transition: background .2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
   }
-  .nav button:hover { background: rgba(255,255,255,.28); }
+  .nav button:hover { background: var(--navy-light); }
   .nav button:disabled { opacity: .25; cursor: default; }
 
   .nav-counter {
     font-size: .78rem;
-    color: rgba(255,255,255,.55);
-    min-width: 48px;
+    color: rgba(255,255,255,.85);
+    background: var(--navy);
+    padding: 4px 10px;
+    border-radius: 12px;
+    min-width: 56px;
     text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
   }
 
   /* ── Slide number ─────────────────────────── */
@@ -338,7 +343,7 @@
       <div class="card on-white">
         <span class="icon">📬</span>
         <h3>Ideas were scattered</h3>
-        <p>Suggestions arrived by email, at the bar, in the suggestion box — no consistent record.</p>
+        <p>Suggestions arrived by email, at the bar, in passing conversation — no consistent record.</p>
       </div>
       <div class="card on-white">
         <span class="icon">⚖️</span>

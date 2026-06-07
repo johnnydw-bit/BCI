@@ -127,6 +127,7 @@ export async function generateRejectionMessage(
       system: `You write short, diplomatic member communications for Bramley Golf Club's Continuous Improvement Programme.
 Tone: warm, respectful, and constructive — like a thoughtful club secretary. Never condescending or preachy.
 Reference specific details from what the member actually wrote so they feel genuinely heard.
+Always refer to the governing body as "the Board" — never "the committee".
 Keep to 3–5 sentences. Output plain text only — no bullet points, no markdown, no subject line.`,
       messages: [{
         role: 'user',
@@ -234,10 +235,11 @@ Your task is to inform a member that their improvement idea will not be progress
 - Gives a real, specific reason grounded in the nature of the idea (not a vague brush-off)
 - Is honest but diplomatic — never dismissive or condescending
 - Invites continued engagement with the programme
-Keep to 4-6 sentences. Never mention scoring, score bands, internal process, or staff names. Never include a subject line. Do not start with "Dear Member". Sign off as: ${signoff}`
+Keep to 4-6 sentences. Never mention scoring, score bands, internal process, or staff names. Never include a subject line. Do not start with "Dear Member". Always refer to the governing body as "the Board" — never "the committee". Sign off as: ${signoff}`
     : `You write short, ${tone} member emails for Bramley Golf Club's Continuous Improvement Programme.
 Tone: ${tone === 'friendly' ? 'warm, appreciative, concise — like a friendly club secretary' : 'professional, courteous, formal — like an official club communication'}.
 Keep to 2-3 sentences. Never mention scoring, internal processes, or staff names. Never include a subject line. Do not start with "Dear Member" — just write the body paragraph(s).
+Always refer to the governing body as "the Board" — never "the committee".
 Sign off as: ${signoff}`
 
   const userContent = isRejection
@@ -300,7 +302,7 @@ SCORING DIMENSIONS (weighted 0-10 per dimension, weights are configurable):
 - novelty (${Math.round(weights.novelty * 100)}%): Not an obvious standard practice already in place
 - member_experience_delta (${Math.round(weights.experienceDelta * 100)}%): Material improvement to day-to-day experience
 
-IMPORTANT — vague suggestions: If a suggestion is directional rather than specific (e.g. "reduce competitions" without data or a concrete proposal), treat it as low-actionability: reduce member_impact by 1-2 points and note this in the ai_narrative. The committee cannot act on direction alone.
+IMPORTANT — vague suggestions: If a suggestion is directional rather than specific (e.g. "reduce competitions" without data or a concrete proposal), treat it as low-actionability: reduce member_impact by 1-2 points and note this in the ai_narrative. The Board cannot act on direction alone.
 
 MULTIPLIERS (applied after weighted score, cap final at 10.0):
 - H&S flag: x${weights.multHs} (safety or compliance dimension)
@@ -371,7 +373,7 @@ Return a JSON array with one object per improvement in the same order:
     "already_in_plan": true/false,
     "cluster_theme": "<shared theme string or null>",
     "ai_summary": "<one sentence summary>",
-    "ai_narrative": "<2-3 sentence assessment for committee>",
+    "ai_narrative": "<2-3 sentence assessment for the Board>",
     "cost_band": "negligible|low|medium|high|very_high",
     "cost_estimate_low": <number in £ or null if cannot estimate>,
     "cost_estimate_high": <number in £ or null if cannot estimate>,
@@ -387,7 +389,7 @@ Return a JSON array with one object per improvement in the same order:
     "seasonal_window": "<description or null>",
     "revenue_opportunity": true/false,
     "revenue_note": "<brief explanation or null>",
-    "member_narrative": "<A short personalised response written directly to the member in plain, warm English — structured as follows (use exactly these labels and a blank line between sections):\n\nOpening: one sentence genuinely acknowledging their idea.\n\nPros:\n• [strength 1]\n• [strength 2 if applicable]\n\nThings to consider:\n• [challenge or constraint 1]\n• [challenge or constraint 2 if applicable]\n\nClosing: one sentence setting realistic expectations about next steps.\n\nRules: never mention scores, bands, ceilings, multipliers, weights, or internal process. Write as if a thoughtful club official is speaking directly to the member. Keep bullet points concise — one line each.\n\nFOOD & BEVERAGE RULE: If the submission category is restaurant, bar, or refreshments, the 'Things to consider' section MUST address all three of the following where relevant — volume (whether demand is sufficient to justify the change), profitability (margin and pricing implications), and wastage (food waste, over-ordering, or spoilage risk). These are the key operational realities the club must weigh for any F&B change.>"
+    "member_narrative": "<A short personalised response written directly to the member in plain, warm English — structured as follows (use exactly these labels and a blank line between sections):\n\nOpening: one sentence genuinely acknowledging their idea.\n\nPros:\n• [strength 1]\n• [strength 2 if applicable]\n\nThings to consider:\n• [challenge or constraint 1]\n• [challenge or constraint 2 if applicable]\n\nClosing: one sentence setting realistic expectations about next steps.\n\nRules: never mention scores, bands, ceilings, multipliers, weights, or internal process. Always refer to the governing body as "the Board" — never "the committee". Write as if a thoughtful club official is speaking directly to the member. Keep bullet points concise — one line each.\n\nFOOD & BEVERAGE RULE: If the submission category is restaurant, bar, or refreshments, the 'Things to consider' section MUST address all three of the following where relevant — volume (whether demand is sufficient to justify the change), profitability (margin and pricing implications), and wastage (food waste, over-ordering, or spoilage risk). These are the key operational realities the club must weigh for any F&B change.>"
   }
 ]`,
     }],
@@ -440,7 +442,7 @@ Return a JSON array with one object per improvement in the same order:
       memberMsg = 'Your improvement has been passed to the relevant director for consideration.'
     } else if (score >= weights.bandActive) {
       band = 'active'
-      memberMsg = 'Your improvement has been noted and will be reviewed at the next committee cycle.'
+      memberMsg = 'Your improvement has been noted and will be reviewed at the next Board cycle.'
     } else if (score >= weights.bandHolding) {
       band = 'holding'
       memberMsg = 'Thank you — your improvement has been recorded.'

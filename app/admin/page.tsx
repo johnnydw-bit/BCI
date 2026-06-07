@@ -212,9 +212,9 @@ export default function AdminPage() {
   }
 
   async function initDb() {
-    setInitStatus('Initialisingâ€¦')
+    setInitStatus('Initialising…')
     const res = await fetch('/api/admin/init-db', { method: 'POST' })
-    setInitStatus(res.ok ? 'âœ“ Database initialised successfully' : 'âœ— Error â€” check logs')
+    setInitStatus(res.ok ? '✓ Database initialised successfully' : '✗ Error — check logs')
   }
 
   async function exportCsv() {
@@ -251,12 +251,12 @@ export default function AdminPage() {
       return
     }
     setImportingCsv(true)
-    setImportStatus('Restoringâ€¦')
+    setImportStatus('Restoring…')
     const form = new FormData()
     form.append('file', file)
     const res = await fetch('/api/admin/import-csv', { method: 'POST', body: form })
     const json = await res.json().catch(() => ({}))
-    setImportStatus(res.ok ? `âœ“ ${json.upserted} records restored` : `âœ— Error: ${json.error ?? 'check logs'}`)
+    setImportStatus(res.ok ? `✓ ${json.upserted} records restored` : `✗ Error: ${json.error ?? 'check logs'}`)
     setImportingCsv(false)
     e.target.value = ''
   }
@@ -264,10 +264,10 @@ export default function AdminPage() {
   async function seedTestData() {
     if (!confirm('Insert 12 test submissions into the database? Run triage afterwards to score them.')) return
     setSeedingData(true)
-    setSeedStatus('Inserting test dataâ€¦')
+    setSeedStatus('Inserting test data…')
     const res = await fetch('/api/admin/seed-test-data', { method: 'POST' })
     const json = await res.json().catch(() => ({}))
-    setSeedStatus(res.ok ? `âœ“ ${json.inserted} submissions inserted â€” run triage to score them` : `âœ— Error: ${json.error ?? 'check logs'}`)
+    setSeedStatus(res.ok ? `✓ ${json.inserted} submissions inserted — run triage to score them` : `✗ Error: ${json.error ?? 'check logs'}`)
     if (json.moderationResults) setModerationResults(json.moderationResults)
     setSeedingData(false)
   }
@@ -275,10 +275,10 @@ export default function AdminPage() {
   async function clearTestData() {
     if (!confirm('Delete all test submissions? This cannot be undone.')) return
     setClearingData(true)
-    setSeedStatus('Clearing test dataâ€¦')
+    setSeedStatus('Clearing test data…')
     const res = await fetch('/api/admin/clear-test-data', { method: 'DELETE' })
     const json = await res.json().catch(() => ({}))
-    setSeedStatus(res.ok ? `âœ“ ${json.deleted} test submissions removed` : `âœ— Error: ${json.error ?? 'check logs'}`)
+    setSeedStatus(res.ok ? `✓ ${json.deleted} test submissions removed` : `✗ Error: ${json.error ?? 'check logs'}`)
     setClearingData(false)
   }
 
@@ -288,27 +288,27 @@ export default function AdminPage() {
       : 'Reset scores for ALL submissions? Every record will be re-queued for triage. This cannot be undone.'
     if (!confirm(msg)) return
     setResettingScores(true)
-    setResetStatus('Resetting scoresâ€¦')
+    setResetStatus('Resetting scores…')
     const res = await fetch('/api/admin/reset-scores', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scope }),
     })
     const json = await res.json().catch(() => ({}))
-    setResetStatus(res.ok ? `âœ“ ${json.reset} submission${json.reset !== 1 ? 's' : ''} reset â€” run triage to re-score` : `âœ— Error: ${json.error ?? 'check logs'}`)
+    setResetStatus(res.ok ? `✓ ${json.reset} submission${json.reset !== 1 ? 's' : ''} reset — run triage to re-score` : `✗ Error: ${json.error ?? 'check logs'}`)
     setResettingScores(false)
   }
 
   async function runTriage() {
     if (!confirm('Run the triage batch now? This will score all pending improvements and send email reports.')) return
     setRunningTriage(true)
-    setTriageStatus('Running triage â€” this may take 30â€“60 secondsâ€¦')
+    setTriageStatus('Running triage — this may take 30–60 seconds…')
     const res = await fetch('/api/admin/run-triage', { method: 'POST' })
     const json = await res.json().catch(() => ({}))
     if (res.ok) {
-      setTriageStatus(`âœ“ Triage complete â€” ${json.scored ?? 0} improvement${json.scored !== 1 ? 's' : ''} scored`)
+      setTriageStatus(`✓ Triage complete — ${json.scored ?? 0} improvement${json.scored !== 1 ? 's' : ''} scored`)
     } else {
-      setTriageStatus(`âœ— Error: ${json.error ?? 'check server logs'}`)
+      setTriageStatus(`✗ Error: ${json.error ?? 'check server logs'}`)
     }
     setRunningTriage(false)
   }
@@ -324,8 +324,8 @@ export default function AdminPage() {
       .replace(/^Score threshold:\s*/i, '')
       .replace(/^Category impact ceiling:\s*/i, '')
       .replace(/^Cluster bonus[^:]*:\s*/i, '')
-      .replace(/\s*\(0[\sÂ·\-â€“]1\)/g, '')
-      .replace(/\s*\(â‰¥ this value\)/g, '')
+      .replace(/\s*\(0[\s·\-–]1\)/g, '')
+      .replace(/\s*\(≥ this value\)/g, '')
       .replace(/^./, (c) => c.toUpperCase())
   }
 
@@ -346,10 +346,10 @@ export default function AdminPage() {
     <div className="bramley-wide-page space-y-4">
       <div className="bramley-card">
         <BramleyHeader
-          subtitle={`${directorName ? directorName + ' â€” ' : ''}${directorRole || 'Admin'} â€” Admin`}
+          subtitle={`${directorName ? directorName + ' — ' : ''}${directorRole || 'Admin'} — Admin`}
           below={
             <div className="flex gap-4">
-              <button onClick={() => router.push('/triage')} className="text-xs opacity-70 hover:opacity-100">â† Triage</button>
+              <button onClick={() => router.push('/triage')} className="text-xs opacity-70 hover:opacity-100">← Triage</button>
               <button onClick={handleLogout} className="text-xs opacity-70 hover:opacity-100">Sign out</button>
             </div>
           }
@@ -406,7 +406,7 @@ export default function AdminPage() {
                           <tr key={key} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                             <td className="px-3 py-1.5 text-xs text-gray-600 leading-tight">
                               {shortLabel(row?.label ?? key)}
-                              {dirty && <span className="ml-1 text-amber-500">â—</span>}
+                              {dirty && <span className="ml-1 text-amber-500">●</span>}
                             </td>
                             <td className="px-2 py-1 text-right w-24">
                               <input
@@ -425,7 +425,7 @@ export default function AdminPage() {
                         <tr className="bg-gray-50 border-t border-gray-200">
                           <td className="px-3 py-1.5 text-xs font-semibold text-gray-500">Total</td>
                           <td className={`px-3 py-1.5 text-right text-xs font-bold ${weightsOk ? 'text-green-600' : 'text-red-600'}`}>
-                            {weightsTotal.toFixed(2)} {weightsOk ? 'âœ“' : 'âœ—'}
+                            {weightsTotal.toFixed(2)} {weightsOk ? '✓' : '✗'}
                           </td>
                         </tr>
                       )}
@@ -441,7 +441,7 @@ export default function AdminPage() {
             <button onClick={saveConfig} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={saving || Object.keys(edits).length === 0}>
               {saving ? <span className="spinner" /> : 'Save changes'}
             </button>
-            {saved && <span className="text-green-600 text-sm">âœ“ Saved</span>}
+            {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
             {Object.keys(edits).length > 0 && !saved && <span className="text-xs text-amber-600">{Object.keys(edits).length} unsaved change{Object.keys(edits).length !== 1 ? 's' : ''}</span>}
           </div>
         </div>
@@ -454,7 +454,7 @@ export default function AdminPage() {
             {/* PIN reveal alerts */}
             {newlyGeneratedPin && (
               <div className="mx-4 mt-4 bg-amber-50 border border-amber-300 rounded-[8px] p-4">
-                <p className="text-sm font-semibold text-amber-800 mb-1">âœ“ Director added â€” note their PIN</p>
+                <p className="text-sm font-semibold text-amber-800 mb-1">✓ Director added — note their PIN</p>
                 <p className="text-sm text-amber-700">
                   <strong>{newlyGeneratedPin.name}</strong> has been added. Their login PIN is: <strong className="font-mono text-lg tracking-widest">{newlyGeneratedPin.pin}</strong>
                 </p>
@@ -464,7 +464,7 @@ export default function AdminPage() {
             )}
             {resetPinResult && (
               <div className="mx-4 mt-4 bg-amber-50 border border-amber-300 rounded-[8px] p-4">
-                <p className="text-sm font-semibold text-amber-800 mb-1">âœ“ PIN reset â€” note the new PIN</p>
+                <p className="text-sm font-semibold text-amber-800 mb-1">✓ PIN reset — note the new PIN</p>
                 <p className="text-sm text-amber-700">
                   <strong>{resetPinResult.name}</strong>'s new PIN is: <strong className="font-mono text-lg tracking-widest">{resetPinResult.pin}</strong>
                 </p>
@@ -505,7 +505,7 @@ export default function AdminPage() {
                       </td>
                       <td className="px-4 py-2.5" onClick={(e) => { e.stopPropagation(); toggleEmailReports(d.id, !d.email_reports) }}>
                         <span className={`text-xs px-2 py-0.5 rounded-[6px] font-semibold cursor-pointer ${d.email_reports ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
-                          {d.email_reports ? 'âœ‰ On' : 'âœ‰ Off'}
+                          {d.email_reports ? '✉ On' : '✉ Off'}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
@@ -532,7 +532,7 @@ export default function AdminPage() {
                               style={{ width: 'auto', background: '#7d3c98' }}
                               className="bramley-btn px-6 py-2 text-sm"
                             >
-                              ðŸ”‘ Reset PIN
+                              🔒 Reset PIN
                             </button>
                             <button onClick={() => setEditingId(null)} className="text-xs text-gray-400 hover:text-gray-600 px-3">Cancel</button>
                           </div>
@@ -600,7 +600,7 @@ export default function AdminPage() {
                 <button onClick={saveConfig} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={saving || Object.keys(edits).length === 0}>
                   {saving ? <span className="spinner" /> : 'Save changes'}
                 </button>
-                {saved && <span className="text-green-600 text-sm">âœ“ Saved</span>}
+                {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
               </div>
             </div>
           </div>
@@ -614,7 +614,7 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-800">Programme dashboard</h3>
               <button onClick={loadDashboard} className="bramley-btn py-1.5 text-sm" disabled={dashLoading}>
-                {dashLoading ? <span className="spinner" /> : 'â†º Refresh'}
+                {dashLoading ? <span className="spinner" /> : '↺ Refresh'}
               </button>
             </div>
 
@@ -628,7 +628,7 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
                     { label: 'Total scored', value: dashboard.totalScored },
-                    { label: 'Average score', value: dashboard.avgScore != null ? Number(dashboard.avgScore).toFixed(1) : 'â€”' },
+                    { label: 'Average score', value: dashboard.avgScore != null ? Number(dashboard.avgScore).toFixed(1) : '—' },
                     { label: 'Quick wins', value: dashboard.quickWins },
                     { label: 'In plan / approved', value: (dashboard.byStatus.find((s) => s.status === 'in_plan')?.count ?? 0) + (dashboard.byStatus.find((s) => s.status === 'approved')?.count ?? 0) },
                   ].map((stat) => (
@@ -676,7 +676,7 @@ export default function AdminPage() {
                         <tr key={row.category} className={`border-b border-gray-100 ${i % 2 === 0 ? '' : 'bg-gray-50'}`}>
                           <td className="py-1.5 text-gray-700 capitalize">{row.category.replace(/_/g, ' ')}</td>
                           <td className="py-1.5 text-right text-gray-800 font-medium">{row.count}</td>
-                          <td className="py-1.5 text-right text-gray-600">{row.avg_score != null ? Number(row.avg_score).toFixed(1) : 'â€”'}</td>
+                          <td className="py-1.5 text-right text-gray-600">{row.avg_score != null ? Number(row.avg_score).toFixed(1) : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -716,8 +716,8 @@ export default function AdminPage() {
           <div className="max-w-3xl space-y-4">
             <div>
               <h3 className="font-semibold text-gray-800 mb-1">Database initialisation</h3>
-              <p className="text-sm text-gray-500 mb-3">Run once on first deployment to create all tables and seed default configuration values. Safe to run again â€” existing data is preserved.</p>
-              <button onClick={initDb} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm">âš™ Initialise database</button>
+              <p className="text-sm text-gray-500 mb-3">Run once on first deployment to create all tables and seed default configuration values. Safe to run again — existing data is preserved.</p>
+              <button onClick={initDb} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm">⚙ Initialise database</button>
               {initStatus && <p className="text-sm mt-2 text-gray-700">{initStatus}</p>}
             </div>
 
@@ -732,7 +732,7 @@ export default function AdminPage() {
                 style={{ width: 'auto' }}
                 className="bramley-btn px-8 py-2.5 text-sm flex items-center gap-2"
               >
-                {runningTriage ? <><span className="spinner" /> Runningâ€¦</> : 'â–¶ Run triage now'}
+                {runningTriage ? <><span className="spinner" /> Running…</> : '▶ Run triage now'}
               </button>
               {triageStatus && <p className="text-sm mt-2 text-gray-700">{triageStatus}</p>}
             </div>
@@ -743,7 +743,7 @@ export default function AdminPage() {
               <h3 className="font-semibold text-gray-800 mb-1">Backup &amp; restore</h3>
               <p className="text-sm text-gray-500 mb-3">
                 Export all submissions as a CSV file. A backup is also emailed automatically to the Operations Manager every Sunday at 06:00.
-                To restore, upload a previously exported CSV â€” existing records are updated, missing records are re-inserted. No data is deleted.
+                To restore, upload a previously exported CSV — existing records are updated, missing records are re-inserted. No data is deleted.
               </p>
               <div className="flex gap-3 flex-wrap items-center">
                 <button
@@ -752,7 +752,7 @@ export default function AdminPage() {
                   className="bramley-btn px-6 py-2.5 text-sm"
                   style={{ width: 'auto', background: '#1e8449' }}
                 >
-                  {exportingCsv ? <><span className="spinner" /> Exportingâ€¦</> : 'â¬‡ Export CSV'}
+                  {exportingCsv ? <><span className="spinner" /> Exporting…</> : '⬇ Export CSV'}
                 </button>
                 <button
                   onClick={exportFull}
@@ -761,10 +761,10 @@ export default function AdminPage() {
                   style={{ width: 'auto', background: '#1a5276' }}
                   title="Exports all tables (submissions, clusters, config, directors, audit log) as JSON"
                 >
-                  {exportingFull ? <><span className="spinner" /> Exportingâ€¦</> : 'â¬‡ Full backup (JSON)'}
+                  {exportingFull ? <><span className="spinner" /> Exporting…</> : '⬇ Full backup (JSON)'}
                 </button>
                 <label className={`bramley-btn px-6 py-2.5 text-sm text-center cursor-pointer ${importingCsv ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ width: 'auto', background: '#2471a3' }}>
-                  {importingCsv ? 'Restoringâ€¦' : 'â¬† Restore from CSV'}
+                  {importingCsv ? 'Restoring…' : '⬆ Restore from CSV'}
                   <input type="file" accept=".csv" className="hidden" onChange={importCsv} disabled={importingCsv} />
                 </label>
               </div>
@@ -787,7 +787,7 @@ export default function AdminPage() {
                   className="bramley-btn px-6 py-2.5 text-sm"
                   style={{ width: 'auto', background: '#2471a3' }}
                 >
-                  {seedingData ? <><span className="spinner" /> Seedingâ€¦</> : 'â¬‡ Seed test data'}
+                  {seedingData ? <><span className="spinner" /> Seeding…</> : '⬇ Seed test data'}
                 </button>
                 <button
                   onClick={clearTestData}
@@ -795,7 +795,7 @@ export default function AdminPage() {
                   className="bramley-btn px-6 py-2.5 text-sm"
                   style={{ width: 'auto', background: '#c0392b' }}
                 >
-                  {clearingData ? <><span className="spinner" /> Clearingâ€¦</> : 'âœ• Clear test data'}
+                  {clearingData ? <><span className="spinner" /> Clearing…</> : '✕ Clear test data'}
                 </button>
               </div>
               {seedStatus && <p className="text-sm mt-2 text-gray-700">{seedStatus}</p>}
@@ -814,13 +814,13 @@ export default function AdminPage() {
                     <tbody>
                       {moderationResults.map((r, i) => (
                         <tr key={i} className="border-b border-gray-100 last:border-0">
-                          <td className="px-3 py-1.5 text-gray-700 truncate max-w-0" style={{ maxWidth: '260px' }}>{r.description}â€¦</td>
+                          <td className="px-3 py-1.5 text-gray-700 truncate max-w-0" style={{ maxWidth: '260px' }}>{r.description}…</td>
                           <td className="px-3 py-1.5 text-gray-500">{r.expected}</td>
                           <td className="px-3 py-1.5 text-gray-700">{r.actual}</td>
                           <td className="px-3 py-1.5 text-center">
                             {r.passed
-                              ? <span className="text-red-500 font-bold" title="AI missed this">âœ— Slipped through</span>
-                              : <span className="text-green-600 font-bold">âœ“ Caught</span>}
+                              ? <span className="text-red-500 font-bold" title="AI missed this">✗ Slipped through</span>
+                              : <span className="text-green-600 font-bold">✓ Caught</span>}
                           </td>
                         </tr>
                       ))}
@@ -845,7 +845,7 @@ export default function AdminPage() {
                   className="bramley-btn px-6 py-2.5 text-sm"
                   style={{ width: 'auto', background: '#7d3c98' }}
                 >
-                  {resettingScores ? <><span className="spinner" /> Resettingâ€¦</> : 'â†º Reset test data only'}
+                  {resettingScores ? <><span className="spinner" /> Resetting…</> : '↺ Reset test data only'}
                 </button>
                 <button
                   onClick={() => resetScores('all')}
@@ -853,7 +853,7 @@ export default function AdminPage() {
                   className="bramley-btn px-6 py-2.5 text-sm"
                   style={{ width: 'auto', background: '#922b21' }}
                 >
-                  {resettingScores ? <><span className="spinner" /> Resettingâ€¦</> : 'â†º Reset all submissions'}
+                  {resettingScores ? <><span className="spinner" /> Resetting…</> : '↺ Reset all submissions'}
                 </button>
               </div>
               {resetStatus && <p className="text-sm mt-2 text-gray-700">{resetStatus}</p>}

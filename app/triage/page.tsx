@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { CATEGORIES, STATUS_LABELS } from '@/lib/categories'
 import BramleyHeader from '@/components/BramleyHeader'
 import FullscreenButton from '@/components/FullscreenButton'
+import InstallPrompt from '@/components/InstallPrompt'
 
 interface Submission {
   id: number
@@ -323,6 +324,7 @@ export default function TriagePage() {
 
   return (
     <div className="bramley-wide-page space-y-4">
+      <InstallPrompt />
       {/* Header */}
       <div className="bramley-card">
         <BramleyHeader

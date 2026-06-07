@@ -18,11 +18,15 @@ export default function SubmitPage() {
 
   const [sessionWarning, setSessionWarning] = useState(false)
 
-  // Require member or director session
+  // Require member or director session — check both cookies
   useEffect(() => {
     fetch('/api/session').then((r) => r.json()).then((s) => {
-      if (!s.authenticated || (s.type !== 'member' && s.type !== 'director')) router.replace('/')
-      else setSessionType(s.type)
+      if (s.authenticated && s.type === 'member') { setSessionType('member'); return }
+      // Fall back to director session
+      fetch('/api/director-session').then((r) => r.json()).then((d) => {
+        if (d.authenticated && d.type === 'director') { setSessionType('director'); return }
+        router.replace('/')
+      })
     })
   }, [router])
 

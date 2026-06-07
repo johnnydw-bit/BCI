@@ -331,6 +331,7 @@ export default function TriagePage() {
           subtitle={`${data.directorName} — ${data.role}`}
           below={
             <div className="flex gap-4 items-center">
+              <button onClick={() => router.push('/submit')} className="text-xs opacity-70 hover:opacity-100">Submit an improvement</button>
               {data.isManager && (
                 <button onClick={() => router.push('/admin')} className="text-xs opacity-70 hover:opacity-100">Admin</button>
               )}

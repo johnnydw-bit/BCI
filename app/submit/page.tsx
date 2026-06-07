@@ -14,13 +14,15 @@ type Step = 'form' | 'submitting' | 'success' | 'rejected'
 export default function SubmitPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>('form')
+  const [sessionType, setSessionType] = useState<'member' | 'director' | null>(null)
 
   const [sessionWarning, setSessionWarning] = useState(false)
 
-  // Require member session — unauthenticated or director sessions go to member login
+  // Require member or director session
   useEffect(() => {
     fetch('/api/session').then((r) => r.json()).then((s) => {
-      if (!s.authenticated || s.type !== 'member') router.replace('/')
+      if (!s.authenticated || (s.type !== 'member' && s.type !== 'director')) router.replace('/')
+      else setSessionType(s.type)
     })
   }, [router])
 
@@ -120,9 +122,10 @@ export default function SubmitPage() {
           <button onClick={() => { setStep('form'); setDescription(''); setBenefit(''); setCategory(''); setImpact(''); setMemberMsg(null) }} className="bramley-btn">
             Submit another improvement
           </button>
-          <button onClick={() => router.push('/my-improvements')} className="bramley-btn-secondary">
-            View my improvements
-          </button>
+          {sessionType === 'director'
+            ? <button onClick={() => router.push('/triage')} className="bramley-btn-secondary">Back to triage</button>
+            : <button onClick={() => router.push('/my-improvements')} className="bramley-btn-secondary">View my improvements</button>
+          }
           <button onClick={handleLogout} className="text-sm text-gray-400 w-full py-2 hover:text-gray-600">Sign out</button>
         </div>
       </div></div>
@@ -253,9 +256,10 @@ export default function SubmitPage() {
             <button type="submit" disabled={description.length > DESC_MAX || benefit.length > BENEFIT_MAX} className="bramley-btn">
               Submit improvement
             </button>
-            <button type="button" onClick={() => router.push('/my-improvements')} className="bramley-btn-secondary">
-              View my improvements
-            </button>
+            {sessionType === 'director'
+              ? <button type="button" onClick={() => router.push('/triage')} className="bramley-btn-secondary">Back to triage</button>
+              : <button type="button" onClick={() => router.push('/my-improvements')} className="bramley-btn-secondary">View my improvements</button>
+            }
             <button type="button" onClick={handleLogout} className="text-sm text-gray-400 w-full py-2 hover:text-gray-600">
               Sign out
             </button>

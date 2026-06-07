@@ -11,9 +11,14 @@ export async function POST(req: NextRequest) {
   const token = cookieStore.get('bci_session')?.value
   const session = token ? await verifySession(token) : null
 
-  if (!session || session.type !== 'member') {
+  if (!session || (session.type !== 'member' && session.type !== 'director')) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
+
+  // Resolve submitter identity — works for both member and director sessions
+  const submitterId   = session.type === 'member' ? session.memberId   : session.email
+  const submitterName = session.type === 'member' ? session.memberName : session.directorName
+  const submitterEmail = session.type === 'member' ? session.memberEmail : session.email
 
   const { description, benefit, category, impact, recognition, emailOptOut } = await req.json()
 
@@ -34,7 +39,7 @@ export async function POST(req: NextRequest) {
   // Fetch member's existing submissions for duplicate check
   const existing = await sql`
     SELECT description FROM submissions
-    WHERE member_id = ${session.memberId}
+    WHERE member_id = ${submitterId}
       AND deleted_at IS NULL
     ORDER BY created_at DESC
     LIMIT 10
@@ -49,19 +54,19 @@ export async function POST(req: NextRequest) {
       await sql`
         INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, status, moderation_reason)
         VALUES (
-          ${session.memberId}, ${session.memberName},
+          ${submitterId}, ${submitterName},
           ${description.trim()}, ${benefit.trim()},
           ${category}, ${Number(impact)}, ${recognition},
           'rejected', ${moderation.reason ?? 'silent_reject'}
         )
       `
     }
-    // Send rejection email to member if they have an email
-    if (session.memberEmail && !emailOptOut) {
-      void sendModerationRejectionEmail(session.memberEmail, {
+    // Send rejection email if they have an email
+    if (submitterEmail && !emailOptOut) {
+      void sendModerationRejectionEmail(submitterEmail, {
         description: description.trim(),
         message: moderation.message,
-        memberName: session.memberName,
+        memberName: submitterName,
       }).catch((e) => console.error('[submit] Moderation rejection email failed:', e))
     }
     return NextResponse.json({ ok: false, rejected: true, message: moderation.message })
@@ -70,14 +75,14 @@ export async function POST(req: NextRequest) {
   const inserted = await sql`
     INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, member_email, email_opt_out)
     VALUES (
-      ${session.memberId},
-      ${session.memberName},
+      ${submitterId},
+      ${submitterName},
       ${description.trim()},
       ${benefit.trim()},
       ${category},
       ${Number(impact)},
       ${recognition},
-      ${session.memberEmail ?? null},
+      ${submitterEmail ?? null},
       ${emailOptOut ? true : false}
     )
     RETURNING id
@@ -134,8 +139,8 @@ export async function POST(req: NextRequest) {
     console.error('[submit] AI assessment failed — will be picked up by nightly triage:', e)
   }
 
-  if (session.memberEmail && !emailOptOut) {
-    void sendSubmissionConfirmation(session.memberEmail, description.trim(), session.memberName)
+  if (submitterEmail && !emailOptOut) {
+    void sendSubmissionConfirmation(submitterEmail, description.trim(), submitterName)
       .catch((e) => console.error('[submit] Confirmation email failed:', e))
   }
 

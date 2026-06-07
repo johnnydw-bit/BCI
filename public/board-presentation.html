@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bramley Golf Club — Continuous Improvement Programme</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #231d45;
+    --navy-light: #2d2560;
+    --green: #0d5d3d;
+    --gold: #c9a84c;
+    --text: #1a1a2e;
+    --muted: #6b6b8a;
+    --bg: #f5f4f8;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Deck ─────────────────────────────────── */
+  .deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 64px;
+    opacity: 0;
+    transform: translateY(24px);
+    pointer-events: none;
+    transition: opacity .4s ease, transform .4s ease;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+  }
+
+  /* ── Backgrounds ──────────────────────────── */
+  .bg-navy   { background: var(--navy); color: #fff; }
+  .bg-white  { background: #fff; color: var(--text); }
+  .bg-light  { background: var(--bg); color: var(--text); }
+  .bg-green  { background: var(--green); color: #fff; }
+  .bg-split  { background: linear-gradient(135deg, var(--navy) 50%, var(--navy-light) 50%); color: #fff; }
+
+  /* ── Typography ───────────────────────────── */
+  .eyebrow {
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    opacity: .6;
+    margin-bottom: 12px;
+  }
+
+  h1 { font-size: 3rem; font-weight: 800; line-height: 1.1; }
+  h2 { font-size: 2.2rem; font-weight: 700; line-height: 1.15; }
+  h3 { font-size: 1.4rem; font-weight: 600; }
+
+  .subtitle {
+    font-size: 1.15rem;
+    opacity: .8;
+    margin-top: 16px;
+    max-width: 640px;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    line-height: 1.7;
+    max-width: 700px;
+  }
+
+  /* ── Cards & Grids ────────────────────────── */
+  .card-grid {
+    display: grid;
+    gap: 20px;
+    width: 100%;
+    max-width: 900px;
+    margin-top: 36px;
+  }
+
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .card {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 14px;
+    padding: 24px;
+  }
+
+  .card.on-white {
+    background: #fff;
+    border: 1px solid #e5e3ef;
+    box-shadow: 0 2px 12px rgba(35,29,69,.08);
+  }
+
+  .card .icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+  .card p  { font-size: .88rem; opacity: .75; line-height: 1.55; }
+
+  /* ── Steps ────────────────────────────────── */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 720px;
+    width: 100%;
+    margin-top: 28px;
+  }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #fff;
+    font-weight: 800;
+    font-size: .9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .step-body h3 { font-size: 1rem; font-weight: 700; }
+  .step-body p  { font-size: .88rem; opacity: .75; line-height: 1.5; margin-top: 3px; }
+
+  /* ── Band table ───────────────────────────── */
+  .band-table { width: 100%; max-width: 780px; border-collapse: collapse; margin-top: 28px; }
+  .band-table th { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; padding: 8px 14px; text-align: left; opacity: .6; }
+  .band-table td { padding: 10px 14px; font-size: .88rem; border-top: 1px solid rgba(255,255,255,.1); }
+  .band-table.on-white td { border-top: 1px solid #eee; }
+  .band-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: .78rem; font-weight: 700; }
+
+  /* ── Link button ──────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: .95rem;
+    text-decoration: none;
+    transition: opacity .2s;
+    cursor: pointer;
+    border: none;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-gold   { background: var(--gold); color: #fff; }
+  .btn-white  { background: #fff; color: var(--navy); }
+  .btn-navy   { background: var(--navy); color: #fff; }
+  .btn-ghost  { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25); }
+
+  .btn-row { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; justify-content: center; }
+
+  /* ── Logo mark ────────────────────────────── */
+  .logo-mark {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -.05em;
+    color: #fff;
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+
+  /* ── Divider ──────────────────────────────── */
+  .divider {
+    width: 48px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--gold);
+    margin: 20px auto;
+  }
+
+  /* ── Highlight box ────────────────────────── */
+  .highlight {
+    background: rgba(201,168,76,.15);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    font-size: .9rem;
+    line-height: 1.55;
+    max-width: 700px;
+    margin-top: 20px;
+  }
+
+  /* ── Score badge ──────────────────────────── */
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #fff;
+    background: var(--green);
+  }
+
+  /* ── Nav controls ─────────────────────────── */
+  .nav {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 100;
+  }
+
+  .nav button {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s;
+  }
+  .nav button:hover { background: rgba(255,255,255,.28); }
+  .nav button:disabled { opacity: .25; cursor: default; }
+
+  .nav-counter {
+    font-size: .78rem;
+    color: rgba(255,255,255,.55);
+    min-width: 48px;
+    text-align: center;
+  }
+
+  /* ── Slide number ─────────────────────────── */
+  .slide-num {
+    position: fixed;
+    top: 20px;
+    right: 28px;
+    font-size: .72rem;
+    color: rgba(255,255,255,.3);
+    z-index: 100;
+  }
+
+  /* ── Progress bar ─────────────────────────── */
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gold);
+    transition: width .3s ease;
+    z-index: 100;
+  }
+
+  /* ── Util ─────────────────────────────────── */
+  .text-center { text-align: center; }
+  .mt-4 { margin-top: 16px; }
+  .mt-6 { margin-top: 24px; }
+  .mt-8 { margin-top: 32px; }
+  .w-full { width: 100%; }
+  .max-w-lg { max-width: 640px; }
+  .max-w-xl { max-width: 780px; }
+  .opacity-70 { opacity: .7; }
+  .text-sm { font-size: .88rem; }
+  .text-gold { color: var(--gold); }
+  .text-green { color: #4caf82; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="slide-num" id="slideNum"></div>
+
+<div class="deck" id="deck">
+
+  <!-- ① Title -------------------------------------------------->
+  <div class="slide bg-navy text-center active">
+    <div class="logo-mark">B</div>
+    <div class="eyebrow" style="color:rgba(255,255,255,.5)">Bramley Golf Club</div>
+    <h1 style="color:#fff; max-width:700px">Continuous Improvement Programme</h1>
+    <div class="divider"></div>
+    <p class="subtitle">A digital system for capturing, assessing, and acting on member improvement ideas — fairly, consistently, and transparently.</p>
+    <div class="btn-row">
+      <a class="btn btn-gold" href="https://bcg-cip.vercel.app" target="_blank">Open member portal ↗</a>
+      <a class="btn btn-ghost" href="https://bcg-cip.vercel.app/board" target="_blank">Board login ↗</a>
+    </div>
+  </div>
+
+  <!-- ② Why -------------------------------------------------->
+  <div class="slide bg-white">
+    <div class="eyebrow">The opportunity</div>
+    <h2 style="max-width:640px; text-align:center">Members have ideas.<br>We needed a better way to hear them.</h2>
+    <div class="divider" style="background:var(--navy)"></div>
+    <div class="card-grid cols-3" style="margin-top:32px">
+      <div class="card on-white">
+        <span class="icon">📬</span>
+        <h3>Ideas were scattered</h3>
+        <p>Suggestions arrived by email, at the bar, in the suggestion box — no consistent record.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">⚖️</span>
+        <h3>No fair scoring</h3>
+        <p>Without a structured process, louder voices could outweigh better ideas.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">📭</span>
+        <h3>Members in the dark</h3>
+        <p>Members rarely heard back about what happened to their suggestions.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ What is it ------------------------------------------>
+  <div class="slide bg-light">
+    <div class="eyebrow">The solution</div>
+    <h2 class="text-center">A purpose-built improvement portal</h2>
+    <div class="divider" style="background:var(--navy)"></div>
+    <div class="card-grid cols-2" style="max-width:780px; margin-top:32px">
+      <div class="card on-white">
+        <span class="icon">📱</span>
+        <h3>Member-facing portal</h3>
+        <p>Members submit ideas from any device. The portal installs as an app on phones — no app store needed.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">🤖</span>
+        <h3>AI-assisted scoring</h3>
+        <p>Every idea is automatically scored across six dimensions: impact, feasibility, cost, novelty, strategic fit, and experience.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">📋</span>
+        <h3>Board triage dashboard</h3>
+        <p>Directors see a prioritised, scored list of ideas. Filter by area, owner, flags, or Board member submissions.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">✉️</span>
+        <h3>Automatic member updates</h3>
+        <p>Members receive personalised email notifications when their idea is assessed or its status changes.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ Member journey ---------------------------------------->
+  <div class="slide bg-navy">
+    <div class="eyebrow">Member experience</div>
+    <h2 style="color:#fff; text-align:center">Submitting an idea takes two minutes</h2>
+    <div class="steps" style="margin-top:32px">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3 style="color:#fff">Sign in with name &amp; email</h3>
+          <p>Members access the portal via a link on the club website. No passwords — just name and email.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3 style="color:#fff">Describe the improvement</h3>
+          <p>What they'd like to see changed, why it would benefit members, which area it relates to, and how many members it affects.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3 style="color:#fff">Instant AI feedback</h3>
+          <p>Within seconds, an AI preliminary assessment is shown — plain English, no jargon. Full scoring runs overnight.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3 style="color:#fff">Track progress in My Improvements</h3>
+          <p>Members can log back in at any time to see the status of every idea they've submitted.</p>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn-gold" href="https://bcg-cip.vercel.app" target="_blank">Try the member portal ↗</a>
+    </div>
+  </div>
+
+  <!-- ⑤ Moderation ------------------------------------------>
+  <div class="slide bg-white">
+    <div class="eyebrow">Quality control</div>
+    <h2 class="text-center" style="max-width:580px">Every submission passes an automatic moderation gate</h2>
+    <div class="divider" style="background:var(--navy)"></div>
+    <div class="card-grid cols-3" style="margin-top:28px; max-width:800px">
+      <div class="card on-white">
+        <span class="icon">🚫</span>
+        <h3>Inappropriate content</h3>
+        <p>Offensive language, personal complaints, or content unrelated to the club.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">🔁</span>
+        <h3>Duplicates</h3>
+        <p>Near-identical ideas from the same member are flagged and the member is invited to resubmit with added context.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">🌫️</span>
+        <h3>Vague or unactionable</h3>
+        <p>"Make the course better" is rejected. The system explains why and encourages a specific resubmission.</p>
+      </div>
+    </div>
+    <div class="highlight" style="margin-top:24px; color:var(--text)">
+      Rejected submissions are logged for the Club Manager to review — nothing is silently discarded without a record.
+    </div>
+  </div>
+
+  <!-- ⑥ AI Scoring ------------------------------------------>
+  <div class="slide bg-light">
+    <div class="eyebrow">Assessment engine</div>
+    <h2 class="text-center">Six-dimension AI scoring</h2>
+    <div class="divider" style="background:var(--navy)"></div>
+    <div class="card-grid cols-3" style="margin-top:28px; max-width:820px">
+      <div class="card on-white">
+        <span class="icon">👥</span>
+        <h3>Member impact</h3>
+        <p>How many members benefit, and how much does it improve their experience?</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">🎯</span>
+        <h3>Strategic alignment</h3>
+        <p>How well does it fit the club's current priorities and direction?</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">🔧</span>
+        <h3>Feasibility</h3>
+        <p>How realistic is implementation? Are there constraints or dependencies?</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">💰</span>
+        <h3>Cost vs benefit</h3>
+        <p>Estimated cost range and confidence, weighed against likely benefit delivered.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">💡</span>
+        <h3>Novelty</h3>
+        <p>Is this a genuinely fresh idea or standard practice at clubs of this level?</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">⭐</span>
+        <h3>Member experience</h3>
+        <p>The material, day-to-day improvement to life at the club.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑦ Score bands ----------------------------------------->
+  <div class="slide bg-navy">
+    <div class="eyebrow">Prioritisation</div>
+    <h2 style="color:#fff; text-align:center">Score bands tell the Board what to focus on</h2>
+    <table class="band-table" style="margin-top:28px">
+      <thead>
+        <tr>
+          <th style="color:rgba(255,255,255,.5)">Band</th>
+          <th style="color:rgba(255,255,255,.5)">What it means</th>
+          <th style="color:rgba(255,255,255,.5)">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="band-pill" style="background:#0d5d3d">Priority</span></td>
+          <td style="color:#fff">High score — strong case across all dimensions</td>
+          <td style="color:rgba(255,255,255,.7)">Passed to relevant director immediately</td>
+        </tr>
+        <tr>
+          <td><span class="band-pill" style="background:#1e8449">Active queue</span></td>
+          <td style="color:#fff">Good score — worthy of the next review cycle</td>
+          <td style="color:rgba(255,255,255,.7)">Reviewed at next Board cycle</td>
+        </tr>
+        <tr>
+          <td><span class="band-pill" style="background:#b7770d">Holding</span></td>
+          <td style="color:#fff">Solid idea, longer timeframe</td>
+          <td style="color:rgba(255,255,255,.7)">Recorded for future consideration</td>
+        </tr>
+        <tr>
+          <td><span class="band-pill" style="background:#888">Low priority</span></td>
+          <td style="color:#fff">Noted but unlikely to be progressed soon</td>
+          <td style="color:rgba(255,255,255,.7)">Remains visible; member notified</td>
+        </tr>
+        <tr>
+          <td><span class="band-pill" style="background:#2471a3">Already in plan</span></td>
+          <td style="color:#fff">Great minds think alike</td>
+          <td style="color:rgba(255,255,255,.7)">Member told their idea is in progress</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight" style="margin-top:20px">
+      ⚡ <strong>Quick wins</strong> — ideas that can be implemented in under 4 weeks at under £500 — are flagged and can be actioned ahead of the standard cycle regardless of score band.
+    </div>
+  </div>
+
+  <!-- ⑧ Board triage ----------------------------------------->
+  <div class="slide bg-white">
+    <div class="eyebrow">Board dashboard</div>
+    <h2 class="text-center" style="max-width:640px">The triage view gives directors everything they need</h2>
+    <div class="divider" style="background:var(--navy)"></div>
+    <div class="card-grid cols-2" style="max-width:780px; margin-top:24px">
+      <div class="card on-white">
+        <span class="icon">📊</span>
+        <h3>Score-ranked list</h3>
+        <p>All submissions sorted by AI score. H&amp;S flags always surface to the top.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">🔍</span>
+        <h3>Powerful filters</h3>
+        <p>Filter by area, decision status, flag type, suggested owner — or show only Board member submissions.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">👤</span>
+        <h3>Director-scoped view</h3>
+        <p>Each director only sees categories relevant to their role. The Club Manager sees everything.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">✍️</span>
+        <h3>One-click decisions</h3>
+        <p>Set status, assign owner, set target date, add notes — all inline without leaving the list.</p>
+      </div>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn-navy" href="https://bcg-cip.vercel.app/board" target="_blank">Open Board triage ↗</a>
+    </div>
+  </div>
+
+  <!-- ⑨ H&S & clustering ------------------------------------>
+  <div class="slide bg-light">
+    <div class="eyebrow">Intelligent features</div>
+    <h2 class="text-center">Built-in safety and pattern detection</h2>
+    <div class="divider" style="background:var(--navy)"></div>
+    <div class="card-grid cols-2" style="max-width:760px; margin-top:32px">
+      <div class="card on-white">
+        <span class="icon">⚠️</span>
+        <h3>Health &amp; Safety flagging</h3>
+        <p>Any submission with a safety dimension is automatically flagged in red and surfaced to the top of the triage list, regardless of its overall score.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">🔗</span>
+        <h3>Cluster detection</h3>
+        <p>When multiple members submit similar ideas independently, they are grouped into a cluster. Clustered ideas receive a consensus bonus — the Board can see recurring themes at a glance.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">📅</span>
+        <h3>Seasonal windows</h3>
+        <p>Ideas tied to a specific time of year (e.g. winter drainage, summer catering) are flagged with the optimal implementation window.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">💼</span>
+        <h3>Suggested ownership</h3>
+        <p>The AI recommends which director should own each idea based on category and content — reducing triage time significantly.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑩ Status workflow -------------------------------------->
+  <div class="slide bg-navy">
+    <div class="eyebrow">Decision workflow</div>
+    <h2 style="color:#fff; text-align:center">Clear status at every stage</h2>
+    <div class="card-grid cols-3" style="max-width:820px; margin-top:32px">
+      <div class="card">
+        <span class="icon">⏳</span>
+        <h3 style="color:#fff">Awaiting Decision</h3>
+        <p>Scored and in the queue — waiting for Board review.</p>
+      </div>
+      <div class="card">
+        <span class="icon">🔎</span>
+        <h3 style="color:#fff">Under Consideration</h3>
+        <p>Actively being reviewed by the relevant director.</p>
+      </div>
+      <div class="card">
+        <span class="icon">📋</span>
+        <h3 style="color:#fff">In Plan</h3>
+        <p>Included in the club's improvement plan.</p>
+      </div>
+      <div class="card">
+        <span class="icon">✅</span>
+        <h3 style="color:#fff">Approved</h3>
+        <p>Approved and queued for implementation.</p>
+      </div>
+      <div class="card">
+        <span class="icon">🏆</span>
+        <h3 style="color:#fff">Implemented</h3>
+        <p>Done — member notified and idea credited.</p>
+      </div>
+      <div class="card">
+        <span class="icon">🚫</span>
+        <h3 style="color:#fff">Not Progressed</h3>
+        <p>Board has decided not to progress — member receives a personalised explanation.</p>
+      </div>
+    </div>
+    <p class="text-sm opacity-70 mt-4 text-center" style="color:#fff">Every status change triggers a personalised email to the member.</p>
+  </div>
+
+  <!-- ⑪ Board submissions ------------------------------------>
+  <div class="slide bg-white">
+    <div class="eyebrow">Board participation</div>
+    <h2 class="text-center" style="max-width:580px">Board members can submit improvements too</h2>
+    <div class="divider" style="background:var(--navy)"></div>
+    <p class="lead text-center mt-6" style="color:var(--muted)">
+      Directors can submit improvement ideas directly from the triage dashboard without signing out — their identity is taken automatically from their Board PIN login.
+    </p>
+    <div class="card-grid cols-2" style="max-width:680px; margin-top:24px">
+      <div class="card on-white">
+        <span class="icon">🏛</span>
+        <h3>Filtered view</h3>
+        <p>The Owner filter includes a <strong>Board submissions</strong> option — instantly show only ideas raised by Board members.</p>
+      </div>
+      <div class="card on-white">
+        <span class="icon">🔒</span>
+        <h3>Anonymous option</h3>
+        <p>Board members can choose anonymous recognition, just like any other member — keeping the process fair.</p>
+      </div>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn-navy" href="https://bcg-cip.vercel.app/board" target="_blank">Sign in to Board ↗</a>
+    </div>
+  </div>
+
+  <!-- ⑫ Privacy / transparency -------------------------------->
+  <div class="slide bg-light">
+    <div class="eyebrow">Governance &amp; privacy</div>
+    <h2 class="text-center" style="max-width:600px">Fair, transparent, and data-responsible</h2>
+    <div class="divider" style="background:var(--navy)"></div>
+    <div class="steps" style="margin-top:28px">
+      <div class="step">
+        <div class="step-num" style="background:var(--navy)">✓</div>
+        <div class="step-body">
+          <h3>All ideas treated equally</h3>
+          <p>Scoring is AI-driven and consistent — no idea is advanced or suppressed based on who submitted it.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--navy)">✓</div>
+        <div class="step-body">
+          <h3>Anonymous submissions respected</h3>
+          <p>Members who choose anonymous recognition are not identified to directors in the triage view.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--navy)">✓</div>
+        <div class="step-body">
+          <h3>Data stored securely</h3>
+          <p>All data is stored on encrypted cloud infrastructure. Email addresses are used only for programme communications and never shared.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num" style="background:var(--navy)">✓</div>
+        <div class="step-body">
+          <h3>Full audit trail</h3>
+          <p>Every status change is logged with a timestamp. Members can see the complete history of their submissions.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑬ Get started ------------------------------------------>
+  <div class="slide bg-navy text-center">
+    <div class="logo-mark">B</div>
+    <div class="eyebrow" style="color:rgba(255,255,255,.5)">Ready to use</div>
+    <h1 style="color:#fff; max-width:680px">The programme is live and open to members</h1>
+    <div class="divider"></div>
+    <p class="subtitle">Members access it via the club website. Board members sign in at the Board URL. The system runs automatically — nightly scoring, clustering, and email updates.</p>
+    <div class="btn-row">
+      <a class="btn btn-gold" href="https://bcg-cip.vercel.app" target="_blank">Member portal ↗</a>
+      <a class="btn btn-white" href="https://bcg-cip.vercel.app/board" target="_blank">Board login ↗</a>
+    </div>
+    <p class="text-sm opacity-70 mt-8" style="color:rgba(255,255,255,.5)">
+      Questions? Contact the Club Manager.
+    </p>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- Nav -->
+<nav class="nav">
+  <button id="prev" onclick="go(-1)" title="Previous (←)">&#8592;</button>
+  <span class="nav-counter" id="counter"></span>
+  <button id="next" onclick="go(1)" title="Next (→)">&#8594;</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll('.slide')
+  const total  = slides.length
+  let cur = 0
+
+  function show(n) {
+    slides[cur].classList.remove('active')
+    cur = Math.max(0, Math.min(n, total - 1))
+    slides[cur].classList.add('active')
+    document.getElementById('counter').textContent = (cur + 1) + ' / ' + total
+    document.getElementById('slideNum').textContent = (cur + 1) + ' / ' + total
+    document.getElementById('prev').disabled = cur === 0
+    document.getElementById('next').disabled = cur === total - 1
+    document.getElementById('progress').style.width = ((cur + 1) / total * 100) + '%'
+  }
+
+  function go(dir) { show(cur + dir) }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(1) }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); go(-1) }
+  })
+
+  // Click anywhere on slide (but not on links/buttons) to advance
+  document.getElementById('deck').addEventListener('click', e => {
+    if (e.target.closest('a,button')) return
+    go(1)
+  })
+
+  show(0)
+</script>
+</body>
+</html>

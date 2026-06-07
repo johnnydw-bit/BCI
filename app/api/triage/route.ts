@@ -151,37 +151,34 @@ export async function PATCH(req: NextRequest) {
 
     // Send AI-generated email to member if they have email and haven't opted out
     if (row?.member_email && !row.email_opt_out) {
-      // Run email async â€” don't block the response
-      void (async () => {
-        try {
-          const configRows = await sql`SELECT key, value FROM config WHERE key IN ('COMMS_TONE', 'COMMS_SIGNOFF')`
-          const cfg = Object.fromEntries((configRows as Array<{ key: string; value: string }>).map((r) => [r.key, r.value]))
-          const tone = (cfg['COMMS_TONE'] ?? 'friendly') as 'friendly' | 'formal'
-          const signoff = cfg['COMMS_SIGNOFF'] ?? 'The Improvement Committee, Bramley Golf Club'
-          const targetDate = confirmed_target_date ?? row.confirmed_target_date ?? null
+      try {
+        const configRows = await sql`SELECT key, value FROM config WHERE key IN ('COMMS_TONE', 'COMMS_SIGNOFF')`
+        const cfg = Object.fromEntries((configRows as Array<{ key: string; value: string }>).map((r) => [r.key, r.value]))
+        const tone = (cfg['COMMS_TONE'] ?? 'friendly') as 'friendly' | 'formal'
+        const signoff = cfg['COMMS_SIGNOFF'] ?? 'The Board, Bramley Golf Club'
+        const targetDate = confirmed_target_date ?? row.confirmed_target_date ?? null
 
-          const emailBody = await generateStatusEmail({
-            description: row.description,
-            benefit: row.benefit ?? undefined,
-            newStatus: status,
-            statusLabel: STATUS_LABELS[status] ?? status,
-            confirmedTargetDate: targetDate,
-            tone,
-            signoff,
-            aiNarrative: row.ai_narrative ?? null,
-            directorNote: row.notes ?? null,
-          })
+        const emailBody = await generateStatusEmail({
+          description: row.description,
+          benefit: row.benefit ?? undefined,
+          newStatus: status,
+          statusLabel: STATUS_LABELS[status] ?? status,
+          confirmedTargetDate: targetDate,
+          tone,
+          signoff,
+          aiNarrative: row.ai_narrative ?? null,
+          directorNote: row.notes ?? null,
+        })
 
-          await sendStatusChangeEmail(row.member_email!, {
-            description: row.description,
-            statusLabel: STATUS_LABELS[status] ?? status,
-            emailBody,
-            memberName: row.member_name,
-          })
-        } catch (e) {
-          console.error('[triage PATCH] Failed to send status change email:', e)
-        }
-      })()
+        await sendStatusChangeEmail(row.member_email!, {
+          description: row.description,
+          statusLabel: STATUS_LABELS[status] ?? status,
+          emailBody,
+          memberName: row.member_name,
+        })
+      } catch (e) {
+        console.error('[triage PATCH] Failed to send status change email:', e)
+      }
     }
   }
 

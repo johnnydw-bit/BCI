@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { signSession } from '@/lib/auth'
-import { sql } from '@/lib/db'
+import { sql, ensureDb } from '@/lib/db'
 import { cookies } from 'next/headers'
 import { getClientIp, isRateLimited, recordFailedAttempt, lockoutMinutesRemaining } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
   const { name, email } = await req.json()
+
+  await ensureDb()
 
   if (!name?.trim() || !email?.trim()) {
     return NextResponse.json({ error: 'Name and email address are required' }, { status: 400 })

@@ -1,10 +1,19 @@
 import { neon } from '@neondatabase/serverless'
 
 let _db: ReturnType<typeof neon> | null = null
+let _initialized = false
 
 function db() {
   if (!_db) _db = neon(process.env.DATABASE_URL!)
   return _db
+}
+
+// Auto-run migrations on first use
+let _initPromise: Promise<void> | null = null
+export function ensureDb(): Promise<void> {
+  if (_initialized) return Promise.resolve()
+  if (!_initPromise) _initPromise = initDb().then(() => { _initialized = true })
+  return _initPromise
 }
 
 type Row = Record<string, unknown>

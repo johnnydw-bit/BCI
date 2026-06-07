@@ -740,7 +740,7 @@ function SpreadsheetTable({
                     <span className="bramley-badge text-xs" style={{ background: scoreBandColor(s.score_band) }}>
                       {Number(s.score).toFixed(1)}
                     </span>
-                  ) : <span className="text-gray-300">—</span>}
+                  ) : <span className="text-amber-500 text-xs font-semibold" title="Awaiting overnight triage">⏳</span>}
                 </td>
 
                 {/* Summary */}
@@ -900,6 +900,14 @@ function SpreadsheetDetailPanel({
           {s.recurring_flag && <span className="bramley-badge text-xs" style={{ background: '#922b21' }}>🔁 Recurring ×{s.recurring_run_count + 1}</span>}
           {s.cluster_theme && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>Cluster ({s.cluster_size})</span>}
         </div>
+
+        {/* Awaiting triage notice */}
+        {s.score == null && (
+          <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            <span className="font-semibold">⏳ Awaiting overnight triage</span>
+            <p className="mt-1 text-amber-700">This submission has not yet been scored. It will be assessed, clustered and scored in the next scheduled overnight run.</p>
+          </div>
+        )}
 
         {/* AI Assessment */}
         {(s.ai_narrative || s.cost_band || s.impl_complexity || s.strategic_note) && (

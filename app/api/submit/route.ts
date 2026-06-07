@@ -92,8 +92,9 @@ export async function POST(req: NextRequest) {
   `
   const submissionId = (inserted[0] as { id: number }).id
 
-  // Run AI assessment immediately — store results and include memberMsg in confirmation email.
-  // Clustering, director reports, and full triage happen overnight.
+  // Generate AI narrative for the submitter — but do NOT store the score.
+  // Scoring (with clustering, category ceilings, bonuses) happens in the overnight triage run.
+  // ai_assessed_at is intentionally left null so the triage run scores this from scratch.
   let memberMsg: string | undefined
   try {
     const categoryCeiling = cat.ceiling ?? 10
@@ -107,13 +108,8 @@ export async function POST(req: NextRequest) {
     }])
     if (result) {
       memberMsg = result.memberNarrative || result.memberMsg
-      const suggestedTargetDate = result.implWeeksHigh != null
-        ? new Date(Date.now() + result.implWeeksHigh * 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        : null
       await sql`
         UPDATE submissions SET
-          score                   = ${result.score},
-          score_band              = ${result.scoreBand},
           member_msg              = ${memberMsg},
           h_and_s_flag            = ${result.hAndSFlag},
           ai_summary              = ${result.aiSummary},
@@ -126,20 +122,18 @@ export async function POST(req: NextRequest) {
           impl_weeks_low          = ${result.implWeeksLow},
           impl_weeks_high         = ${result.implWeeksHigh},
           impl_complexity         = ${result.implComplexity},
-          suggested_target_date   = ${suggestedTargetDate},
           strategic_note          = ${result.strategicNote},
           suggested_owner         = ${result.suggestedOwner},
           needs_external_approval = ${result.needsExternalApproval},
           approval_body           = ${result.approvalBody},
           seasonal_window         = ${result.seasonalWindow},
           revenue_opportunity     = ${result.revenueOpportunity},
-          revenue_note            = ${result.revenueNote},
-          ai_assessed_at          = NOW()
+          revenue_note            = ${result.revenueNote}
         WHERE id = ${submissionId}
       `
     }
   } catch (e) {
-    console.error('[submit] AI assessment failed — will be picked up by nightly triage:', e)
+    console.error('[submit] AI narrative failed — will be picked up by nightly triage:', e)
   }
 
   if (submitterEmail && !emailOptOut) {
@@ -147,8 +141,5 @@ export async function POST(req: NextRequest) {
       .catch((e) => console.error('[submit] Confirmation email failed:', e))
   }
 
-  return NextResponse.json({
-    ok: true,
-    memberMsg: memberMsg ?? null,
-  })
+  return NextResponse.json({ ok: true, memberMsg: memberMsg ?? null })
 }

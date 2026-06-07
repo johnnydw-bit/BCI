@@ -117,7 +117,7 @@ export default function SubmitPage() {
               <div className="p-4 space-y-3">
                 <p className="text-gray-800 leading-relaxed whitespace-pre-line">{memberMsg}</p>
                 <p className="text-sm text-gray-500 leading-relaxed border-t border-gray-100 pt-3">
-                  This is a preliminary AI assessment only. Your idea will be fully evaluated overnight — scored for feasibility, cost and member impact, and considered alongside all other current priorities before the Board reviews it.
+                  This is a preliminary assessment. Your idea will be considered alongside all other current priorities before the Board reviews it.
                 </p>
               </div>
             </div>

@@ -98,7 +98,7 @@ export default function TriagePage() {
   const [data, setData] = useState<TriageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<number | null>(null)
-  const [savedField, setSavedField] = useState<{ id: number; field: string } | null>(null)
+  const [savedId, setSavedId] = useState<number | null>(null)
   const [tab, setTab] = useState<'triage' | 'tracking' | 'moderated'>('triage')
   const [tracked, setTracked] = useState<TrackedImprovement[]>([])
   const [trackingEdit, setTrackingEdit] = useState<Record<number, Partial<TrackedImprovement>>>({})
@@ -222,7 +222,7 @@ export default function TriagePage() {
 
   const TARGET_DATE_STATUSES = new Set(['under_consideration', 'approved', 'in_plan'])
 
-  async function updateField(id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override' | 'confirmed_target_date' | 'confirmed_cost', value: string, extra?: Record<string, string>) {
+  async function updateField(id: number, field: 'score_override', value: string, extra?: Record<string, string>) {
     setUpdating(id)
     await fetch('/api/triage', {
       method: 'PATCH',
@@ -231,23 +231,51 @@ export default function TriagePage() {
     })
     setData((prev) => prev ? {
       ...prev,
-      submissions: prev.submissions.map((s) => s.id === id ? {
-        ...s,
-        [field]: value,
-        ...extra,
-      } : s),
+      submissions: prev.submissions.map((s) => s.id === id ? { ...s, [field]: value, ...extra } : s),
     } : prev)
-    // Refresh audit log after status or score override changes
-    if (field === 'status' || field === 'score_override') {
-      setAuditLog((prev) => { const n = { ...prev }; delete n[id]; return n })
+    setAuditLog((prev) => { const n = { ...prev }; delete n[id]; return n })
+    fetchAuditLog(id)
+    setUpdating(null)
+    setSavedId(id)
+    setTimeout(() => setSavedId(null), 2000)
+  }
+
+  async function savePanel(id: number, draft: { status: string; suggested_owner: string; category: string; confirmed_target_date: string; confirmed_cost: string; notes: string }) {
+    setUpdating(id)
+    await fetch('/api/triage', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        status: draft.status,
+        suggested_owner: draft.suggested_owner,
+        category: draft.category,
+        confirmed_target_date: draft.confirmed_target_date,
+        confirmed_cost: draft.confirmed_cost,
+        notes: draft.notes,
+      }),
+    })
+    const prev = data?.submissions.find((s) => s.id === id)
+    setData((d) => d ? {
+      ...d,
+      submissions: d.submissions.map((s) => s.id === id ? {
+        ...s,
+        status: draft.status,
+        suggested_owner: draft.suggested_owner || null,
+        category: draft.category,
+        confirmed_target_date: draft.confirmed_target_date || null,
+        confirmed_cost: draft.confirmed_cost !== '' ? Number(draft.confirmed_cost) : null,
+        notes: draft.notes || null,
+      } : s),
+    } : d)
+    if (draft.status !== prev?.status) {
+      setAuditLog((a) => { const n = { ...a }; delete n[id]; return n })
       fetchAuditLog(id)
     }
     setUpdating(null)
-    setSavedField({ id, field })
-    setTimeout(() => setSavedField(null), 2000)
-    if (field === 'status' && (value === 'approved' || value === 'implemented')) {
-      refreshTracking()
-    }
+    setSavedId(id)
+    setTimeout(() => setSavedId(null), 2500)
+    if (draft.status === 'approved' || draft.status === 'implemented') refreshTracking()
   }
 
   async function handleLogout() {
@@ -480,10 +508,11 @@ export default function TriagePage() {
                 s={s}
                 isManager={data.isManager}
                 onUpdate={updateField}
+                onSave={savePanel}
                 onDelete={deleteImprovement}
                 onClose={() => setSidePanelId(null)}
                 updating={updating === s.id}
-                savedField={savedField?.id === s.id ? savedField.field : null}
+                saved={savedId === s.id}
                 deleting={deleting === s.id}
                 auditLog={auditLog[s.id] ?? []}
                 onOpen={() => fetchAuditLog(s.id)}
@@ -845,26 +874,74 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function SpreadsheetDetailPanel({
-  s, isManager, onUpdate, onDelete, onClose, updating, savedField, deleting, auditLog, onOpen,
+  s, isManager, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen,
 }: {
   s: Submission
   isManager: boolean
-  onUpdate: (id: number, field: 'status' | 'category' | 'suggested_owner' | 'notes' | 'score_override' | 'confirmed_target_date' | 'confirmed_cost', value: string, extra?: Record<string, string>) => void
+  onUpdate: (id: number, field: 'score_override', value: string, extra?: Record<string, string>) => void
+  onSave: (id: number, draft: { status: string; suggested_owner: string; category: string; confirmed_target_date: string; confirmed_cost: string; notes: string }) => void
   onDelete: (id: number) => void
   onClose: () => void
   updating: boolean
-  savedField: string | null
+  saved: boolean
   deleting: boolean
   auditLog: AuditEntry[]
   onOpen: () => void
 }) {
   useEffect(() => { onOpen() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [draft, setDraft] = useState({
+    status: s.status,
+    suggested_owner: s.suggested_owner ?? '',
+    category: s.category,
+    confirmed_target_date: s.confirmed_target_date ? s.confirmed_target_date.substring(0, 10) : '',
+    confirmed_cost: s.confirmed_cost != null ? String(s.confirmed_cost) : '',
+    notes: s.notes ?? '',
+  })
+
+  // Reset draft when a different submission is selected
+  useEffect(() => {
+    setDraft({
+      status: s.status,
+      suggested_owner: s.suggested_owner ?? '',
+      category: s.category,
+      confirmed_target_date: s.confirmed_target_date ? s.confirmed_target_date.substring(0, 10) : '',
+      confirmed_cost: s.confirmed_cost != null ? String(s.confirmed_cost) : '',
+      notes: s.notes ?? '',
+    })
+  }, [s.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isDirty = draft.status !== s.status
+    || draft.suggested_owner !== (s.suggested_owner ?? '')
+    || draft.category !== s.category
+    || draft.confirmed_target_date !== (s.confirmed_target_date ? s.confirmed_target_date.substring(0, 10) : '')
+    || draft.confirmed_cost !== (s.confirmed_cost != null ? String(s.confirmed_cost) : '')
+    || draft.notes !== (s.notes ?? '')
+
+  const aiDate = s.suggested_target_date ? s.suggested_target_date.substring(0, 10) : ''
+  const aiLow = s.cost_estimate_low != null ? Number(s.cost_estimate_low) : null
+  const aiHigh = s.cost_estimate_high != null ? Number(s.cost_estimate_high) : null
+  const aiMid = aiLow != null && aiHigh != null ? Math.round((aiLow + aiHigh) / 2) : null
+
+  function SaveBtn({ className }: { className?: string }) {
+    return (
+      <button
+        onClick={() => onSave(s.id, draft)}
+        disabled={updating || !isDirty}
+        className={`bramley-btn py-1.5 text-xs px-4 ${className ?? ''}`}
+        style={{ width: 'auto', opacity: isDirty ? 1 : 0.35 }}
+      >
+        {updating ? <span className="spinner" style={{ width: 14, height: 14 }} /> : isDirty ? 'Save changes' : saved ? '✓ Saved' : 'No changes'}
+      </button>
+    )
+  }
+
   return (
     <div className="bramley-card w-80 xl:w-96 2xl:w-[440px] shrink-0 sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
       <div className="bramley-body space-y-4 text-sm">
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {s.score != null && (
               <span className="bramley-badge" style={{ background: scoreBandColor(s.score_band) }}>
                 {Number(s.score).toFixed(1)}
@@ -872,7 +949,10 @@ function SpreadsheetDetailPanel({
             )}
             <span className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === s.category)?.label}</span>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none shrink-0">✕</button>
+          <div className="flex items-center gap-2 shrink-0">
+            {isManager && <SaveBtn />}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+          </div>
         </div>
 
         {/* Improvement text */}
@@ -924,13 +1004,10 @@ function SpreadsheetDetailPanel({
                 {s.impl_weeks_low != null && s.impl_weeks_high != null && ` · ${s.impl_weeks_low}–${s.impl_weeks_high}w`}
               </p>
             )}
-            {(s.confirmed_target_date || s.suggested_target_date) && (
+            {s.suggested_target_date && (
               <p>
-                <span className="font-semibold text-gray-500">Target:</span>{' '}
-                {s.confirmed_target_date
-                  ? <><span className="text-green-700 font-semibold">{new Date(s.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span> <span className="text-green-600 text-xs">✓ confirmed</span></>
-                  : <span className="text-gray-500">❓ {new Date(s.suggested_target_date!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                }
+                <span className="font-semibold text-gray-500">AI target:</span>{' '}
+                <span className="text-gray-500">❓ {new Date(s.suggested_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
               </p>
             )}
             {s.strategic_note && <p className="text-gray-600 italic">{s.strategic_note}</p>}
@@ -943,61 +1020,79 @@ function SpreadsheetDetailPanel({
 
         {/* Board Decision */}
         {isManager && (
-          <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-2 text-xs">
+          <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-3 text-xs">
             <p className="font-bold text-amber-700 uppercase tracking-wider">📋 Board Decision</p>
+
             <div>
-              <label className="text-gray-500 block mb-1">Status <Saved show={savedField === 'status'} /></label>
-              <select
-                className="bramley-input text-xs py-1 w-full"
-                value={s.status}
-                onChange={(e) => onUpdate(s.id, 'status', e.target.value)}
-                disabled={updating}
-              >
-                {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                  <option key={val} value={val}>{label}</option>
-                ))}
+              <label className="text-gray-500 block mb-1">Status</label>
+              <select className="bramley-input text-xs py-1 w-full" value={draft.status} onChange={(e) => setDraft(d => ({ ...d, status: e.target.value }))} disabled={updating}>
+                {Object.entries(STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
               </select>
             </div>
+
             <div>
-              <label className="text-gray-500 block mb-1">Owner <Saved show={savedField === 'suggested_owner'} /></label>
-              <select
-                className="bramley-input text-xs py-1 w-full"
-                value={s.suggested_owner ?? ''}
-                onChange={(e) => onUpdate(s.id, 'suggested_owner', e.target.value)}
-                disabled={updating}
-              >
+              <label className="text-gray-500 block mb-1">Owner</label>
+              <select className="bramley-input text-xs py-1 w-full" value={draft.suggested_owner} onChange={(e) => setDraft(d => ({ ...d, suggested_owner: e.target.value }))} disabled={updating}>
                 <option value="">— Unassigned —</option>
                 {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
+
             <div>
-              <label className="text-gray-500 block mb-1">Area <Saved show={savedField === 'category'} /></label>
-              <select
-                className="bramley-input text-xs py-1 w-full"
-                value={s.category}
-                onChange={(e) => onUpdate(s.id, 'category', e.target.value)}
-                disabled={updating}
-              >
+              <label className="text-gray-500 block mb-1">Area</label>
+              <select className="bramley-input text-xs py-1 w-full" value={draft.category} onChange={(e) => setDraft(d => ({ ...d, category: e.target.value }))} disabled={updating}>
                 {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
-            <TargetDateField s={s} onUpdate={onUpdate} updating={updating} saved={savedField === 'confirmed_target_date'} />
-            <ConfirmedCostField s={s} onUpdate={onUpdate} updating={updating} saved={savedField === 'confirmed_cost'} />
-            <button
-              onClick={() => onDelete(s.id)}
-              disabled={deleting}
-              className="text-red-500 hover:text-red-700 text-xs font-semibold"
-            >
-              {deleting ? 'Removing…' : '✕ Remove improvement'}
-            </button>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">
+                Target date
+                {draft.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
+              </label>
+              <div className="flex gap-1 items-center flex-wrap">
+                <input type="date" className="bramley-input text-sm py-1.5 w-36" value={draft.confirmed_target_date} onChange={(e) => setDraft(d => ({ ...d, confirmed_target_date: e.target.value }))} disabled={updating} />
+                {draft.confirmed_target_date && <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
+              </div>
+              {aiDate && !draft.confirmed_target_date && (
+                <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: aiDate }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
+                  Use AI estimate ({new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
+                </button>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">
+                Cost target (£)
+                {draft.confirmed_cost && <span className="ml-1 text-green-600">✓ confirmed</span>}
+              </label>
+              <div className="flex gap-1 items-center flex-wrap">
+                <input type="number" min="0" step="1" className="bramley-input text-sm py-1.5 w-32" placeholder="e.g. 2500" value={draft.confirmed_cost} onChange={(e) => setDraft(d => ({ ...d, confirmed_cost: e.target.value }))} disabled={updating} />
+                {draft.confirmed_cost && <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
+              </div>
+              {aiMid != null && !draft.confirmed_cost && (
+                <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: String(aiMid) }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
+                  Use AI midpoint (£{aiMid.toLocaleString()})
+                </button>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Board notes</label>
+              <textarea rows={3} className="bramley-input text-xs py-1 w-full resize-none" placeholder="Notes visible to all managers…" value={draft.notes} onChange={(e) => setDraft(d => ({ ...d, notes: e.target.value }))} disabled={updating} />
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <SaveBtn />
+              <button onClick={() => onDelete(s.id)} disabled={deleting} className="text-red-500 hover:text-red-700 text-xs font-semibold">
+                {deleting ? 'Removing…' : '✕ Remove'}
+              </button>
+            </div>
           </div>
         )}
 
         {isManager && (
-          <>
-            <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} saved={savedField === 'score_override'} />
-            <NotesPanel s={s} onUpdate={onUpdate} updating={updating} saved={savedField === 'notes'} />
-          </>
+          <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} />
         )}
 
         {auditLog.length > 0 && (
@@ -1020,139 +1115,19 @@ function SpreadsheetDetailPanel({
 
 // ── Shared sub-components ───────────────────────────────────────────────────
 
-function TargetDateField({ s, onUpdate, updating, saved }: {
-  s: Submission
-  onUpdate: (id: number, field: 'confirmed_target_date', value: string) => void
-  updating: boolean
-  saved: boolean
-}) {
-  const aiDate = s.suggested_target_date ? s.suggested_target_date.substring(0, 10) : ''
-  const currentDate = s.confirmed_target_date ? s.confirmed_target_date.substring(0, 10) : ''
-  const [val, setVal] = useState(currentDate)
-  const dirty = val !== currentDate
-
-  // Keep in sync if parent state updates
-  useEffect(() => { setVal(s.confirmed_target_date ? s.confirmed_target_date.substring(0, 10) : '') }, [s.confirmed_target_date])
-
-  return (
-    <div className="min-w-[180px]">
-      <label className="text-xs text-gray-600 block mb-1">
-        Target date
-        {s.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
-        <Saved show={saved} />
-      </label>
-      <div className="flex gap-1 items-center flex-wrap">
-        <input
-          type="date"
-          className="bramley-input text-sm py-1.5 w-36"
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          disabled={updating}
-        />
-        {dirty && (
-          <button
-            onClick={() => onUpdate(s.id, 'confirmed_target_date', val)}
-            disabled={updating}
-            className="bramley-btn py-1 text-xs px-2"
-          >Save</button>
-        )}
-        {!dirty && val && (
-          <button
-            onClick={() => { setVal(''); onUpdate(s.id, 'confirmed_target_date', '') }}
-            disabled={updating}
-            className="text-xs text-gray-400 hover:text-red-500"
-            title="Clear date"
-          >✕</button>
-        )}
-      </div>
-      {aiDate && !s.confirmed_target_date && (
-        <button
-          onClick={() => setVal(aiDate)}
-          className="text-xs text-blue-500 hover:text-blue-700 mt-1"
-        >
-          Use AI estimate ({new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
-        </button>
-      )}
-    </div>
-  )
-}
-
-function ConfirmedCostField({ s, onUpdate, updating, saved }: {
-  s: Submission
-  onUpdate: (id: number, field: 'confirmed_cost', value: string) => void
-  updating: boolean
-  saved: boolean
-}) {
-  const aiLow = s.cost_estimate_low != null ? Number(s.cost_estimate_low) : null
-  const aiHigh = s.cost_estimate_high != null ? Number(s.cost_estimate_high) : null
-  const aiMid = aiLow != null && aiHigh != null ? Math.round((aiLow + aiHigh) / 2) : null
-  const current = s.confirmed_cost != null ? String(s.confirmed_cost) : ''
-  const [val, setVal] = useState(current)
-  const dirty = val !== current
-
-  useEffect(() => { setVal(s.confirmed_cost != null ? String(s.confirmed_cost) : '') }, [s.confirmed_cost])
-
-  return (
-    <div className="min-w-[180px]">
-      <label className="text-xs text-gray-600 block mb-1">
-        Cost target (£)
-        {s.confirmed_cost != null && <span className="ml-1 text-green-600">✓ confirmed</span>}
-        <Saved show={saved} />
-      </label>
-      <div className="flex gap-1 items-center flex-wrap">
-        <input
-          type="number"
-          min="0"
-          step="1"
-          className="bramley-input text-sm py-1.5 w-32"
-          placeholder="e.g. 2500"
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          disabled={updating}
-        />
-        {dirty && (
-          <button
-            onClick={() => onUpdate(s.id, 'confirmed_cost', val)}
-            disabled={updating}
-            className="bramley-btn py-1 text-xs px-2"
-          >Save</button>
-        )}
-        {!dirty && val && (
-          <button
-            onClick={() => { setVal(''); onUpdate(s.id, 'confirmed_cost', '') }}
-            disabled={updating}
-            className="text-xs text-gray-400 hover:text-red-500"
-            title="Clear cost"
-          >✕</button>
-        )}
-      </div>
-      {aiMid != null && !s.confirmed_cost && (
-        <button
-          onClick={() => setVal(String(aiMid))}
-          className="text-xs text-blue-500 hover:text-blue-700 mt-1"
-        >
-          Use AI midpoint (£{aiMid.toLocaleString()})
-        </button>
-      )}
-    </div>
-  )
-}
-
-function ScoreOverridePanel({ s, onUpdate, updating, saved }: {
+function ScoreOverridePanel({ s, onUpdate, updating }: {
   s: Submission
   onUpdate: (id: number, field: 'score_override', value: string, extra?: Record<string, string>) => void
   updating: boolean
-  saved: boolean
 }) {
   const [overrideVal, setOverrideVal] = useState(s.score_override != null ? String(s.score_override) : '')
   const [reason, setReason] = useState(s.score_override_reason ?? '')
   const [editing, setEditing] = useState(false)
-  const effectiveScore = s.score_override ?? s.score
 
   return (
     <div className="mt-2 rounded-[8px] border border-gray-200 bg-white p-3 text-xs space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-gray-500 uppercase tracking-wide">Score override<Saved show={saved} /></span>
+        <span className="font-semibold text-gray-500 uppercase tracking-wide">Score override</span>
         {s.score_override != null && (
           <span className="text-gray-400 italic">Overridden by {s.score_override_by}</span>
         )}
@@ -1215,51 +1190,6 @@ function ScoreOverridePanel({ s, onUpdate, updating, saved }: {
               >Remove override</button>
             )}
             <button onClick={() => setEditing(false)} className="text-gray-400 hover:text-gray-600 text-xs">Cancel</button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function NotesPanel({ s, onUpdate, updating, saved }: {
-  s: Submission
-  onUpdate: (id: number, field: 'notes', value: string) => void
-  updating: boolean
-  saved: boolean
-}) {
-  const [draft, setDraft] = useState(s.notes ?? '')
-  const [editing, setEditing] = useState(false)
-  const dirty = draft !== (s.notes ?? '')
-
-  return (
-    <div className="mt-2 rounded-[8px] border border-gray-200 bg-white p-3 text-xs space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="font-semibold text-gray-500 uppercase tracking-wide">Board notes<Saved show={saved} /></span>
-        {!editing && (
-          <button onClick={() => setEditing(true)} className="text-blue-500 hover:text-blue-700">
-            {s.notes ? 'Edit' : '+ Add note'}
-          </button>
-        )}
-      </div>
-      {!editing && s.notes && <p className="text-gray-700 whitespace-pre-wrap">{s.notes}</p>}
-      {!editing && !s.notes && <p className="text-gray-400 italic">No notes yet</p>}
-      {editing && (
-        <div className="space-y-2">
-          <textarea
-            rows={3}
-            className="bramley-input text-xs py-1 w-full resize-none"
-            placeholder="Add Board notes visible to all managers…"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <button
-              disabled={updating || !dirty}
-              onClick={() => { onUpdate(s.id, 'notes', draft); setEditing(false) }}
-              className="bramley-btn py-1 text-xs"
-            >Save</button>
-            <button onClick={() => { setDraft(s.notes ?? ''); setEditing(false) }} className="text-gray-400 hover:text-gray-600 text-xs">Cancel</button>
           </div>
         </div>
       )}

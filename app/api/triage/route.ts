@@ -167,7 +167,8 @@ export async function PATCH(req: NextRequest) {
           tone,
           signoff,
           aiNarrative: row.ai_narrative ?? null,
-          directorNote: row.notes ?? null,
+          // Board notes are private — only used as context for Not Progressed emails
+          directorNote: status === 'rejected' ? (row.notes ?? null) : null,
         })
 
         await sendStatusChangeEmail(row.member_email!, {

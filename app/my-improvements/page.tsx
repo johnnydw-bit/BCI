@@ -229,7 +229,7 @@ export default function MyImprovementsPage() {
                                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                                   Assessment {s.scored_at ? `· ${formatDate(s.scored_at)}` : ''}
                                 </p>
-                                <p className="text-sm text-gray-700 leading-relaxed">{s.member_msg}</p>
+                                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{s.member_msg}</p>
                                 {targetDate && (
                                   <p className="text-xs text-gray-500 mt-2">
                                     {s.confirmed_target_date ? 'Target date' : 'Indicative timeline'}:{' '}

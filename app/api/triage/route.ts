@@ -141,7 +141,7 @@ export async function PATCH(req: NextRequest) {
     await sql`
       UPDATE submissions
       SET status = ${status},
-          confirmed_target_date = COALESCE(${confirmed_target_date ?? null}, confirmed_target_date)
+          confirmed_target_date = COALESCE(${confirmed_target_date || null}, confirmed_target_date)
       WHERE id = ${id}
     `
     await sql`

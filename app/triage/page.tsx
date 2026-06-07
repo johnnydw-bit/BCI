@@ -98,6 +98,7 @@ export default function TriagePage() {
   const [data, setData] = useState<TriageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<number | null>(null)
+  const [savedField, setSavedField] = useState<{ id: number; field: string } | null>(null)
   const [tab, setTab] = useState<'triage' | 'tracking' | 'moderated'>('triage')
   const [tracked, setTracked] = useState<TrackedImprovement[]>([])
   const [trackingEdit, setTrackingEdit] = useState<Record<number, Partial<TrackedImprovement>>>({})
@@ -242,6 +243,8 @@ export default function TriagePage() {
       fetchAuditLog(id)
     }
     setUpdating(null)
+    setSavedField({ id, field })
+    setTimeout(() => setSavedField(null), 2000)
     if (field === 'status' && (value === 'approved' || value === 'implemented')) {
       refreshTracking()
     }
@@ -480,6 +483,7 @@ export default function TriagePage() {
                 onDelete={deleteImprovement}
                 onClose={() => setSidePanelId(null)}
                 updating={updating === s.id}
+                savedField={savedField?.id === s.id ? savedField.field : null}
                 deleting={deleting === s.id}
                 auditLog={auditLog[s.id] ?? []}
                 onOpen={() => fetchAuditLog(s.id)}
@@ -835,8 +839,13 @@ function SpreadsheetTable({
   )
 }
 
+function Saved({ show }: { show: boolean }) {
+  if (!show) return null
+  return <span className="ml-2 text-green-600 text-xs font-semibold animate-pulse">✓ Saved</span>
+}
+
 function SpreadsheetDetailPanel({
-  s, isManager, onUpdate, onDelete, onClose, updating, deleting, auditLog, onOpen,
+  s, isManager, onUpdate, onDelete, onClose, updating, savedField, deleting, auditLog, onOpen,
 }: {
   s: Submission
   isManager: boolean
@@ -844,6 +853,7 @@ function SpreadsheetDetailPanel({
   onDelete: (id: number) => void
   onClose: () => void
   updating: boolean
+  savedField: string | null
   deleting: boolean
   auditLog: AuditEntry[]
   onOpen: () => void
@@ -928,7 +938,7 @@ function SpreadsheetDetailPanel({
           <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-2 text-xs">
             <p className="font-bold text-amber-700 uppercase tracking-wider">📋 Board Decision</p>
             <div>
-              <label className="text-gray-500 block mb-1">Status</label>
+              <label className="text-gray-500 block mb-1">Status <Saved show={savedField === 'status'} /></label>
               <select
                 className="bramley-input text-xs py-1 w-full"
                 value={s.status}
@@ -941,7 +951,7 @@ function SpreadsheetDetailPanel({
               </select>
             </div>
             <div>
-              <label className="text-gray-500 block mb-1">Owner</label>
+              <label className="text-gray-500 block mb-1">Owner <Saved show={savedField === 'suggested_owner'} /></label>
               <select
                 className="bramley-input text-xs py-1 w-full"
                 value={s.suggested_owner ?? ''}
@@ -953,7 +963,7 @@ function SpreadsheetDetailPanel({
               </select>
             </div>
             <div>
-              <label className="text-gray-500 block mb-1">Area</label>
+              <label className="text-gray-500 block mb-1">Area <Saved show={savedField === 'category'} /></label>
               <select
                 className="bramley-input text-xs py-1 w-full"
                 value={s.category}
@@ -963,8 +973,8 @@ function SpreadsheetDetailPanel({
                 {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
-            <TargetDateField s={s} onUpdate={onUpdate} updating={updating} />
-            <ConfirmedCostField s={s} onUpdate={onUpdate} updating={updating} />
+            <TargetDateField s={s} onUpdate={onUpdate} updating={updating} saved={savedField === 'confirmed_target_date'} />
+            <ConfirmedCostField s={s} onUpdate={onUpdate} updating={updating} saved={savedField === 'confirmed_cost'} />
             <button
               onClick={() => onDelete(s.id)}
               disabled={deleting}
@@ -977,8 +987,8 @@ function SpreadsheetDetailPanel({
 
         {isManager && (
           <>
-            <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} />
-            <NotesPanel s={s} onUpdate={onUpdate} updating={updating} />
+            <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} saved={savedField === 'score_override'} />
+            <NotesPanel s={s} onUpdate={onUpdate} updating={updating} saved={savedField === 'notes'} />
           </>
         )}
 
@@ -1002,10 +1012,11 @@ function SpreadsheetDetailPanel({
 
 // ── Shared sub-components ───────────────────────────────────────────────────
 
-function TargetDateField({ s, onUpdate, updating }: {
+function TargetDateField({ s, onUpdate, updating, saved }: {
   s: Submission
   onUpdate: (id: number, field: 'confirmed_target_date', value: string) => void
   updating: boolean
+  saved: boolean
 }) {
   const aiDate = s.suggested_target_date ? s.suggested_target_date.substring(0, 10) : ''
   const currentDate = s.confirmed_target_date ? s.confirmed_target_date.substring(0, 10) : ''
@@ -1020,6 +1031,7 @@ function TargetDateField({ s, onUpdate, updating }: {
       <label className="text-xs text-gray-600 block mb-1">
         Target date
         {s.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
+        <Saved show={saved} />
       </label>
       <div className="flex gap-1 items-center flex-wrap">
         <input
@@ -1057,10 +1069,11 @@ function TargetDateField({ s, onUpdate, updating }: {
   )
 }
 
-function ConfirmedCostField({ s, onUpdate, updating }: {
+function ConfirmedCostField({ s, onUpdate, updating, saved }: {
   s: Submission
   onUpdate: (id: number, field: 'confirmed_cost', value: string) => void
   updating: boolean
+  saved: boolean
 }) {
   const aiLow = s.cost_estimate_low != null ? Number(s.cost_estimate_low) : null
   const aiHigh = s.cost_estimate_high != null ? Number(s.cost_estimate_high) : null
@@ -1076,6 +1089,7 @@ function ConfirmedCostField({ s, onUpdate, updating }: {
       <label className="text-xs text-gray-600 block mb-1">
         Cost target (£)
         {s.confirmed_cost != null && <span className="ml-1 text-green-600">✓ confirmed</span>}
+        <Saved show={saved} />
       </label>
       <div className="flex gap-1 items-center flex-wrap">
         <input
@@ -1116,10 +1130,11 @@ function ConfirmedCostField({ s, onUpdate, updating }: {
   )
 }
 
-function ScoreOverridePanel({ s, onUpdate, updating }: {
+function ScoreOverridePanel({ s, onUpdate, updating, saved }: {
   s: Submission
   onUpdate: (id: number, field: 'score_override', value: string, extra?: Record<string, string>) => void
   updating: boolean
+  saved: boolean
 }) {
   const [overrideVal, setOverrideVal] = useState(s.score_override != null ? String(s.score_override) : '')
   const [reason, setReason] = useState(s.score_override_reason ?? '')
@@ -1129,7 +1144,7 @@ function ScoreOverridePanel({ s, onUpdate, updating }: {
   return (
     <div className="mt-2 rounded-[8px] border border-gray-200 bg-white p-3 text-xs space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-gray-500 uppercase tracking-wide">Score override</span>
+        <span className="font-semibold text-gray-500 uppercase tracking-wide">Score override<Saved show={saved} /></span>
         {s.score_override != null && (
           <span className="text-gray-400 italic">Overridden by {s.score_override_by}</span>
         )}
@@ -1199,10 +1214,11 @@ function ScoreOverridePanel({ s, onUpdate, updating }: {
   )
 }
 
-function NotesPanel({ s, onUpdate, updating }: {
+function NotesPanel({ s, onUpdate, updating, saved }: {
   s: Submission
   onUpdate: (id: number, field: 'notes', value: string) => void
   updating: boolean
+  saved: boolean
 }) {
   const [draft, setDraft] = useState(s.notes ?? '')
   const [editing, setEditing] = useState(false)
@@ -1211,7 +1227,7 @@ function NotesPanel({ s, onUpdate, updating }: {
   return (
     <div className="mt-2 rounded-[8px] border border-gray-200 bg-white p-3 text-xs space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-gray-500 uppercase tracking-wide">Board notes</span>
+        <span className="font-semibold text-gray-500 uppercase tracking-wide">Board notes<Saved show={saved} /></span>
         {!editing && (
           <button onClick={() => setEditing(true)} className="text-blue-500 hover:text-blue-700">
             {s.notes ? 'Edit' : '+ Add note'}

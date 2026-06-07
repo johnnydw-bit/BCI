@@ -205,32 +205,62 @@ export const DEFAULT_WEIGHTS: ScoringWeights = {
 
 /**
  * Generate a personalised status-change email body for a member.
- * The director's internal note is NOT passed here — it is internal only.
+ * For "rejected" status, pass aiNarrative and directorNote as private context
+ * to produce a diplomatic, evidence-based explanation — neither is quoted verbatim.
  */
 export async function generateStatusEmail(opts: {
   description: string
+  benefit?: string
   newStatus: string
   statusLabel: string
   confirmedTargetDate: string | null
   tone: 'friendly' | 'formal'
   signoff: string
+  aiNarrative?: string | null
+  directorNote?: string | null
 }): Promise<string> {
-  const { description, statusLabel, confirmedTargetDate, tone, signoff } = opts
+  const { description, benefit, statusLabel, confirmedTargetDate, tone, signoff, newStatus, aiNarrative, directorNote } = opts
   const dateNote = confirmedTargetDate
-    ? `The committee's target date for this is ${new Date(confirmedTargetDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.`
+    ? `The Board's target date for this is ${new Date(confirmedTargetDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.`
     : ''
+
+  const isRejection = newStatus === 'rejected'
+
+  const systemPrompt = isRejection
+    ? `You write diplomatic, evidence-based member emails for Bramley Golf Club's Continuous Improvement Programme.
+Tone: ${tone === 'friendly' ? 'warm and respectful — like a thoughtful club secretary' : 'professional and courteous — like an official club communication'}.
+Your task is to inform a member that their improvement idea will not be progressed, in a way that:
+- Genuinely acknowledges the idea and shows it was properly considered
+- Gives a real, specific reason grounded in the nature of the idea (not a vague brush-off)
+- Is honest but diplomatic — never dismissive or condescending
+- Invites continued engagement with the programme
+Keep to 4-6 sentences. Never mention scoring, score bands, internal process, or staff names. Never include a subject line. Do not start with "Dear Member". Sign off as: ${signoff}`
+    : `You write short, ${tone} member emails for Bramley Golf Club's Continuous Improvement Programme.
+Tone: ${tone === 'friendly' ? 'warm, appreciative, concise — like a friendly club secretary' : 'professional, courteous, formal — like an official club communication'}.
+Keep to 2-3 sentences. Never mention scoring, internal processes, or staff names. Never include a subject line. Do not start with "Dear Member" — just write the body paragraph(s).
+Sign off as: ${signoff}`
+
+  const userContent = isRejection
+    ? `Write an email to a member informing them that their improvement idea will not be progressed by the Board.
+
+MEMBER'S IDEA: "${description}"
+MEMBER'S STATED BENEFIT: "${benefit ?? ''}"
+
+INTERNAL CONTEXT (use this to inform the tone and reasoning — do NOT quote it verbatim or reference it directly):
+AI assessment of this idea: ${aiNarrative ?? 'Not available.'}
+Director's internal note: ${directorNote ?? 'None provided.'}
+
+Write a diplomatic, evidence-based email that references specific aspects of their idea to show it was genuinely considered. Give a real reason why it cannot be progressed at this time — draw on the internal context to ground the explanation, but express it in plain member-facing language. Do not mention the AI, scoring, or any internal system. End with the sign-off "${signoff}". Output plain text only — no HTML, no markdown.`
+    : `Write the email body to send to the member whose improvement idea ("${description}") has moved to status: "${statusLabel}". ${dateNote}
+The tone is ${tone}. End with the sign-off "${signoff}". Output plain text only — no HTML, no markdown.`
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 400,
-    system: `You write short, ${tone} member emails for Bramley Golf Club's Continuous Improvement Programme.
-Tone: ${tone === 'friendly' ? 'warm, appreciative, concise — like a friendly club secretary' : 'professional, courteous, formal — like an official club communication'}.
-Keep to 2-3 sentences. Never mention scoring, internal processes, or staff names. Never include a subject line. Do not start with "Dear Member" — just write the body paragraph(s).
-Sign off as: ${signoff}`,
+    max_tokens: isRejection ? 500 : 400,
+    system: systemPrompt,
     messages: [{
       role: 'user',
-      content: `Write the email body to send to the member whose improvement idea ("${description}") has moved to status: "${statusLabel}". ${dateNote}
-The tone is ${tone}. End with the sign-off "${signoff}". Output plain text only — no HTML, no markdown.`,
+      content: userContent,
     }],
   })
 

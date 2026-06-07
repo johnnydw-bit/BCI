@@ -121,16 +121,20 @@ export async function PATCH(req: NextRequest) {
     }
 
     const current = await sql`
-      SELECT status, description, member_email, member_name, email_opt_out, confirmed_target_date
+      SELECT status, description, benefit, member_email, member_name, email_opt_out,
+             confirmed_target_date, ai_narrative, notes
       FROM submissions WHERE id = ${id}
     `
     const row = current[0] as {
       status: string
       description: string
+      benefit: string | null
       member_email: string | null
       member_name: string | null
       email_opt_out: boolean
       confirmed_target_date: string | null
+      ai_narrative: string | null
+      notes: string | null
     }
     const oldStatus = row?.status
 
@@ -158,11 +162,14 @@ export async function PATCH(req: NextRequest) {
 
           const emailBody = await generateStatusEmail({
             description: row.description,
+            benefit: row.benefit ?? undefined,
             newStatus: status,
             statusLabel: STATUS_LABELS[status] ?? status,
             confirmedTargetDate: targetDate,
             tone,
             signoff,
+            aiNarrative: row.ai_narrative ?? null,
+            directorNote: row.notes ?? null,
           })
 
           await sendStatusChangeEmail(row.member_email!, {

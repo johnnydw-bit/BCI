@@ -57,7 +57,7 @@ export default function AdminPage() {
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/committee')
+    router.push('/board')
   }
   const [config, setConfig] = useState<ConfigRow[]>([])
   const [edits, setEdits] = useState<Record<string, string>>({})
@@ -93,7 +93,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/admin/config').then((r) => { if (r.status === 403) { router.push('/committee'); return null } return r.json() }),
+      fetch('/api/admin/config').then((r) => { if (r.status === 403) { router.push('/board'); return null } return r.json() }),
       fetch('/api/admin/directors').then((r) => r.json()),
     ]).then(([cfg, dirs]) => {
       if (cfg) {
@@ -546,7 +546,7 @@ export default function AdminPage() {
 
             {/* Add director form */}
             <div className="border-t border-gray-100 p-4 space-y-3">
-              <h3 className="font-semibold text-gray-800 text-sm">Add director / committee member</h3>
+              <h3 className="font-semibold text-gray-800 text-sm">Add director / Board member</h3>
               <p className="text-xs text-gray-500">A secure 6-digit PIN will be automatically generated and shown once after adding.</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
                 <input className="bramley-input text-sm py-2" placeholder="Full name" value={newDir.name} onChange={(e) => setNewDir({ ...newDir, name: e.target.value })} />
@@ -592,7 +592,7 @@ export default function AdminPage() {
                     className="bramley-input py-1.5 text-sm"
                     value={configValue('COMMS_SIGNOFF')}
                     onChange={(e) => handleEdit('COMMS_SIGNOFF', e.target.value)}
-                    placeholder="e.g. The Committee, Bramley Golf Club"
+                    placeholder="e.g. The Board, Bramley Golf Club"
                   />
                 </div>
               </div>

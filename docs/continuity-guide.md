@@ -245,7 +245,7 @@ If a new developer is needed to maintain or extend the system, here is what they
 1. Access to the GitHub repository (add them as a collaborator)
 2. Access to the Vercel project (add them as a team member)
 3. Access to the Neon project (add them as a collaborator)
-4. A copy of this document and the committee guide
+4. A copy of this document and the Board guide
 5. A recent full JSON backup so they understand the data structure
 6. The environment variables from Vercel (DATABASE_URL, ANTHROPIC_API_KEY, RESEND_API_KEY, MANAGER_EMAIL, EMAIL_FROM, NEXT_PUBLIC_APP_URL, DEBUG_EMAIL)
 

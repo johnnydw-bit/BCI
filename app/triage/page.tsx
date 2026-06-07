@@ -105,7 +105,7 @@ export default function TriagePage() {
   useEffect(() => {
     fetch('/api/triage')
       .then((r) => {
-        if (r.status === 403) { router.push('/committee'); return null }
+        if (r.status === 403) { router.push('/board'); return null }
         return r.json()
       })
       .then((d) => { if (d) setData(d) })
@@ -247,7 +247,7 @@ export default function TriagePage() {
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/committee')
+    router.push('/board')
   }
 
   function formatDate(iso: string) {
@@ -402,7 +402,7 @@ export default function TriagePage() {
               <option value="revenue">💰 Revenue opportunity</option>
               <option value="recurring">🔁 Recurring theme</option>
               <option value="in_plan">📋 In plan</option>
-              <option value="cost_threshold">£ Committee approval</option>
+              <option value="cost_threshold">£ Board approval</option>
             </select>
           </div>
           {ownerOptions.length > 0 && (
@@ -813,7 +813,7 @@ function SpreadsheetTable({
                     {s.h_and_s_flag && <span title="H&S" className="text-red-600">⚠</span>}
                     {s.quick_win_flag && <span title="Quick win">⚡</span>}
                     {s.revenue_opportunity && <span title="Revenue">💰</span>}
-                    {s.cost_threshold_flag && <span title="Committee approval" className="text-orange-600 font-bold text-xs">£</span>}
+                    {s.cost_threshold_flag && <span title="Board approval" className="text-orange-600 font-bold text-xs">£</span>}
                     {s.needs_external_approval && <span title="External approval">⚖</span>}
                     {s.seasonal_window && <span title="Seasonal">📅</span>}
                     {s.recurring_flag && <span title={`Recurring ×${s.recurring_run_count + 1}`}>🔁</span>}
@@ -877,7 +877,7 @@ function SpreadsheetDetailPanel({
           {s.score_band === 'in_plan' && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>📋 In plan</span>}
           {s.quick_win_flag && <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>}
           {s.revenue_opportunity && <span className="bramley-badge text-xs" style={{ background: '#6c3483' }}>💰 Revenue</span>}
-          {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Committee</span>}
+          {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Board</span>}
           {s.needs_external_approval && <span className="bramley-badge text-xs" style={{ background: '#7d6608' }}>⚖ Approval</span>}
           {s.suggested_owner && <span className="bramley-badge text-xs" style={{ background: '#117a65' }}>👤 {s.suggested_owner}</span>}
           {s.seasonal_window && <span className="bramley-badge text-xs" style={{ background: '#1a5276' }}>📅 Seasonal</span>}
@@ -917,10 +917,10 @@ function SpreadsheetDetailPanel({
           </div>
         )}
 
-        {/* Committee Decision */}
+        {/* Board Decision */}
         {isManager && (
           <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-2 text-xs">
-            <p className="font-bold text-amber-700 uppercase tracking-wider">📋 Committee Decision</p>
+            <p className="font-bold text-amber-700 uppercase tracking-wider">📋 Board Decision</p>
             <div>
               <label className="text-gray-500 block mb-1">Status</label>
               <select
@@ -1205,7 +1205,7 @@ function NotesPanel({ s, onUpdate, updating }: {
   return (
     <div className="mt-2 rounded-[8px] border border-gray-200 bg-white p-3 text-xs space-y-2">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-gray-500 uppercase tracking-wide">Committee notes</span>
+        <span className="font-semibold text-gray-500 uppercase tracking-wide">Board notes</span>
         {!editing && (
           <button onClick={() => setEditing(true)} className="text-blue-500 hover:text-blue-700">
             {s.notes ? 'Edit' : '+ Add note'}
@@ -1219,7 +1219,7 @@ function NotesPanel({ s, onUpdate, updating }: {
           <textarea
             rows={3}
             className="bramley-input text-xs py-1 w-full resize-none"
-            placeholder="Add committee notes visible to all managers…"
+            placeholder="Add Board notes visible to all managers…"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
           />

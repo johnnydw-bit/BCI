@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import BramleyHeader from '@/components/BramleyHeader'
 
-export default function CommitteeLoginPage() {
+export default function BoardLoginPage() {
   const router = useRouter()
 
   const [pin, setPin] = useState('')
@@ -45,12 +45,12 @@ export default function CommitteeLoginPage() {
   return (
     <div className="bramley-wide-page">
       <div className="bramley-card">
-        <BramleyHeader subtitle="Committee Access" />
+        <BramleyHeader subtitle="Board Access" />
 
         <div className="bramley-body">
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="bramley-label">Committee PIN</label>
+              <label className="bramley-label">Board PIN</label>
               <div className="relative">
                 <input
                   className="bramley-input pr-12"
@@ -58,7 +58,7 @@ export default function CommitteeLoginPage() {
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
                   autoComplete="current-password"
-                  placeholder="Enter your committee PIN"
+                  placeholder="Enter your Board PIN"
                   required
                   autoFocus
                 />

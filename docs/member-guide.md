@@ -1,7 +1,7 @@
-# Bramley Golf Club — Continuous Improvement Programme
+﻿# Bramley Golf Club â€” Continuous Improvement Programme
 ## Member Guide
 
-*Version 1.0 — June 2026*
+*Version 1.0 â€” June 2026*
 
 ---
 
@@ -21,7 +21,7 @@ The Continuous Improvement Programme (CIP) gives every member a direct voice in 
 6. [Impact levels](#6-impact-levels)
 7. [Recognition](#7-recognition)
 8. [What happens after you submit](#8-what-happens-after-you-submit)
-9. [Tracking your ideas — My Improvements](#9-tracking-your-ideas--my-improvements)
+9. [Tracking your ideas â€” My Improvements](#9-tracking-your-ideas--my-improvements)
 10. [Email updates](#10-email-updates)
 11. [Withdrawing a submission](#11-withdrawing-a-submission)
 12. [Privacy and data](#12-privacy-and-data)
@@ -31,12 +31,12 @@ The Continuous Improvement Programme (CIP) gives every member a direct voice in 
 
 ## 1. What is the Continuous Improvement Programme?
 
-The CIP is a structured way for members to suggest improvements to any aspect of the club — the course, facilities, catering, events, and more. Every idea is reviewed by the committee using a consistent, fair scoring process.
+The CIP is a structured way for members to suggest improvements to any aspect of the club â€” the course, facilities, catering, events, and more. Every idea is reviewed by the Board using a consistent, fair scoring process.
 
 **Key points:**
 - Any active member can submit ideas
 - All ideas are treated equally regardless of who submits them
-- Submissions are assessed by an impartial scoring process before committee review
+- Submissions are assessed by an impartial scoring process before Board review
 - You can track the status of your ideas at any time
 - You will receive email updates when the status of your idea changes
 
@@ -44,44 +44,39 @@ The CIP is a structured way for members to suggest improvements to any aspect of
 
 ## 2. Saving the portal to your device
 
-You can save the Bramley CIP portal to your home screen so it opens like an app — no need to find the link each time.
+You can save the Bramley CIP portal to your home screen so it opens like an app â€” no need to find the link each time.
 
 **The portal address is:** `https://bcg-cip.vercel.app`
 
-**Android &amp; desktop Chrome — automatic prompt**
+**Android &amp; desktop Chrome â€” automatic prompt**
 
 After signing in, the portal will offer to install itself. A banner appears at the bottom of the screen with an **Install** button. Tap it, confirm in the dialog that appears, and the app icon is added to your home screen automatically.
 
-**iPhone / iPad (Safari) — manual steps required**
+**iPhone / iPad (Safari) â€” manual steps required**
 
 Apple does not support automatic install prompts. Instead, a banner will appear with instructions:
 1. Tap the **Share** button (the box with an arrow pointing up) at the bottom of your screen
 2. Scroll down and tap **Add to Home Screen**
 3. Confirm the name and tap **Add**
 
-> **Tip:** The install prompt appears 2 seconds after you sign in. If you tap "Not now" it won't appear again on that device — but you can always install manually using the steps above.
+> **Tip:** The install prompt appears 2 seconds after you sign in. If you tap "Not now" it won't appear again on that device â€” but you can always install manually using the steps above.
 
 ---
 
 ## 3. Signing in
 
-Before you can submit an idea or track your improvements, you need to sign in using your **club membership credentials**.
+Before you can submit an idea or track your improvements, you need to sign in.
 
 **What you need:**
-- Your **Member ID** (the number on your membership card)
-- Your **club website PIN** (the same PIN you use to log in to the Bramley Golf Club website)
+- Your **name**
 - Your **email address**
 
-**First-time sign-in:** Your email address will be registered against your member ID. On future visits, you must use the same email address.
-
 **Steps:**
-1. Go to the programme website
-2. Enter your Member ID, PIN, and email address
-3. Click **Sign in**
+1. Go to the programme website (the link is on the Bramley Golf Club website)
+2. Enter your name and email address
+3. Click **Continue**
 
 > **Tip:** Your session stays active for 8 hours. After 10 minutes of inactivity you will see a warning, and after 20 minutes you will be signed out automatically for security.
-
-> **Locked out?** If you enter incorrect details 5 times, access is locked for 15 minutes. This is a security measure to protect your account.
 
 ---
 
@@ -91,7 +86,7 @@ Once signed in, click **Submit an improvement** to open the submission form.
 
 ### The form
 
-**Describe your improvement** *(required — up to 200 characters)*
+**Describe your improvement** *(required â€” up to 200 characters)*
 
 Be specific. Describe exactly what you would like to see changed or introduced. The clearer and more specific your idea, the better it can be assessed.
 
@@ -101,7 +96,7 @@ Be specific. Describe exactly what you would like to see changed or introduced. 
 
 ---
 
-**How would this benefit members?** *(required — up to 500 characters)*
+**How would this benefit members?** *(required â€” up to 500 characters)*
 
 Explain the benefit to members and the club. Think about:
 - Which members would benefit and how?
@@ -198,30 +193,30 @@ You can choose whether to be named if your idea is implemented.
 
 **Anonymous:** Your idea will be assessed exactly the same way, but your name will not be associated with it if it proceeds. You will not be eligible for recognition awards.
 
-You can submit some ideas anonymously and others with your name — the choice is made per submission.
+You can submit some ideas anonymously and others with your name â€” the choice is made per submission.
 
 ---
 
 ## 8. What happens after you submit
 
-### Step 1 — Moderation (immediate)
+### Step 1 â€” Moderation (immediate)
 Your idea is automatically checked to ensure it meets the programme guidelines. If it passes, it enters the assessment queue. If not, you receive an explanation.
 
-### Step 2 — AI-assisted scoring (weekly, Monday mornings)
+### Step 2 â€” AI-assisted scoring (weekly, Monday mornings)
 All new submissions are scored overnight using a structured assessment process. Each idea is evaluated across six dimensions:
-- **Member impact** — based on your self-assessed impact and category
-- **Strategic alignment** — how well it fits the club's priorities
-- **Feasibility** — how realistic it is to implement
-- **Cost vs benefit** — likely cost compared to benefit delivered
-- **Novelty** — whether this is a fresh idea or standard practice
-- **Member experience** — the material improvement to day-to-day club life
+- **Member impact** â€” based on your self-assessed impact and category
+- **Strategic alignment** â€” how well it fits the club's priorities
+- **Feasibility** â€” how realistic it is to implement
+- **Cost vs benefit** â€” likely cost compared to benefit delivered
+- **Novelty** â€” whether this is a fresh idea or standard practice
+- **Member experience** â€” the material improvement to day-to-day club life
 
-Scores are combined into a final rating out of 10. Ideas may also be grouped with similar submissions (clusters) to identify recurring themes — clustered ideas receive a consensus bonus.
+Scores are combined into a final rating out of 10. Ideas may also be grouped with similar submissions (clusters) to identify recurring themes â€” clustered ideas receive a consensus bonus.
 
-### Step 3 — Committee review
+### Step 3 â€” Board review
 Directors review scored submissions in the triage report and make decisions: Under Consideration, Approved, In Plan, Rejected, or Implemented.
 
-### Step 4 — You are notified
+### Step 4 â€” You are notified
 When the status of your idea changes, you receive a personalised email update.
 
 ---
@@ -232,18 +227,18 @@ After assessment, your idea is placed in one of the following bands (visible in 
 
 | Band | What it means |
 |---|---|
-| **Priority** | High score — your idea has been passed to the relevant director for active consideration |
-| **Active queue** | Good score — your idea will be reviewed at the next committee cycle |
-| **Holding** | Solid idea but longer timeframe — recorded for future consideration |
+| **Priority** | High score â€” your idea has been passed to the relevant director for active consideration |
+| **Active queue** | Good score â€” your idea will be reviewed at the next Board cycle |
+| **Holding** | Solid idea but longer timeframe â€” recorded for future consideration |
 | **Low priority** | Noted but unlikely to be progressed in the near term |
 | **Not progressed** | Score was below the threshold for active consideration |
-| **Already in our plan** | Great minds think alike — this is already being worked on |
+| **Already in our plan** | Great minds think alike â€” this is already being worked on |
 
-> ⚡ **Quick win** — If your idea can be implemented quickly at low cost, it may be flagged as a Quick Win and actioned ahead of the standard review cycle regardless of its score band.
+> âš¡ **Quick win** â€” If your idea can be implemented quickly at low cost, it may be flagged as a Quick Win and actioned ahead of the standard review cycle regardless of its score band.
 
 ---
 
-## 9. Tracking your ideas — My Improvements
+## 9. Tracking your ideas â€” My Improvements
 
 Sign in and click **My improvements** to see all the ideas you have submitted and their current status.
 
@@ -251,21 +246,21 @@ Each card shows:
 - The **current status** of your idea
 - The **date you submitted** it
 - Your **improvement description** and category
-- After assessment: the **score band** and a message from the committee
-- The **target date** if one has been confirmed by the committee
-- A **status history** — click "Show history" to see every status change and when it happened
-- A **⚡ Quick win** badge if applicable
+- After assessment: the **score band** and a message from the Board
+- The **target date** if one has been confirmed by the Board
+- A **status history** â€” click "Show history" to see every status change and when it happened
+- A **âš¡ Quick win** badge if applicable
 
 ### Status meanings
 
 | Status | Meaning |
 |---|---|
-| **Awaiting Decision** | Submitted and assessed — awaiting committee decision |
-| **Under Consideration** | The committee is actively reviewing this |
+| **Awaiting Decision** | Submitted and assessed â€” awaiting Board decision |
+| **Under Consideration** | the Board is actively reviewing this |
 | **In Plan** | Included in the club's improvement plan |
 | **Approved** | Approved for implementation |
 | **Implemented** | Done! Your idea has been put into practice |
-| **Not Progressed** | The committee has decided not to progress this at this time |
+| **Not Progressed** | the Board has decided not to progress this at this time |
 | **Withdrawn** | You chose to withdraw this submission |
 
 ---
@@ -276,7 +271,7 @@ You will receive an email in the following circumstances (unless you have opted 
 
 | Email | When sent |
 |---|---|
-| **Assessment update** | After the weekly scoring run — tells you your score band and committee message |
+| **Assessment update** | After the weekly scoring run â€” tells you your score band and Board message |
 | **Status change** | When a director changes the status of your idea |
 | **Withdrawal confirmation** | When you withdraw a submission |
 
@@ -297,7 +292,7 @@ You can withdraw any of your submitted ideas from the **My Improvements** page, 
 4. Confirm when prompted
 
 **What happens:**
-- The submission is marked as Withdrawn and removed from the committee's review queue
+- The submission is marked as Withdrawn and removed from the Board's review queue
 - You receive a confirmation email
 - The relevant director is notified if your idea had already been scored
 - If your idea was part of a cluster (grouped with similar submissions), the cluster is updated
@@ -309,9 +304,9 @@ Withdrawal cannot be undone. If you change your mind, you can resubmit your idea
 ## 12. Privacy and data
 
 - Your name and email address are stored securely against your member ID
-- Your email address is used only for programme communications — it is never shared with third parties
-- Your improvement ideas are visible to committee members and directors as part of the review process
-- If you choose **anonymous** recognition, your name is not displayed to committee members in the normal triage view
+- Your email address is used only for programme communications â€” it is never shared with third parties
+- Your improvement ideas are visible to Board members as part of the review process
+- If you choose **anonymous** recognition, your name is not displayed to Board members in the normal triage view
 - Data is stored on secure cloud infrastructure and backed up regularly
 - You may request deletion of your submissions by contacting the Club Manager
 
@@ -331,16 +326,16 @@ The most common reasons are: the idea was too vague to act on, it was a duplicat
 **Can I edit my submission after sending it?**
 No. Once submitted, ideas cannot be edited. If you realise you have made an error, withdraw the submission and resubmit with the corrected information.
 
-**I submitted anonymously — can I change to named later?**
+**I submitted anonymously â€” can I change to named later?**
 No. The recognition preference is set at submission time and cannot be changed afterwards.
 
-**My idea was not progressed — can I resubmit it?**
+**My idea was not progressed â€” can I resubmit it?**
 Yes. If circumstances have changed, or if you have new information that strengthens the case, you are welcome to resubmit with additional context.
 
 **What does "Quick win" mean?**
-A quick win is an idea that can be implemented quickly (typically within 4 weeks) at low cost (typically under £500). These may be actioned ahead of the standard review cycle.
+A quick win is an idea that can be implemented quickly (typically within 4 weeks) at low cost (typically under Â£500). These may be actioned ahead of the standard review cycle.
 
-**I haven't received any emails — what should I do?**
+**I haven't received any emails â€” what should I do?**
 Check your spam or junk folder for emails from `noreply@bramleygolfclub.co.uk`. If you cannot find them, contact the Club Manager.
 
 **How do I contact someone about my submission?**
@@ -348,5 +343,6 @@ If you have a concern about a submission, please contact the Club Manager direct
 
 ---
 
-*Bramley Golf Club — Continuous Improvement Programme*
+*Bramley Golf Club â€” Continuous Improvement Programme*
 *For assistance, contact the Club Manager*
+

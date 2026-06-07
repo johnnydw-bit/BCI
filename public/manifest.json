@@ -1,8 +1,8 @@
 {
-  "name": "Bramley GC — Committee",
+  "name": "Bramley GC — Board",
   "short_name": "Bramley CIP",
-  "description": "Bramley Golf Club Continuous Improvement Programme — Committee view",
-  "start_url": "/committee",
+  "description": "Bramley Golf Club Continuous Improvement Programme — Board view",
+  "start_url": "/board",
   "scope": "/",
   "display": "standalone",
   "orientation": "landscape",

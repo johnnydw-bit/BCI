@@ -505,7 +505,7 @@ export default function TriagePage() {
             )}
           </div>
           {sidePanelId != null && (() => {
-            const s = [...urgent, ...normal].find(x => x.id === sidePanelId)
+            const s = data.submissions.find(x => x.id === sidePanelId)
             if (!s) return null
             return (
               <SpreadsheetDetailPanel

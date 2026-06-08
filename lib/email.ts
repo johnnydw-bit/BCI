@@ -349,6 +349,43 @@ export async function sendWithdrawalDirectorNotification(to: string, opts: {
   })
 }
 
+/** Notification to the chain of command when a decision is made or recommended. */
+export async function sendRatificationNotification(to: string[], opts: {
+  description: string
+  statusLabel: string
+  changedBy: string
+  changedByRole: string
+  nextRatifier: string | null  // null = final decision, no further ratification needed
+  submissionId: number
+}) {
+  if (to.length === 0) return
+  const isPending = opts.nextRatifier !== null
+  const subject = isPending
+    ? `⏳ Ratification needed: "${opts.statusLabel}" — ${opts.changedBy}`
+    : `✓ Decision ratified: "${opts.statusLabel}" — ${opts.changedBy}`
+
+  await send({
+    from: FROM,
+    to,
+    subject,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader(isPending ? '#b7770d' : '#1e8449', 'Bramley Golf Club — Continuous Improvement', isPending ? '⏳ Decision pending ratification' : '✓ Decision ratified')}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:collapse">
+            <tr><td style="background:#f5f5f5;font-weight:600;width:160px;font-family:sans-serif">Improvement</td><td style="font-family:sans-serif">${opts.description}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Decision</td><td style="font-family:sans-serif"><strong>${opts.statusLabel}</strong></td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Set by</td><td style="font-family:sans-serif">${opts.changedBy} (${opts.changedByRole})</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Next step</td><td style="font-family:sans-serif">${isPending ? `<strong style="color:#b7770d">Ratification expected from: ${opts.nextRatifier}</strong>` : '<span style="color:#1e8449">Final decision — no further ratification required.</span>'}</td></tr>
+          </table>
+          <p style="color:#555;font-size:13px;font-family:sans-serif">You are receiving this because you are in the ratification chain for this decision. ${isPending ? 'Please review and ratify or override as appropriate.' : 'You may override this decision at any time by opening the triage board.'}</p>
+          ${emailButton(`${APP_URL}/triage`, 'Open Triage Board →')}
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendTriageReport(to: string[], periodStart: Date, periodEnd: Date, nextRunAt: Date, htmlReport: string) {
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 

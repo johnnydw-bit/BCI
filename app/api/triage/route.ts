@@ -2,9 +2,9 @@
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
-import { DIRECTOR_CATEGORIES, isManager, roleToAuthority, canOverrideAuthority } from '@/lib/categories'
+import { DIRECTOR_CATEGORIES, isManager, roleToAuthority, canOverrideAuthority, AUTHORITY_LEVELS } from '@/lib/categories'
 import { generateStatusEmail } from '@/lib/ai'
-import { sendStatusChangeEmail } from '@/lib/email'
+import { sendStatusChangeEmail, sendRatificationNotification } from '@/lib/email'
 
 const STATUS_LABELS: Record<string, string> = {
   new:                 'Awaiting Decision',
@@ -136,7 +136,7 @@ export async function PATCH(req: NextRequest) {
 
     const current = await sql`
       SELECT status, description, benefit, member_email, member_name, email_opt_out,
-             confirmed_target_date, ai_narrative, notes
+             confirmed_target_date, ai_narrative, notes, category
       FROM submissions WHERE id = ${id}
     `
     const row = current[0] as {
@@ -149,6 +149,7 @@ export async function PATCH(req: NextRequest) {
       confirmed_target_date: string | null
       ai_narrative: string | null
       notes: string | null
+      category: string | null
     }
     const oldStatus = row?.status
 
@@ -196,6 +197,58 @@ export async function PATCH(req: NextRequest) {
       } catch (e) {
         console.error('[triage PATCH] Failed to send status change email:', e)
       }
+    }
+
+    // Send ratification chain notification to everyone in the chain except the actor
+    try {
+      const ROLE_AUTHORITY_MAP: Record<string, string> = {
+        'Operations Manager': 'operations_manager',
+        'Club Manager':       'club_manager',
+        'Super Admin':        'club_manager',
+        'Chair of the Board': 'chairman',
+      }
+      // All active directors with email — category directors for this submission + all senior roles
+      const allRows = await sql`
+        SELECT name, email, role FROM director_roles
+        WHERE active = TRUE AND email IS NOT NULL
+      `
+      const categoryForSubmission = row.category ?? null
+      const recipients = (allRows as Array<{ name: string; email: string; role: string }>)
+        .filter(r => {
+          if (r.email === session.email) return false // exclude actor
+          const authority = ROLE_AUTHORITY_MAP[r.role]
+          if (authority) return true // always include Ops Manager, Club Manager, Chair
+          // For director-level roles, only include if they cover this category
+          const theirCategories = DIRECTOR_CATEGORIES[r.role] ?? []
+          return categoryForSubmission ? theirCategories.includes(categoryForSubmission as never) : false
+        })
+        .map(r => r.email)
+
+      const NEXT_RATIFIER: Record<string, string | null> = {
+        director:            'Operations Manager',
+        operations_manager:  'Club Manager',
+        club_manager:        'Chair of the Board',
+        chairman:            null,
+      }
+      const nextRatifier = NEXT_RATIFIER[myAuthority] ?? null
+
+      const AUTHORITY_ROLE_LABELS: Record<string, string> = {
+        director:            session.role,
+        operations_manager:  'Operations Manager',
+        club_manager:        'Club Manager',
+        chairman:            'Chair of the Board',
+      }
+
+      await sendRatificationNotification(recipients, {
+        description: row.description,
+        statusLabel: STATUS_LABELS[status] ?? status,
+        changedBy: session.directorName,
+        changedByRole: AUTHORITY_ROLE_LABELS[myAuthority] ?? session.role,
+        nextRatifier,
+        submissionId: id,
+      })
+    } catch (e) {
+      console.error('[triage PATCH] Failed to send ratification notification:', e)
     }
   }
 

@@ -20,8 +20,8 @@ function generatePin(): string {
 
 export async function GET() {
   if (!await requireManager()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  // Never return pin_hash; return a placeholder so frontend knows PIN is set
-  const rows = await sql`SELECT id, role, name, email, active, email_reports FROM director_roles ORDER BY name`
+  // Return pin (plaintext) so admin can look up a director's PIN; never return pin_hash
+  const rows = await sql`SELECT id, role, name, email, active, email_reports, pin FROM director_roles ORDER BY name`
   return NextResponse.json({ directors: rows })
 }
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     for (const row of rows as Array<{ id: number; name: string; role: string }>) {
       const pin = generatePin()
       const pinHash = createHash('sha256').update(pin).digest('hex')
-      await sql`UPDATE director_roles SET pin_hash = ${pinHash} WHERE id = ${row.id}`
+      await sql`UPDATE director_roles SET pin_hash = ${pinHash}, pin = ${pin} WHERE id = ${row.id}`
       results.push({ name: row.name, role: row.role, pin })
     }
     return NextResponse.json({ ok: true, pins: results })
@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
   const pinHash = createHash('sha256').update(pin).digest('hex')
   try {
     await sql`
-      INSERT INTO director_roles (pin_hash, role, name, email)
-      VALUES (${pinHash}, ${role}, ${name}, ${email})
+      INSERT INTO director_roles (pin_hash, pin, role, name, email)
+      VALUES (${pinHash}, ${pin}, ${role}, ${name}, ${email})
     `
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -82,7 +82,7 @@ export async function PUT(req: NextRequest) {
     const pin = generatePin()
     const pinHash = createHash('sha256').update(pin).digest('hex')
     try {
-      await sql`UPDATE director_roles SET pin_hash = ${pinHash} WHERE id = ${id}`
+      await sql`UPDATE director_roles SET pin_hash = ${pinHash}, pin = ${pin} WHERE id = ${id}`
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       if (msg.includes('unique') || msg.includes('duplicate')) {

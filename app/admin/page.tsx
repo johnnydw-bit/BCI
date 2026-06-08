@@ -58,7 +58,7 @@ interface DashboardData {
 }
 
 interface ConfigRow { key: string; value: string; label: string }
-interface Director { id: number; role: string; name: string; email: string; active: boolean; email_reports: boolean }
+interface Director { id: number; role: string; name: string; email: string; active: boolean; email_reports: boolean; pin: string | null }
 
 export default function AdminPage() {
   const router = useRouter()

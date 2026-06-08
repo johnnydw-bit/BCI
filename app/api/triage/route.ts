@@ -2,7 +2,7 @@
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
-import { DIRECTOR_CATEGORIES, isManager } from '@/lib/categories'
+import { DIRECTOR_CATEGORIES, isManager, roleToAuthority, canOverrideAuthority } from '@/lib/categories'
 import { generateStatusEmail } from '@/lib/ai'
 import { sendStatusChangeEmail } from '@/lib/email'
 
@@ -42,7 +42,7 @@ export async function GET() {
       s.recurring_flag, s.recurring_run_count,
       s.seasonal_window, s.revenue_opportunity, s.revenue_note,
       s.notes, s.score_override, s.score_override_reason, s.score_override_by,
-      s.confirmed_cost,
+      s.confirmed_cost, s.decision_authority, s.decision_by,
       c.theme AS cluster_theme, c.size AS cluster_size,
       (d.email IS NOT NULL) AS from_board
     FROM submissions s
@@ -67,7 +67,7 @@ export async function PATCH(req: NextRequest) {
   const token = cookieStore.get('bci_director_session')?.value
   const session = token ? await verifySession(token) : null
 
-  if (!session || session.type !== 'director' || !isManager(session.role)) {
+  if (!session || session.type !== 'director') {
     return NextResponse.json({ error: 'Not authorised' }, { status: 403 })
   }
 
@@ -78,6 +78,20 @@ export async function PATCH(req: NextRequest) {
   } = await req.json()
 
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+  // Fetch current decision authority to enforce hierarchy
+  const currentRow = await sql`SELECT decision_authority FROM submissions WHERE id = ${id}`
+  const currentAuthority = (currentRow[0] as { decision_authority: string | null })?.decision_authority ?? null
+
+  // Decision fields require authority check — score override still requires isManager
+  const myAuthority = roleToAuthority(session.role)
+  const hasDecisionAccess = canOverrideAuthority(session.role, currentAuthority)
+
+  if ((status !== undefined || suggested_owner !== undefined || notes !== undefined ||
+       confirmed_target_date !== undefined || confirmed_cost !== undefined || category !== undefined) &&
+      !hasDecisionAccess) {
+    return NextResponse.json({ error: 'This decision has been ratified by a higher authority and cannot be changed.' }, { status: 403 })
+  }
 
   if (suggested_owner !== undefined) {
     await sql`UPDATE submissions SET suggested_owner = ${suggested_owner || null} WHERE id = ${id}`
@@ -141,7 +155,9 @@ export async function PATCH(req: NextRequest) {
     await sql`
       UPDATE submissions
       SET status = ${status},
-          confirmed_target_date = COALESCE(${confirmed_target_date || null}, confirmed_target_date)
+          confirmed_target_date = COALESCE(${confirmed_target_date || null}, confirmed_target_date),
+          decision_authority = ${myAuthority},
+          decision_by = ${session.directorName}
       WHERE id = ${id}
     `
     await sql`

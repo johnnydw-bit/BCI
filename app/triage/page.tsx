@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CATEGORIES, STATUS_LABELS } from '@/lib/categories'
+import { CATEGORIES, STATUS_LABELS, roleToAuthority, AUTHORITY_LEVELS } from '@/lib/categories'
 import BramleyHeader from '@/components/BramleyHeader'
 import FullscreenButton from '@/components/FullscreenButton'
 import InstallPrompt from '@/components/InstallPrompt'
@@ -51,6 +51,8 @@ interface Submission {
   score_override_by: string | null
   confirmed_target_date: string | null
   confirmed_cost: number | null
+  decision_authority: string | null
+  decision_by: string | null
 }
 
 interface AuditEntry {
@@ -270,6 +272,8 @@ export default function TriagePage() {
         confirmed_target_date: draft.confirmed_target_date || null,
         confirmed_cost: draft.confirmed_cost !== '' ? Number(draft.confirmed_cost) : null,
         notes: draft.notes || null,
+        decision_authority: roleToAuthority(d.role),
+        decision_by: d.directorName,
       } : s),
     } : d)
     if (draft.status !== prev?.status) {
@@ -511,6 +515,7 @@ export default function TriagePage() {
               <SpreadsheetDetailPanel
                 s={s}
                 isManager={data.isManager}
+                myRole={data.role}
                 onUpdate={updateField}
                 onSave={savePanel}
                 onDelete={deleteImprovement}
@@ -878,10 +883,11 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function SpreadsheetDetailPanel({
-  s, isManager, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen,
+  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen,
 }: {
   s: Submission
   isManager: boolean
+  myRole: string
   onUpdate: (id: number, field: 'score_override', value: string, extra?: Record<string, string>) => void
   onSave: (id: number, draft: { status: string; suggested_owner: string; category: string; confirmed_target_date: string; confirmed_cost: string; notes: string }) => void
   onDelete: (id: number) => void
@@ -927,15 +933,32 @@ function SpreadsheetDetailPanel({
   const aiHigh = s.cost_estimate_high != null ? Number(s.cost_estimate_high) : null
   const aiMid = aiLow != null && aiHigh != null ? Math.round((aiLow + aiHigh) / 2) : null
 
+  // Ratification authority logic
+  const myAuthority = roleToAuthority(myRole)
+  const myAuthorityLevel = AUTHORITY_LEVELS[myAuthority] ?? 0
+  const currentAuthorityLevel = AUTHORITY_LEVELS[s.decision_authority ?? ''] ?? 0
+  const isLocked = currentAuthorityLevel > myAuthorityLevel
+  const isPending = s.decision_authority === 'director'
+  const isDirectorLevel = myAuthority === 'director'
+  const canDecide = !isLocked
+
+  const AUTHORITY_LABELS: Record<string, string> = {
+    director: 'Director',
+    operations_manager: 'Operations Manager',
+    club_manager: 'Club Manager',
+    chairman: 'Chair of the Board',
+  }
+
   function SaveBtn({ className }: { className?: string }) {
+    const label = isDirectorLevel ? 'Flag for ratification' : isPending ? 'Ratify & save' : 'Save changes'
     return (
       <button
         onClick={() => onSave(s.id, draft)}
-        disabled={updating || !isDirty}
+        disabled={updating || !isDirty || isLocked}
         className={`bramley-btn py-1.5 text-xs px-4 ${className ?? ''}`}
-        style={{ width: 'auto', opacity: isDirty ? 1 : 0.35 }}
+        style={{ width: 'auto', opacity: (isDirty && canDecide) ? 1 : 0.35 }}
       >
-        {updating ? <span className="spinner" style={{ width: 14, height: 14 }} /> : isDirty ? 'Save changes' : saved ? '✓ Saved' : 'No changes'}
+        {updating ? <span className="spinner" style={{ width: 14, height: 14 }} /> : isDirty ? label : saved ? '✓ Saved' : 'No changes'}
       </button>
     )
   }
@@ -954,7 +977,7 @@ function SpreadsheetDetailPanel({
             <span className="text-xs text-gray-500">{CATEGORIES.find(c => c.value === s.category)?.label}</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {isManager && <SaveBtn />}
+            <SaveBtn />
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
           </div>
         </div>
@@ -1022,78 +1045,97 @@ function SpreadsheetDetailPanel({
           </div>
         )}
 
-        {/* Board Decision */}
-        {isManager && (
-          <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-3 text-xs">
+        {/* Board Decision — visible to all directors, locked by ratification hierarchy */}
+        <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-3 text-xs">
+          <div className="flex items-center justify-between">
             <p className="font-bold text-amber-700 uppercase tracking-wider">📋 Board Decision</p>
+            {isPending && !isDirectorLevel && (
+              <span className="text-xs font-semibold text-orange-600 bg-orange-100 border border-orange-200 rounded px-2 py-0.5">⏳ Pending ratification</span>
+            )}
+            {isPending && isDirectorLevel && (
+              <span className="text-xs font-semibold text-orange-600 bg-orange-100 border border-orange-200 rounded px-2 py-0.5">⏳ Awaiting ratification</span>
+            )}
+            {s.decision_authority && !isPending && s.decision_by && (
+              <span className="text-xs font-semibold text-green-700 bg-green-100 border border-green-200 rounded px-2 py-0.5">
+                ✓ {AUTHORITY_LABELS[s.decision_authority] ?? s.decision_authority}
+              </span>
+            )}
+          </div>
 
-            <div>
-              <label className="text-gray-500 block mb-1">Status</label>
-              <select className="bramley-input text-xs py-1 w-full" value={draft.status} onChange={(e) => setDraft(d => ({ ...d, status: e.target.value }))} disabled={updating}>
-                {Object.entries(STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
-              </select>
+          {isLocked && (
+            <p className="text-xs text-gray-500 italic">
+              Decision set by {s.decision_by} ({AUTHORITY_LABELS[s.decision_authority ?? ''] ?? s.decision_authority}). Higher authority required to change.
+            </p>
+          )}
+
+          <div>
+            <label className="text-gray-500 block mb-1">Status</label>
+            <select className="bramley-input text-xs py-1 w-full" value={draft.status} onChange={(e) => setDraft(d => ({ ...d, status: e.target.value }))} disabled={updating || isLocked}>
+              {Object.entries(STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-gray-500 block mb-1">Owner</label>
+            <select className="bramley-input text-xs py-1 w-full" value={draft.suggested_owner} onChange={(e) => setDraft(d => ({ ...d, suggested_owner: e.target.value }))} disabled={updating || isLocked}>
+              <option value="">— Unassigned —</option>
+              {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-gray-500 block mb-1">Area</label>
+            <select className="bramley-input text-xs py-1 w-full" value={draft.category} onChange={(e) => setDraft(d => ({ ...d, category: e.target.value }))} disabled={updating || isLocked}>
+              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-600 block mb-1">
+              Target date
+              {draft.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
+            </label>
+            <div className="flex gap-1 items-center flex-wrap">
+              <input type="date" className="bramley-input text-sm py-1.5 w-36" value={draft.confirmed_target_date} onChange={(e) => setDraft(d => ({ ...d, confirmed_target_date: e.target.value }))} disabled={updating || isLocked} />
+              {draft.confirmed_target_date && !isLocked && <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
             </div>
+            {aiDate && !draft.confirmed_target_date && !isLocked && (
+              <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: aiDate }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
+                Use AI estimate ({new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
+              </button>
+            )}
+          </div>
 
-            <div>
-              <label className="text-gray-500 block mb-1">Owner</label>
-              <select className="bramley-input text-xs py-1 w-full" value={draft.suggested_owner} onChange={(e) => setDraft(d => ({ ...d, suggested_owner: e.target.value }))} disabled={updating}>
-                <option value="">— Unassigned —</option>
-                {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
+          <div>
+            <label className="text-xs text-gray-600 block mb-1">
+              Cost target (£)
+              {draft.confirmed_cost && <span className="ml-1 text-green-600">✓ confirmed</span>}
+            </label>
+            <div className="flex gap-1 items-center flex-wrap">
+              <input type="number" min="0" step="1" className="bramley-input text-sm py-1.5 w-32" placeholder="e.g. 2500" value={draft.confirmed_cost} onChange={(e) => setDraft(d => ({ ...d, confirmed_cost: e.target.value }))} disabled={updating || isLocked} />
+              {draft.confirmed_cost && !isLocked && <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
             </div>
+            {aiMid != null && !draft.confirmed_cost && !isLocked && (
+              <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: String(aiMid) }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
+                Use AI midpoint (£{aiMid.toLocaleString()})
+              </button>
+            )}
+          </div>
 
-            <div>
-              <label className="text-gray-500 block mb-1">Area</label>
-              <select className="bramley-input text-xs py-1 w-full" value={draft.category} onChange={(e) => setDraft(d => ({ ...d, category: e.target.value }))} disabled={updating}>
-                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
-            </div>
+          <div>
+            <label className="text-xs text-gray-600 block mb-1">Board notes</label>
+            <textarea rows={3} className="bramley-input text-xs py-1 w-full resize-none" placeholder="Notes visible to all directors…" value={draft.notes} onChange={(e) => setDraft(d => ({ ...d, notes: e.target.value }))} disabled={updating || isLocked} />
+          </div>
 
-            <div>
-              <label className="text-xs text-gray-600 block mb-1">
-                Target date
-                {draft.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
-              </label>
-              <div className="flex gap-1 items-center flex-wrap">
-                <input type="date" className="bramley-input text-sm py-1.5 w-36" value={draft.confirmed_target_date} onChange={(e) => setDraft(d => ({ ...d, confirmed_target_date: e.target.value }))} disabled={updating} />
-                {draft.confirmed_target_date && <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
-              </div>
-              {aiDate && !draft.confirmed_target_date && (
-                <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: aiDate }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
-                  Use AI estimate ({new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
-                </button>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-gray-600 block mb-1">
-                Cost target (£)
-                {draft.confirmed_cost && <span className="ml-1 text-green-600">✓ confirmed</span>}
-              </label>
-              <div className="flex gap-1 items-center flex-wrap">
-                <input type="number" min="0" step="1" className="bramley-input text-sm py-1.5 w-32" placeholder="e.g. 2500" value={draft.confirmed_cost} onChange={(e) => setDraft(d => ({ ...d, confirmed_cost: e.target.value }))} disabled={updating} />
-                {draft.confirmed_cost && <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
-              </div>
-              {aiMid != null && !draft.confirmed_cost && (
-                <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: String(aiMid) }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
-                  Use AI midpoint (£{aiMid.toLocaleString()})
-                </button>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-gray-600 block mb-1">Board notes</label>
-              <textarea rows={3} className="bramley-input text-xs py-1 w-full resize-none" placeholder="Notes visible to all managers…" value={draft.notes} onChange={(e) => setDraft(d => ({ ...d, notes: e.target.value }))} disabled={updating} />
-            </div>
-
-            <div className="flex items-center justify-between pt-1">
-              <SaveBtn />
+          <div className="flex items-center justify-between pt-1">
+            <SaveBtn />
+            {isManager && (
               <button onClick={() => onDelete(s.id)} disabled={deleting} className="text-red-500 hover:text-red-700 text-xs font-semibold">
                 {deleting ? 'Removing…' : '✕ Remove'}
               </button>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {isManager && (
           <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} />

@@ -49,7 +49,31 @@ export const DIRECTOR_CATEGORIES: Record<string, string[]> = {
   'Operations Manager':  ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
 }
 
-/** Returns true for roles that have full management permissions */
+/** Returns true for roles that have full management permissions (score override etc.) */
 export function isManager(role: string): boolean {
-  return role === 'Club Manager' || role === 'Super Admin'
+  return role === 'Club Manager' || role === 'Super Admin' || role === 'Operations Manager' || role === 'Chairman' || role === 'Chair' || role === 'Chair of the Board'
+}
+
+/** Decision authority levels — higher number = higher authority */
+export const AUTHORITY_LEVELS: Record<string, number> = {
+  director:            1,
+  operations_manager:  2,
+  club_manager:        3,
+  chairman:            4,
+}
+
+/** Map a director role to its decision authority key */
+export function roleToAuthority(role: string): string {
+  if (role === 'Operations Manager') return 'operations_manager'
+  if (role === 'Club Manager' || role === 'Super Admin') return 'club_manager'
+  if (role === 'Chairman' || role === 'Chair' || role === 'Chair of the Board') return 'chairman'
+  return 'director'
+}
+
+/** Returns true if the given role can overwrite the current decision authority */
+export function canOverrideAuthority(role: string, currentAuthority: string | null): boolean {
+  if (!currentAuthority) return true
+  const myLevel = AUTHORITY_LEVELS[roleToAuthority(role)] ?? 0
+  const currentLevel = AUTHORITY_LEVELS[currentAuthority] ?? 0
+  return myLevel >= currentLevel
 }

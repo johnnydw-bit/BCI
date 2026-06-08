@@ -226,6 +226,10 @@ export async function initDb() {
   // Withdrawn status support
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS withdrawn_at TIMESTAMPTZ`
 
+  // Ratification hierarchy
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS decision_authority TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS decision_by TEXT`
+
   // Login rate limiting
   await sql`
     CREATE TABLE IF NOT EXISTS login_attempts (

@@ -770,8 +770,8 @@ function SpreadsheetTable({
                 key={s.id}
                 onClick={() => onSelect(isSelected ? null : s.id)}
                 className={`border-b border-gray-100 cursor-pointer transition-colors
-                  ${isUrgent ? 'bg-red-50 hover:bg-red-100' : isPendingRatification ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-blue-50'}
-                  ${isSelected ? (isUrgent ? 'bg-red-100 ring-1 ring-inset ring-red-400' : isPendingRatification ? 'bg-amber-100 ring-1 ring-inset ring-amber-400' : 'bg-blue-50 ring-1 ring-inset ring-blue-400') : ''}`}
+                  ${isUrgent ? 'bg-red-100 hover:bg-red-200' : isPendingRatification ? 'bg-amber-100 hover:bg-amber-200' : 'hover:bg-blue-50'}
+                  ${isSelected ? (isUrgent ? 'bg-red-200 ring-1 ring-inset ring-red-400' : isPendingRatification ? 'bg-amber-200 ring-1 ring-inset ring-amber-400' : 'bg-blue-50 ring-1 ring-inset ring-blue-400') : ''}`}
                 style={isPendingRatification && !isUrgent ? { borderLeft: '3px solid #f59e0b' } : undefined}
               >
                 {/* Score */}

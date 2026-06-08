@@ -2,7 +2,7 @@
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
-import { DIRECTOR_CATEGORIES, isManager, roleToAuthority, canOverrideAuthority, AUTHORITY_LEVELS, DEFAULT_SPEND_LIMITS, isDecisionFinalised } from '@/lib/categories'
+import { DIRECTOR_CATEGORIES, getCategoriesForRole, isManager, roleToAuthority, canOverrideAuthority, AUTHORITY_LEVELS, DEFAULT_SPEND_LIMITS, isDecisionFinalised } from '@/lib/categories'
 import { generateStatusEmail } from '@/lib/ai'
 import { sendStatusChangeEmail, sendRatificationNotification } from '@/lib/email'
 
@@ -40,7 +40,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authorised' }, { status: 403 })
   }
 
-  const allowedCategories = DIRECTOR_CATEGORIES[session.role] ?? []
+  const allowedCategories = getCategoriesForRole(session.role)
 
   const rows = await sql`
     SELECT
@@ -252,7 +252,7 @@ export async function PATCH(req: NextRequest) {
           const authority = ROLE_AUTHORITY_MAP[r.role]
           if (authority) return true // always include Ops Manager, Club Manager, Chair
           // For director-level roles, only include if they cover this category
-          const theirCategories = DIRECTOR_CATEGORIES[r.role] ?? []
+          const theirCategories = getCategoriesForRole(r.role)
           return categoryForSubmission ? theirCategories.includes(categoryForSubmission as never) : false
         })
         .map(r => r.email)

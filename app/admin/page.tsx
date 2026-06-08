@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation'
 import BramleyHeader from '@/components/BramleyHeader'
 import FullscreenButton from '@/components/FullscreenButton'
 
-const ROLES = ['Club Manager', 'Super Admin', 'Operations Manager', 'Chair of the Board', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
+const ROLES = [
+  'Club Manager', 'Super Admin', 'Operations Manager', 'Finance Director',
+  'Chair of the Board', 'Golf Director', 'Estate Director', 'F&B Director',
+  'Commercial Director', 'Men\'s Captain', 'Women\'s Captain',
+]
 
 const CONFIG_GROUPS = [
   {
@@ -70,7 +74,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [newDir, setNewDir] = useState({ role: ROLES[0], name: '', email: '' })
+  const [newDir, setNewDir] = useState({ role: '', name: '', email: '' })
   const [addingDir, setAddingDir] = useState(false)
   const [dirError, setDirError] = useState('')
   const [newlyGeneratedPin, setNewlyGeneratedPin] = useState<{ name: string; pin: string } | null>(null)
@@ -149,7 +153,7 @@ export default function AdminPage() {
       const updated = await fetch('/api/admin/directors').then((r) => r.json())
       setDirectors(updated.directors)
       setNewlyGeneratedPin({ name: newDir.name, pin: json.pin })
-      setNewDir({ role: ROLES[0], name: '', email: '' })
+      setNewDir({ role: '', name: '', email: '' })
     } else {
       setDirError(json.error ?? 'Failed to add director')
     }
@@ -527,9 +531,7 @@ export default function AdminPage() {
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
                             <input className="bramley-input text-sm py-2" placeholder="Full name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
                             <input className="bramley-input text-sm py-2" placeholder="Email" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
-                            <select className="bramley-input text-sm py-2" value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}>
-                              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                            </select>
+                            <input className="bramley-input text-sm py-2" placeholder="Role" list="role-suggestions" value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })} />
                           </div>
                           {editError && <p className="bramley-error mt-2">{editError}</p>}
                           <div className="flex gap-2 mt-3">
@@ -597,16 +599,19 @@ export default function AdminPage() {
               )}
             </div>
 
+            {/* Role suggestions datalist — shared by add and edit forms */}
+            <datalist id="role-suggestions">
+              {ROLES.map((r) => <option key={r} value={r} />)}
+            </datalist>
+
             {/* Add director form */}
             <div className="border-t border-gray-100 p-4 space-y-3">
               <h3 className="font-semibold text-gray-800 text-sm">Add director / Board member</h3>
-              <p className="text-xs text-gray-500">A secure 6-digit PIN will be automatically generated and shown once after adding.</p>
+              <p className="text-xs text-gray-500">A secure 6-digit PIN will be automatically generated and shown once after adding. Type any role name or choose from the suggestions.</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
                 <input className="bramley-input text-sm py-2" placeholder="Full name" value={newDir.name} onChange={(e) => setNewDir({ ...newDir, name: e.target.value })} />
                 <input className="bramley-input text-sm py-2" placeholder="Email address" type="email" value={newDir.email} onChange={(e) => setNewDir({ ...newDir, email: e.target.value })} />
-                <select className="bramley-input text-sm py-2" value={newDir.role} onChange={(e) => setNewDir({ ...newDir, role: e.target.value })}>
-                  {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+                <input className="bramley-input text-sm py-2" placeholder="Role" list="role-suggestions" value={newDir.role} onChange={(e) => setNewDir({ ...newDir, role: e.target.value })} />
               </div>
               {dirError && <p className="bramley-error">{dirError}</p>}
               <button onClick={addDirector} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={addingDir}>

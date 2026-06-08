@@ -37,15 +37,29 @@ export const STATUS_LABELS: Record<string, string> = {
 /** Statuses that should prompt for a target date when set by a director */
 export const TARGET_DATE_STATUSES = new Set(['under_consideration', 'approved', 'in_plan'])
 
+const ALL_CATEGORIES = ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other']
+
 export const DIRECTOR_CATEGORIES: Record<string, string[]> = {
   'Golf Director':       ['course', 'competitions'],
   'Estate Director':     ['clubhouse', 'grounds', 'refreshments'],
   'F&B Director':        ['restaurant', 'bar', 'refreshments'],
   'Commercial Director': ['pro_shop'],
-  'Club Manager':        ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
-  'Super Admin':         ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
-  'Chair of the Board':  ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
-  'Operations Manager':  ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
+  'Men\'s Captain':      ['course', 'competitions'],
+  'Women\'s Captain':    ['course', 'competitions'],
+  'Finance Director':    ALL_CATEGORIES,
+  'Club Manager':        ALL_CATEGORIES,
+  'Super Admin':         ALL_CATEGORIES,
+  'Chair of the Board':  ALL_CATEGORIES,
+  'Operations Manager':  ALL_CATEGORIES,
+}
+
+/**
+ * Returns the category list for a role. Any role not explicitly mapped
+ * defaults to all categories so a newly created custom role sees everything
+ * until the admin configures it further.
+ */
+export function getCategoriesForRole(role: string): string[] {
+  return DIRECTOR_CATEGORIES[role] ?? ALL_CATEGORIES
 }
 
 /** Returns true for roles that have full management permissions (score override etc.) */

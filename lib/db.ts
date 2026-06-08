@@ -198,6 +198,10 @@ export async function initDb() {
     ['COST_THRESHOLD_QUICKWIN',   '500',   'Cost threshold (£): below this, flag as quick win'],
     ['IMPL_QUICKWIN_WEEKS',       '4',     'Implementation weeks: at or below this = quick win'],
     ['TRIAGE_LOCK',               'false', 'Internal: prevents concurrent triage runs'],
+    ['SPEND_LIMIT_DIRECTOR',           '0',      'Spend signoff limit (£): Director'],
+    ['SPEND_LIMIT_OPERATIONS_MANAGER', '2500',   'Spend signoff limit (£): Operations Manager'],
+    ['SPEND_LIMIT_CLUB_MANAGER',       '10000',  'Spend signoff limit (£): Club Manager'],
+    ['SPEND_LIMIT_CHAIRMAN',           '999999', 'Spend signoff limit (£): Chair of the Board'],
   ]
 
   for (const [key, value, _label] of defaults) {

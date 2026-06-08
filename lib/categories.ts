@@ -76,3 +76,38 @@ export function canOverrideAuthority(role: string, currentAuthority: string | nu
   const currentLevel = AUTHORITY_LEVELS[currentAuthority] ?? 0
   return myLevel >= currentLevel
 }
+
+/**
+ * Default spend signoff limits (£) per authority key.
+ * Stored in the config table and editable via Admin — these are fallback defaults only.
+ */
+export const DEFAULT_SPEND_LIMITS: Record<string, number> = {
+  director:            0,
+  operations_manager:  2500,
+  club_manager:        10000,
+  chairman:            999999,
+}
+
+/**
+ * Returns true if a decision at the given authority level is fully finalised —
+ * i.e. the confirmed cost is within that authority's spend limit (or no confirmed
+ * cost has been set yet, in which case authority level alone determines finality).
+ */
+export function isDecisionFinalised(
+  authority: string | null,
+  confirmedCost: number | null,
+  spendLimits: Record<string, number> = DEFAULT_SPEND_LIMITS
+): boolean {
+  if (!authority) return false
+  if (confirmedCost === null) return true  // no cost set — authority level alone is sufficient
+  const limit = spendLimits[authority] ?? 0
+  return confirmedCost <= limit
+}
+
+/** Human-readable label for an authority key */
+export const AUTHORITY_LABELS: Record<string, string> = {
+  director:            'Director',
+  operations_manager:  'Operations Manager',
+  club_manager:        'Club Manager',
+  chairman:            'Chair of the Board',
+}

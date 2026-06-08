@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CATEGORIES, STATUS_LABELS, roleToAuthority, AUTHORITY_LEVELS } from '@/lib/categories'
+import { CATEGORIES, STATUS_LABELS, roleToAuthority, AUTHORITY_LEVELS, isDecisionFinalised, DEFAULT_SPEND_LIMITS, AUTHORITY_LABELS } from '@/lib/categories'
 import BramleyHeader from '@/components/BramleyHeader'
 import FullscreenButton from '@/components/FullscreenButton'
 import InstallPrompt from '@/components/InstallPrompt'
@@ -93,6 +93,7 @@ interface TriageData {
   directorName: string
   submissions: Submission[]
   isManager: boolean
+  spendLimits: Record<string, number>
 }
 
 export default function TriagePage() {
@@ -503,6 +504,7 @@ export default function TriagePage() {
               selectedId={sidePanelId}
               onSelect={setSidePanelId}
               formatDate={formatDate}
+              spendLimits={data.spendLimits ?? DEFAULT_SPEND_LIMITS}
             />
             {urgent.length === 0 && normal.length === 0 && (
               <p className="text-center text-gray-500 py-12 text-sm">No improvements to triage.</p>
@@ -525,6 +527,7 @@ export default function TriagePage() {
                 deleting={deleting === s.id}
                 auditLog={auditLog[s.id] ?? []}
                 onOpen={() => fetchAuditLog(s.id)}
+                spendLimits={data.spendLimits ?? DEFAULT_SPEND_LIMITS}
               />
             )
           })()}
@@ -735,7 +738,7 @@ export default function TriagePage() {
 // ── Spreadsheet table ───────────────────────────────────────────────────────
 
 function SpreadsheetTable({
-  subs, isManager, onUpdate, selectedId, onSelect, formatDate,
+  subs, isManager, onUpdate, selectedId, onSelect, formatDate, spendLimits,
 }: {
   subs: Submission[]
   isManager: boolean
@@ -743,6 +746,7 @@ function SpreadsheetTable({
   selectedId: number | null
   onSelect: (id: number | null) => void
   formatDate: (iso: string) => string
+  spendLimits: Record<string, number>
 }) {
   return (
     <div className="overflow-x-auto">
@@ -764,7 +768,9 @@ function SpreadsheetTable({
           {subs.map((s) => {
             const isSelected = selectedId === s.id
             const isUrgent = s.h_and_s_flag
-            const isPendingRatification = s.decision_authority === 'director'
+            const rowSpendLimits = spendLimits
+            const isPendingRatification = !!s.decision_authority &&
+              !isDecisionFinalised(s.decision_authority, s.confirmed_cost != null ? Number(s.confirmed_cost) : null, rowSpendLimits)
             return (
               <tr
                 key={s.id}
@@ -885,7 +891,7 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function SpreadsheetDetailPanel({
-  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen,
+  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits,
 }: {
   s: Submission
   isManager: boolean
@@ -899,6 +905,7 @@ function SpreadsheetDetailPanel({
   deleting: boolean
   auditLog: AuditEntry[]
   onOpen: () => void
+  spendLimits: Record<string, number>
 }) {
   useEffect(() => { onOpen() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -935,24 +942,46 @@ function SpreadsheetDetailPanel({
   const aiHigh = s.cost_estimate_high != null ? Number(s.cost_estimate_high) : null
   const aiMid = aiLow != null && aiHigh != null ? Math.round((aiLow + aiHigh) / 2) : null
 
-  // Ratification authority logic
+  // Ratification authority + spend limit logic
   const myAuthority = roleToAuthority(myRole)
   const myAuthorityLevel = AUTHORITY_LEVELS[myAuthority] ?? 0
   const currentAuthorityLevel = AUTHORITY_LEVELS[s.decision_authority ?? ''] ?? 0
   const isLocked = currentAuthorityLevel > myAuthorityLevel
-  const isPending = s.decision_authority === 'director'
   const isDirectorLevel = myAuthority === 'director'
   const canDecide = !isLocked
 
-  const AUTHORITY_LABELS: Record<string, string> = {
-    director: 'Director',
-    operations_manager: 'Operations Manager',
-    club_manager: 'Club Manager',
-    chairman: 'Chair of the Board',
-  }
+  // spendLimits passed as prop from parent (already falls back to defaults there)
+  const mySpendLimit = spendLimits[myAuthority] ?? 0
+
+  // Effective confirmed cost: use draft value if being edited, otherwise saved value
+  const draftCostNum = draft.confirmed_cost !== '' && draft.confirmed_cost !== null && draft.confirmed_cost !== undefined
+    ? Math.round(Number(draft.confirmed_cost))
+    : null
+  const effectiveCost = draftCostNum !== null ? draftCostNum : (s.confirmed_cost != null ? Number(s.confirmed_cost) : null)
+
+  // A decision is finalised when the authority's spend limit covers the cost (or no cost set)
+  const currentDecisionFinalised = isDecisionFinalised(s.decision_authority, s.confirmed_cost != null ? Number(s.confirmed_cost) : null, spendLimits)
+  const myDecisionWillFinalise = isDecisionFinalised(myAuthority, effectiveCost, spendLimits)
+
+  // Pending = a decision has been recorded but is not yet finalised
+  const isPending = !!s.decision_authority && !currentDecisionFinalised
+
+  // Whether save needs to warn about cost exceeding limit
+  const costExceedsMyLimit = effectiveCost !== null && effectiveCost > mySpendLimit
 
   function SaveBtn({ className }: { className?: string }) {
-    const label = isDirectorLevel ? 'Flag for ratification' : isPending ? 'Ratify & save' : 'Save changes'
+    let label: string
+    if (isDirectorLevel) {
+      label = 'Flag for ratification'
+    } else if (isPending && myDecisionWillFinalise) {
+      label = 'Ratify & finalise'
+    } else if (isPending) {
+      label = 'Ratify & save'
+    } else if (costExceedsMyLimit) {
+      label = 'Save & refer up'
+    } else {
+      label = 'Save changes'
+    }
     return (
       <button
         onClick={() => onSave(s.id, draft)}
@@ -1063,6 +1092,17 @@ function SpreadsheetDetailPanel({
               </span>
             )}
           </div>
+
+          {/* Spend limit advisory — shown when cost is set and exceeds current actor's limit */}
+          {!isLocked && costExceedsMyLimit && (
+            <p className="text-xs text-amber-700 bg-amber-100 border border-amber-200 rounded px-2 py-1.5">
+              💰 Confirmed cost £{effectiveCost!.toLocaleString('en-GB')} exceeds your signoff limit of £{mySpendLimit.toLocaleString('en-GB')} — this decision will require ratification from {
+                myAuthority === 'director' ? 'Operations Manager' :
+                myAuthority === 'operations_manager' ? 'Club Manager' :
+                'Chair of the Board'
+              }.
+            </p>
+          )}
 
           {isLocked && (
             <p className="text-xs text-gray-500 italic">

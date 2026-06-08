@@ -2,9 +2,25 @@
 import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
-import { DIRECTOR_CATEGORIES, isManager, roleToAuthority, canOverrideAuthority, AUTHORITY_LEVELS } from '@/lib/categories'
+import { DIRECTOR_CATEGORIES, isManager, roleToAuthority, canOverrideAuthority, AUTHORITY_LEVELS, DEFAULT_SPEND_LIMITS, isDecisionFinalised } from '@/lib/categories'
 import { generateStatusEmail } from '@/lib/ai'
 import { sendStatusChangeEmail, sendRatificationNotification } from '@/lib/email'
+
+/** Load spend limits from the config table, falling back to defaults */
+async function loadSpendLimits(): Promise<Record<string, number>> {
+  const rows = await sql`
+    SELECT key, value FROM config
+    WHERE key IN ('SPEND_LIMIT_DIRECTOR','SPEND_LIMIT_OPERATIONS_MANAGER','SPEND_LIMIT_CLUB_MANAGER','SPEND_LIMIT_CHAIRMAN')
+  `
+  const map: Record<string, number> = { ...DEFAULT_SPEND_LIMITS }
+  for (const r of rows as Array<{ key: string; value: string }>) {
+    if (r.key === 'SPEND_LIMIT_DIRECTOR')           map.director            = Number(r.value)
+    if (r.key === 'SPEND_LIMIT_OPERATIONS_MANAGER') map.operations_manager  = Number(r.value)
+    if (r.key === 'SPEND_LIMIT_CLUB_MANAGER')       map.club_manager        = Number(r.value)
+    if (r.key === 'SPEND_LIMIT_CHAIRMAN')           map.chairman            = Number(r.value)
+  }
+  return map
+}
 
 const STATUS_LABELS: Record<string, string> = {
   new:                 'Awaiting Decision',
@@ -54,11 +70,14 @@ export async function GET() {
     ORDER BY s.h_and_s_flag DESC, s.score DESC NULLS LAST, s.created_at DESC
   `
 
+  const spendLimits = await loadSpendLimits()
+
   return NextResponse.json({
     role: session.role,
     directorName: session.directorName,
     submissions: rows,
     isManager: isManager(session.role),
+    spendLimits,
   })
 }
 
@@ -79,13 +98,17 @@ export async function PATCH(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
-  // Fetch current decision authority to enforce hierarchy
-  const currentRow = await sql`SELECT decision_authority FROM submissions WHERE id = ${id}`
+  // Fetch current decision authority and confirmed cost to enforce hierarchy + spend limits
+  const currentRow = await sql`SELECT decision_authority, confirmed_cost FROM submissions WHERE id = ${id}`
   const currentAuthority = (currentRow[0] as { decision_authority: string | null })?.decision_authority ?? null
+  const existingConfirmedCost = (currentRow[0] as { confirmed_cost: number | null })?.confirmed_cost ?? null
 
   // Decision fields require authority check — score override still requires isManager
   const myAuthority = roleToAuthority(session.role)
   const hasDecisionAccess = canOverrideAuthority(session.role, currentAuthority)
+
+  // Load spend limits from config
+  const spendLimits = await loadSpendLimits()
 
   if ((status !== undefined || suggested_owner !== undefined || notes !== undefined ||
        confirmed_target_date !== undefined || confirmed_cost !== undefined || category !== undefined) &&
@@ -153,6 +176,13 @@ export async function PATCH(req: NextRequest) {
     }
     const oldStatus = row?.status
 
+    // Determine the effective cost for finality check:
+    // use the incoming confirmed_cost if being set now, otherwise the existing value
+    const effectiveCost = confirmed_cost !== undefined
+      ? (confirmed_cost !== '' && confirmed_cost !== null ? Math.round(Number(confirmed_cost)) : null)
+      : existingConfirmedCost
+    const finalised = isDecisionFinalised(myAuthority, effectiveCost, spendLimits)
+
     await sql`
       UPDATE submissions
       SET status = ${status},
@@ -161,9 +191,12 @@ export async function PATCH(req: NextRequest) {
           decision_by = ${session.directorName}
       WHERE id = ${id}
     `
+    const spendNote = !finalised && effectiveCost !== null
+      ? ` (cost £${effectiveCost.toLocaleString()} exceeds signoff limit — pending ratification)`
+      : ''
     await sql`
-      INSERT INTO status_log (submission_id, old_status, new_status, changed_by)
-      VALUES (${id}, ${oldStatus}, ${status}, ${session.directorName})
+      INSERT INTO status_log (submission_id, old_status, new_status, changed_by, note)
+      VALUES (${id}, ${oldStatus}, ${status}, ${session.directorName}, ${spendNote || null})
     `
 
     // Send AI-generated email to member if they have email and haven't opted out
@@ -230,7 +263,8 @@ export async function PATCH(req: NextRequest) {
         club_manager:        'Chair of the Board',
         chairman:            null,
       }
-      const nextRatifier = NEXT_RATIFIER[myAuthority] ?? null
+      // If finalised by spend limit, no further ratification needed regardless of chain position
+      const nextRatifier = finalised ? null : (NEXT_RATIFIER[myAuthority] ?? null)
 
       const AUTHORITY_ROLE_LABELS: Record<string, string> = {
         director:            session.role,
@@ -246,6 +280,9 @@ export async function PATCH(req: NextRequest) {
         changedByRole: AUTHORITY_ROLE_LABELS[myAuthority] ?? session.role,
         nextRatifier,
         submissionId: id,
+        confirmedCost: effectiveCost,
+        spendLimit: spendLimits[myAuthority] ?? 0,
+        finalisedBySpend: finalised && myAuthority !== 'chairman',
       })
     } catch (e) {
       console.error('[triage PATCH] Failed to send ratification notification:', e)
@@ -256,7 +293,7 @@ export async function PATCH(req: NextRequest) {
     await sql`UPDATE submissions SET category = ${category} WHERE id = ${id}`
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, spendLimits })
 }
 
 export async function DELETE(req: NextRequest) {

@@ -355,14 +355,29 @@ export async function sendRatificationNotification(to: string[], opts: {
   statusLabel: string
   changedBy: string
   changedByRole: string
-  nextRatifier: string | null  // null = final decision, no further ratification needed
+  nextRatifier: string | null    // null = final decision, no further ratification needed
   submissionId: number
+  confirmedCost?: number | null  // cost at time of decision (if set)
+  spendLimit?: number            // actor's spend signoff limit
+  finalisedBySpend?: boolean     // true = chain stopped because cost is within actor's limit
 }) {
   if (to.length === 0) return
   const isPending = opts.nextRatifier !== null
   const subject = isPending
     ? `⏳ Ratification needed: "${opts.statusLabel}" — ${opts.changedBy}`
-    : `✓ Decision ratified: "${opts.statusLabel}" — ${opts.changedBy}`
+    : `✓ Decision finalised: "${opts.statusLabel}" — ${opts.changedBy}`
+
+  const fmt = (n: number) => `£${n.toLocaleString('en-GB')}`
+
+  const nextStepHtml = isPending
+    ? `<strong style="color:#b7770d">Ratification expected from: ${opts.nextRatifier}</strong>`
+    : opts.finalisedBySpend
+      ? `<span style="color:#1e8449">Final — cost ${opts.confirmedCost !== null && opts.confirmedCost !== undefined ? fmt(opts.confirmedCost) : 'not set'} is within ${opts.changedByRole} signoff limit (${fmt(opts.spendLimit ?? 0)}).</span>`
+      : `<span style="color:#1e8449">Final decision — no further ratification required.</span>`
+
+  const costRow = opts.confirmedCost !== null && opts.confirmedCost !== undefined
+    ? `<tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Confirmed cost</td><td style="font-family:sans-serif">${fmt(opts.confirmedCost)}${opts.spendLimit !== undefined ? ` <span style="color:#888;font-size:12px">(signoff limit: ${fmt(opts.spendLimit)})</span>` : ''}</td></tr>`
+    : ''
 
   await send({
     from: FROM,
@@ -370,13 +385,14 @@ export async function sendRatificationNotification(to: string[], opts: {
     subject,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-        ${emailHeader(isPending ? '#b7770d' : '#1e8449', 'Bramley Golf Club — Continuous Improvement', isPending ? '⏳ Decision pending ratification' : '✓ Decision ratified')}
+        ${emailHeader(isPending ? '#b7770d' : '#1e8449', 'Bramley Golf Club — Continuous Improvement', isPending ? '⏳ Decision pending ratification' : '✓ Decision finalised')}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
           <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:collapse">
             <tr><td style="background:#f5f5f5;font-weight:600;width:160px;font-family:sans-serif">Improvement</td><td style="font-family:sans-serif">${opts.description}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Decision</td><td style="font-family:sans-serif"><strong>${opts.statusLabel}</strong></td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Set by</td><td style="font-family:sans-serif">${opts.changedBy} (${opts.changedByRole})</td></tr>
-            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Next step</td><td style="font-family:sans-serif">${isPending ? `<strong style="color:#b7770d">Ratification expected from: ${opts.nextRatifier}</strong>` : '<span style="color:#1e8449">Final decision — no further ratification required.</span>'}</td></tr>
+            ${costRow}
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Next step</td><td style="font-family:sans-serif">${nextStepHtml}</td></tr>
           </table>
           <p style="color:#555;font-size:13px;font-family:sans-serif">You are receiving this because you are in the ratification chain for this decision. ${isPending ? 'Please review and ratify or override as appropriate.' : 'You may override this decision at any time by opening the triage board.'}</p>
           ${emailButton(`${APP_URL}/triage`, 'Open Triage Board →')}

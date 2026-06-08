@@ -37,6 +37,11 @@ const CONFIG_GROUPS = [
     note: 'Used to flag quick wins and escalate high-cost items',
     keys: ['COST_THRESHOLD_QUICKWIN', 'COST_THRESHOLD_COMMITTEE', 'IMPL_QUICKWIN_WEEKS'],
   },
+  {
+    title: 'Director Spend Signoff Limits (£)',
+    note: 'Maximum confirmed cost each authority level can finalise without escalation. Set to 999999 for unlimited.',
+    keys: ['SPEND_LIMIT_DIRECTOR', 'SPEND_LIMIT_OPERATIONS_MANAGER', 'SPEND_LIMIT_CLUB_MANAGER', 'SPEND_LIMIT_CHAIRMAN'],
+  },
 ]
 
 interface DashboardData {

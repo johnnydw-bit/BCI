@@ -54,13 +54,12 @@ The system is designed to ensure every submission is treated fairly and consiste
 | **Estate Director** | Clubhouse, Grounds, On-course Refreshments | No | No |
 | **F&B Director** | Restaurant, Bar, On-course Refreshments | No | No |
 | **Commercial Director** | Pro Shop | No | No |
-| **Operations Manager** | All categories | No | No |
 | **Operations Manager** | All categories | Yes | No |
 | **Chair of the Board** | All categories | Yes (final authority) | No |
 | **Club Manager** | All categories | **Yes** | **Yes** |
 | **Super Admin** | All categories | **Yes** | **Yes** (full access) |
 
-> **Note:** All directors can recommend decisions on submissions in their categories. Decisions are subject to ratification by Operations Manager, Club Manager, or Chair of the Board. The Chair of the Board has final authority and their decisions cannot be overridden by lower roles. Only Club Manager and Super Admin can access the Admin panel or delete submissions.
+> **Note:** All directors can recommend decisions on submissions in their categories. Decisions move through a ratification chain: Director → Operations Manager → Club Manager → Chair of the Board. The Chair of the Board has final authority and their decisions cannot be overridden. Only Club Manager and Super Admin can access the Admin panel or delete submissions.
 
 ---
 
@@ -240,13 +239,34 @@ Three sort options available via toggle buttons:
 
 ## 8. Managing submissions — the sidebar
 
-> Only the **Club Manager** and **Super Admin** can perform the actions in this section.
+All directors can access the Board Decision section in the sidebar for submissions in their categories. Decisions move through a ratification chain before becoming final.
+
+### Decision authority hierarchy
+
+| Role | Can act | Effect |
+|---|---|---|
+| **Director** | Recommend | Flagged ⏳ Awaiting ratification |
+| **Operations Manager** | Ratify or override | Confirmed at ops level |
+| **Club Manager** | Ratify or override | Confirmed at manager level |
+| **Chair of the Board** | Final decision | Cannot be overridden |
+
+Once a higher authority has acted, lower roles cannot change the decision. The section becomes read-only with a note showing who set the decision.
+
+### Ratification notifications
+
+Whenever anyone in the chain acts — whether recommending, ratifying, or overriding — **every other member of the chain receives an email**. The email shows:
+- The improvement and the decision made
+- Who made the change and their role
+- Who is next expected to ratify (or confirms it is final if the Chair has acted)
+
+This keeps everyone informed at all times without requiring them to log in to check.
 
 ### How saving works
 
-The sidebar uses a **draft model**. Make as many changes as you need across all fields, then click **Save changes** once. A single save:
+The sidebar uses a **draft model**. Make as many changes as you need across all fields, then click **Save** (or **Flag for ratification** if you are a director) once. A single save:
 - Updates all changed fields in the database in one operation
 - Sends a status-change email to the member (if the status changed and they have an email address and have not opted out)
+- Sends ratification notifications to the rest of the chain
 - Updates the audit trail
 
 Nothing is saved and no emails are sent until you click Save.
@@ -271,6 +291,8 @@ When you save a status change, the member receives a **personalised, AI-generate
 - Never mentions internal scores, bands, weights, or process details
 
 ### Deleting a submission
+
+> Only **Club Manager** and **Super Admin** can delete submissions.
 
 The **✕ Remove** button in the sidebar soft-deletes the submission. It will no longer appear in the triage dashboard or the member's My Improvements view.
 

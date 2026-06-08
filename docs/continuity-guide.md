@@ -3,7 +3,7 @@
 ### What to do if the developer is unavailable
 
 *Prepared by John de Wit — June 2026*
-*For the attention of: Club Chairman and Club Manager*
+*For the attention of: Chair of the Board and Club Manager*
 
 ---
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import BramleyHeader from '@/components/BramleyHeader'
 import FullscreenButton from '@/components/FullscreenButton'
 
-const ROLES = ['Club Manager', 'Super Admin', 'Operations Manager', 'Chairman', 'Chair', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
+const ROLES = ['Club Manager', 'Super Admin', 'Operations Manager', 'Chair of the Board', 'Golf Director', 'Estate Director', 'F&B Director', 'Commercial Director']
 
 const CONFIG_GROUPS = [
   {

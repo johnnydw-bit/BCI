@@ -55,11 +55,12 @@ The system is designed to ensure every submission is treated fairly and consiste
 | **F&B Director** | Restaurant, Bar, On-course Refreshments | No | No |
 | **Commercial Director** | Pro Shop | No | No |
 | **Operations Manager** | All categories | No | No |
-| **Chairman / Chair** | All categories | No | No |
+| **Operations Manager** | All categories | Yes | No |
+| **Chair of the Board** | All categories | Yes (final authority) | No |
 | **Club Manager** | All categories | **Yes** | **Yes** |
 | **Super Admin** | All categories | **Yes** | **Yes** (full access) |
 
-> **Note:** Only the Club Manager and Super Admin can change submission statuses, assign owners, set confirmed dates and costs, delete submissions, or access the Admin panel. All other roles have read-only access to their relevant categories.
+> **Note:** All directors can recommend decisions on submissions in their categories. Decisions are subject to ratification by Operations Manager, Club Manager, or Chair of the Board. The Chair of the Board has final authority and their decisions cannot be overridden by lower roles. Only Club Manager and Super Admin can access the Admin panel or delete submissions.
 
 ---
 
@@ -360,8 +361,9 @@ Available owner roles:
 - Estate Director
 - F&B Director
 - Commercial Director
+- Operations Manager
 - Club Manager
-- Chairman
+- Chair of the Board
 
 ---
 

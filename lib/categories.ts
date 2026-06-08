@@ -44,14 +44,13 @@ export const DIRECTOR_CATEGORIES: Record<string, string[]> = {
   'Commercial Director': ['pro_shop'],
   'Club Manager':        ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
   'Super Admin':         ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
-  'Chairman':            ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
-  'Chair':               ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
+  'Chair of the Board':  ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
   'Operations Manager':  ['course', 'competitions', 'clubhouse', 'grounds', 'refreshments', 'restaurant', 'bar', 'pro_shop', 'other'],
 }
 
 /** Returns true for roles that have full management permissions (score override etc.) */
 export function isManager(role: string): boolean {
-  return role === 'Club Manager' || role === 'Super Admin' || role === 'Operations Manager' || role === 'Chairman' || role === 'Chair' || role === 'Chair of the Board'
+  return role === 'Club Manager' || role === 'Super Admin' || role === 'Operations Manager' || role === 'Chair of the Board'
 }
 
 /** Decision authority levels — higher number = higher authority */
@@ -66,7 +65,7 @@ export const AUTHORITY_LEVELS: Record<string, number> = {
 export function roleToAuthority(role: string): string {
   if (role === 'Operations Manager') return 'operations_manager'
   if (role === 'Club Manager' || role === 'Super Admin') return 'club_manager'
-  if (role === 'Chairman' || role === 'Chair' || role === 'Chair of the Board') return 'chairman'
+  if (role === 'Chair of the Board') return 'chairman'
   return 'director'
 }
 

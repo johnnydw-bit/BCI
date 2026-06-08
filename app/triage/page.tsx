@@ -1268,7 +1268,7 @@ const OWNER_OPTIONS = [
   'F&B Director',
   'Commercial Director',
   'Club Manager',
-  'Chairman',
+  'Chair of the Board',
 ]
 
 function scoreBandColor(band: string | null): string {

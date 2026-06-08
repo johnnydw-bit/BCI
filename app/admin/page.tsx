@@ -533,6 +533,13 @@ export default function AdminPage() {
                             <input className="bramley-input text-sm py-2" placeholder="Email" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
                             <input className="bramley-input text-sm py-2" placeholder="Role" list="role-suggestions" value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })} />
                           </div>
+                          <div className="mt-3 flex items-center gap-3">
+                            <span className="text-xs text-gray-500 font-medium">Current PIN:</span>
+                            {d.pin
+                              ? <span className="font-mono text-base tracking-widest text-gray-800 bg-gray-100 px-3 py-1 rounded">{d.pin}</span>
+                              : <span className="text-xs text-gray-400 italic">Not available — reset PIN to generate one</span>
+                            }
+                          </div>
                           {editError && <p className="bramley-error mt-2">{editError}</p>}
                           <div className="flex gap-2 mt-3">
                             <button onClick={() => saveEdit(d.id, false)} style={{ width: 'auto' }} className="bramley-btn px-6 py-2 text-sm">Save</button>

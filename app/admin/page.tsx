@@ -194,7 +194,7 @@ export default function AdminPage() {
     })
     const data = await res.json().catch(() => ({}))
     if (res.ok) {
-      setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, name: editForm.name, email: editForm.email, role: editForm.role } : d))
+      setDirectors((prev) => prev.map((d) => d.id === id ? { ...d, name: editForm.name, email: editForm.email, role: editForm.role, ...(data.newPin ? { pin: data.newPin } : {}) } : d))
       if (resetPin && data.newPin) {
         setResetPinResult({ name: editForm.name, pin: data.newPin })
       } else {

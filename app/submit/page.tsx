@@ -106,7 +106,7 @@ export default function SubmitPage() {
         <BramleyHeader subtitle="Continuous Improvement Programme" />
         <div className="bramley-body space-y-4">
           <div className="bg-green-50 border border-green-200 rounded-[10px] p-4">
-            <p className="text-green-800 font-semibold">✓ Thank you — your improvement has been received</p>
+            <p className="text-green-800 font-semibold">✓ Thank you — your idea has been logged with the CIP</p>
           </div>
 
           {memberMsg && (
@@ -117,7 +117,7 @@ export default function SubmitPage() {
               <div className="p-4 space-y-3">
                 <p className="text-gray-800 leading-relaxed whitespace-pre-line">{memberMsg}</p>
                 <p className="text-sm text-gray-500 leading-relaxed border-t border-gray-100 pt-3">
-                  This is a preliminary assessment. Your idea will be considered alongside all other current priorities before the Board reviews it.
+                  These are initial AI-generated thoughts, not a Board decision. All submissions are reviewed by the Board alongside other current priorities — we'll be in touch if there's an update, but not every idea will progress.
                 </p>
               </div>
             </div>

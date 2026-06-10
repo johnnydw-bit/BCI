@@ -206,7 +206,8 @@ export async function PATCH(req: NextRequest) {
         const cfg = Object.fromEntries((configRows as Array<{ key: string; value: string }>).map((r) => [r.key, r.value]))
         const tone = (cfg['COMMS_TONE'] ?? 'friendly') as 'friendly' | 'formal'
         const signoff = cfg['COMMS_SIGNOFF'] ?? 'The Board, Bramley Golf Club'
-        const targetDate = confirmed_target_date ?? row.confirmed_target_date ?? null
+        // Only share a target date with the member once the decision is finalised (Chair has signed off)
+        const targetDate = finalised ? (confirmed_target_date ?? row.confirmed_target_date ?? null) : null
 
         const emailBody = await generateStatusEmail({
           description: row.description,

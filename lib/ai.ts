@@ -253,7 +253,7 @@ AI assessment of this idea: ${aiNarrative ?? 'Not available.'}
 Director's internal note: ${directorNote ?? 'None provided.'}
 
 Write a diplomatic, evidence-based email that references specific aspects of their idea to show it was genuinely considered. Give a real reason why it cannot be progressed at this time — draw on the internal context to ground the explanation, but express it in plain member-facing language. Do not mention the AI, scoring, or any internal system. End with the sign-off "${signoff}". Output plain text only — no HTML, no markdown.`
-    : `Write the email body to send to the member whose improvement idea ("${description}") has moved to status: "${statusLabel}". ${dateNote}${directorNote ? ` The Board has left the following note, which should be reflected naturally in the email (do not quote it verbatim): "${directorNote}"` : ''}
+    : `Write the email body to send to the member whose improvement idea ("${description}") has moved to status: "${statusLabel}". ${dateNote}${directorNote ? ` The Board has left the following internal note — include it naturally if it adds useful context for the member, otherwise ignore it: "${directorNote}"` : ''}
 The tone is ${tone}. End with the sign-off "${signoff}". Output plain text only — no HTML, no markdown.`
 
   const response = await client.messages.create({

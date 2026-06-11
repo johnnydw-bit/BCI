@@ -78,14 +78,15 @@ export async function sendHAndSAlert(submission: {
   await send({
     from: FROM,
     to: MANAGER_EMAIL,
-    subject: `⚠️ URGENT — Health & Safety suggestion flagged`,
+    subject: `⚠️ URGENT — Health & Safety suggestion flagged [${cipRef(submission.id)}]`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#c0392b', '⚠️ Bramley Golf Club — Urgent H&amp;S Flag', 'Requires immediate attention')}
         <div style="padding:20px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
           <p style="font-family:sans-serif">A member suggestion has been flagged as having a <strong>Health &amp; Safety</strong> dimension and requires your immediate attention.</p>
           <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:16px 0;border-collapse:collapse">
-            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Category</td><td style="font-family:sans-serif">${submission.category}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Reference</td><td style="font-family:monospace;color:#555">${cipRef(submission.id)}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Category</td><td style="font-family:sans-serif">${submission.category}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Summary</td><td style="font-family:sans-serif">${submission.aiSummary}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Submission</td><td style="font-family:sans-serif">${submission.description}</td></tr>
           </table>
@@ -97,6 +98,7 @@ export async function sendHAndSAlert(submission: {
 }
 
 export async function sendSubmitterUpdate(to: string, submission: {
+  id: number
   description: string
   scoreBand: string
   memberMsg: string
@@ -124,7 +126,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
   await send({
     from: FROM,
     to,
-    subject: `Your Bramley GC improvement has been assessed`,
+    subject: `Your Bramley GC improvement has been assessed [${cipRef(submission.id)}]`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
@@ -133,7 +135,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
           <p style="color:#333;font-family:sans-serif">Thank you for taking the time to submit an improvement idea. Our Board has now assessed it.</p>
 
           <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:16px 0">
-            <p style="margin:0 0 8px;font-size:13px;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;font-family:sans-serif">Your improvement</p>
+            <p style="margin:0 0 8px;font-size:13px;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;font-family:sans-serif">Your improvement · <span style="font-family:monospace;font-weight:normal;color:#aaa">${cipRef(submission.id)}</span></p>
             <p style="margin:0;color:#333;font-family:sans-serif">${submission.description}</p>
           </div>
 
@@ -158,11 +160,12 @@ export async function sendSubmitterUpdate(to: string, submission: {
   })
 }
 
-export async function sendSubmissionConfirmation(to: string, description: string, memberName?: string | null) {
+export async function sendSubmissionConfirmation(to: string, description: string, memberName?: string | null, submissionId?: number) {
+  const ref = submissionId ? cipRef(submissionId) : null
   await send({
     from: FROM,
     to,
-    subject: `We've received your improvement idea — Bramley GC`,
+    subject: `We've received your improvement idea — Bramley GC${ref ? ` [${ref}]` : ''}`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
@@ -171,7 +174,7 @@ export async function sendSubmissionConfirmation(to: string, description: string
           <p style="color:#333;font-family:sans-serif">Thank you for submitting an improvement idea. This email is your confirmation that we've received it.</p>
 
           <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:16px 0">
-            <p style="margin:0 0 8px;font-size:13px;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;font-family:sans-serif">Your improvement</p>
+            <p style="margin:0 0 8px;font-size:13px;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;font-family:sans-serif">Your improvement${ref ? ` · <span style="font-family:monospace;font-weight:normal;color:#aaa">${ref}</span>` : ''}</p>
             <p style="margin:0;color:#333;font-family:sans-serif">${description}</p>
           </div>
 
@@ -284,14 +287,15 @@ export async function sendHighScoreAlert(to: string, submission: {
   await send({
     from: FROM,
     to,
-    subject: `🌟 High-priority improvement flagged — score ${submission.score.toFixed(1)}`,
+    subject: `🌟 High-priority improvement flagged — score ${submission.score.toFixed(1)} [${cipRef(submission.id)}]`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#0d5d3d', '🌟 High-Priority Improvement', `Score: ${submission.score.toFixed(1)} / 10`)}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
           <p style="color:#333;font-family:sans-serif">A member improvement idea has scored <strong>${submission.score.toFixed(1)}/10</strong> during this week's triage — above the high-priority threshold. Your attention is recommended.</p>
           <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:16px 0;border-collapse:collapse">
-            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Category</td><td style="font-family:sans-serif">${submission.category}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Reference</td><td style="font-family:monospace;color:#555">${cipRef(submission.id)}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Category</td><td style="font-family:sans-serif">${submission.category}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Summary</td><td style="font-family:sans-serif">${submission.aiSummary}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Idea</td><td style="font-family:sans-serif">${submission.description}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Suggested owner</td><td style="font-family:sans-serif">${submission.suggestedOwner}</td></tr>
@@ -304,11 +308,12 @@ export async function sendHighScoreAlert(to: string, submission: {
 }
 
 /** Confirmation email to a member who withdraws a submission. */
-export async function sendWithdrawalConfirmationEmail(to: string, description: string, memberName?: string | null) {
+export async function sendWithdrawalConfirmationEmail(to: string, description: string, memberName?: string | null, submissionId?: number) {
+  const ref = submissionId ? cipRef(submissionId) : null
   await send({
     from: FROM,
     to,
-    subject: `Your improvement idea has been withdrawn`,
+    subject: `Your improvement idea has been withdrawn${ref ? ` [${ref}]` : ''}`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
@@ -316,6 +321,7 @@ export async function sendWithdrawalConfirmationEmail(to: string, description: s
           <p style="color:#333;font-family:sans-serif">Dear ${firstName(memberName)},</p>
           <p style="color:#333;font-family:sans-serif">We've received your withdrawal request and the following improvement idea has been removed from the programme.</p>
           <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:16px 0">
+            ${ref ? `<p style="margin:0 0 6px;font-size:12px;font-family:monospace;color:#aaa">${ref}</p>` : ''}
             <p style="margin:0;color:#333;font-family:sans-serif">${description}</p>
           </div>
           <p style="color:#555;font-size:14px;font-family:sans-serif">If this was a mistake or you'd like to resubmit, please feel free to use the programme again.</p>
@@ -328,6 +334,7 @@ export async function sendWithdrawalConfirmationEmail(to: string, description: s
 
 /** Notification to relevant director when a member withdraws a scored submission. */
 export async function sendWithdrawalDirectorNotification(to: string, opts: {
+  submissionId: number
   memberName: string
   description: string
   category: string
@@ -336,14 +343,15 @@ export async function sendWithdrawalDirectorNotification(to: string, opts: {
   await send({
     from: FROM,
     to,
-    subject: `Member withdrawal: improvement idea removed from programme`,
+    subject: `Member withdrawal: improvement idea removed from programme [${cipRef(opts.submissionId)}]`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#888888', 'Bramley Golf Club — Withdrawal Notification', 'Member improvement withdrawn')}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
           <p style="color:#333;font-family:sans-serif">A member has withdrawn an improvement idea. If this was under active consideration, you may wish to review your queue.</p>
           <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:16px 0;border-collapse:collapse">
-            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Member</td><td style="font-family:sans-serif">${opts.memberName}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Reference</td><td style="font-family:monospace;color:#555">${cipRef(opts.submissionId)}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Member</td><td style="font-family:sans-serif">${opts.memberName}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Category</td><td style="font-family:sans-serif">${opts.category}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Score</td><td style="font-family:sans-serif">${opts.score !== null ? opts.score.toFixed(1) : 'Not yet scored'}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Idea</td><td style="font-family:sans-serif">${opts.description}</td></tr>

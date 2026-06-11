@@ -322,6 +322,7 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
       if (emailTo && !sub?.email_opt_out) {
         try {
           await sendSubmitterUpdate(emailTo, {
+            id: sub!.id,
             description: sub!.description,
             scoreBand: r.scoreBand,
             memberMsg,

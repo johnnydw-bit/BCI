@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (submitterEmail && !emailOptOut) {
-    void sendSubmissionConfirmation(submitterEmail, description.trim(), submitterName)
+    void sendSubmissionConfirmation(submitterEmail, description.trim(), submitterName, submissionId)
       .catch((e) => console.error('[submit] Confirmation email failed:', e))
   }
 

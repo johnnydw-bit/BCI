@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   // Email the member (if they have an email and haven't opted out)
   if (sub.member_email) {
     try {
-      await sendWithdrawalConfirmationEmail(sub.member_email, sub.description, sub.member_name)
+      await sendWithdrawalConfirmationEmail(sub.member_email, sub.description, sub.member_name, sub.id)
     } catch (e) {
       console.error('[withdraw] Failed to send member confirmation email:', e)
     }
@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
         const cats = DIRECTOR_CATEGORIES[dir.role] ?? []
         if (cats.includes(sub.category)) {
           await sendWithdrawalDirectorNotification(dir.email, {
+            submissionId: sub.id,
             memberName: sub.member_name ?? session.memberName ?? 'A member',
             description: sub.description,
             category: sub.category,

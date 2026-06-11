@@ -35,7 +35,7 @@ async function send(payload: { from: string; to: string | string[]; subject: str
   } else {
     console.log(`[email] Sent OK — id: ${result.data?.id}`)
   }
-  return result
+  return result.data?.id ?? null
 }
 
 // Outlook-safe table-based header (no flexbox)
@@ -363,7 +363,7 @@ export async function sendWithdrawalDirectorNotification(to: string, opts: {
   })
 }
 
-/** Notification to the chain of command when a decision is made or recommended. */
+/** Notification to the chain of command when a decision is made or recommended. Returns Resend email ID. */
 export async function sendRatificationNotification(to: string[], opts: {
   description: string
   statusLabel: string
@@ -375,7 +375,7 @@ export async function sendRatificationNotification(to: string[], opts: {
   spendLimit?: number
   finalisedBySpend?: boolean
 }) {
-  if (to.length === 0) return
+  if (to.length === 0) return null
   const isPending = opts.nextRatifier !== null
   const subject = isPending
     ? `⏳ Ratification needed: "${opts.statusLabel}" — ${opts.changedBy}`
@@ -393,7 +393,7 @@ export async function sendRatificationNotification(to: string[], opts: {
     ? `<tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Confirmed cost</td><td style="font-family:sans-serif">${fmt(opts.confirmedCost)}${opts.spendLimit !== undefined ? ` <span style="color:#888;font-size:12px">(signoff limit: ${fmt(opts.spendLimit)})</span>` : ''}</td></tr>`
     : ''
 
-  await send({
+  return send({
     from: FROM,
     to,
     subject,
@@ -424,11 +424,11 @@ export async function sendOwnerAssignmentNotification(to: string[], opts: {
   assignedBy: string
   submissionId: number
 }) {
-  if (to.length === 0) return
-  await send({
+  if (to.length === 0) return null
+  return send({
     from: FROM,
     to,
-    subject: `CIP: A submission has been assigned to you`,
+    subject: `CIP: A submission has been assigned to you [${cipRef(opts.submissionId)}]`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club — Continuous Improvement', 'Submission assigned to you')}

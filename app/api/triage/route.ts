@@ -127,12 +127,16 @@ export async function PATCH(req: NextRequest) {
           WHERE role = ${suggested_owner} AND active = TRUE AND email IS NOT NULL
         `
         const ownerEmails = (ownerDirectors as Array<{ email: string }>).map((r) => r.email)
-        await sendOwnerAssignmentNotification(ownerEmails, {
+        const resendId = await sendOwnerAssignmentNotification(ownerEmails, {
           description,
           assignedRole: suggested_owner,
           assignedBy: session.directorName,
           submissionId: id,
         })
+        await sql`
+          INSERT INTO notification_log (submission_id, type, recipients, resend_id)
+          VALUES (${id}, 'owner_assigned', ${ownerEmails.join(', ')}, ${resendId ?? null})
+        `
       } catch (e) {
         console.error('[triage PATCH] Failed to send owner assignment notification:', e)
       }
@@ -293,7 +297,7 @@ export async function PATCH(req: NextRequest) {
         chairman:            'Chair of the Board',
       }
 
-      await sendRatificationNotification(recipients, {
+      const ratifResendId = await sendRatificationNotification(recipients, {
         description: row.description,
         statusLabel: STATUS_LABELS[status] ?? status,
         changedBy: session.directorName,
@@ -304,6 +308,12 @@ export async function PATCH(req: NextRequest) {
         spendLimit: spendLimits[myAuthority] ?? 0,
         finalisedBySpend: finalised && myAuthority !== 'chairman',
       })
+      if (recipients.length > 0) {
+        await sql`
+          INSERT INTO notification_log (submission_id, type, recipients, resend_id)
+          VALUES (${id}, 'ratification', ${recipients.join(', ')}, ${ratifResendId ?? null})
+        `
+      }
     } catch (e) {
       console.error('[triage PATCH] Failed to send ratification notification:', e)
     }

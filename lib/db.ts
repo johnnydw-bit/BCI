@@ -245,6 +245,18 @@ export async function initDb() {
   `
   await sql`CREATE INDEX IF NOT EXISTS login_attempts_lookup ON login_attempts (ip, identifier, attempted_at)`
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS notification_log (
+      id            SERIAL PRIMARY KEY,
+      submission_id INTEGER NOT NULL REFERENCES submissions(id),
+      type          TEXT NOT NULL,
+      recipients    TEXT NOT NULL,
+      resend_id     TEXT,
+      sent_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+  await sql`CREATE INDEX IF NOT EXISTS notification_log_submission ON notification_log (submission_id)`
+
   // Communication tone config
   const commsDefaults: [string, string, string][] = [
     ['COMMS_TONE',    'friendly', 'Member communication tone: friendly | formal'],

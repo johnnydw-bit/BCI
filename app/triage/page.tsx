@@ -1206,6 +1206,11 @@ function SpreadsheetDetailPanel({
           <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} />
         )}
 
+        <div className="pt-3 border-t border-gray-200">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Notifications</p>
+          <NotificationLog submissionId={s.id} />
+        </div>
+
         {auditLog.length > 0 && (
           <div className="pt-3 border-t border-gray-200">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Activity log</p>
@@ -1324,6 +1329,66 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
         {entry.note && !isScoreOverride && <span className="text-gray-400"> · {entry.note}</span>}
         <span className="text-gray-400 ml-1">· {fmt(entry.changed_at)}</span>
       </div>
+    </div>
+  )
+}
+
+interface NotificationEntry {
+  id: number
+  type: string
+  recipients: string
+  resend_id: string | null
+  sent_at: string
+  last_event: string | null
+}
+
+function NotificationLog({ submissionId }: { submissionId: number }) {
+  const [entries, setEntries] = useState<NotificationEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`/api/triage/notifications?submissionId=${submissionId}`)
+      .then((r) => r.json())
+      .then((d) => setEntries(d.notifications ?? []))
+      .finally(() => setLoading(false))
+  }, [submissionId])
+
+  if (loading) return <p className="text-xs text-gray-400 italic">Loading…</p>
+  if (entries.length === 0) return <p className="text-xs text-gray-400 italic">No notifications sent yet.</p>
+
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+  const eventBadge = (event: string | null) => {
+    if (!event) return <span className="text-gray-300 text-xs">—</span>
+    const map: Record<string, { label: string; color: string }> = {
+      opened:           { label: '👁 Opened',    color: '#1e8449' },
+      clicked:          { label: '🖱 Clicked',   color: '#1e8449' },
+      delivered:        { label: '✓ Delivered',  color: '#2471a3' },
+      sent:             { label: '⬆ Sent',       color: '#888'    },
+      sending:          { label: '⬆ Sending',    color: '#888'    },
+      queued:           { label: '⏳ Queued',    color: '#b7770d' },
+      bounced:          { label: '✕ Bounced',    color: '#c0392b' },
+      complained:       { label: '⚠ Complained', color: '#c0392b' },
+      delivery_delayed: { label: '⏳ Delayed',   color: '#b7770d' },
+    }
+    const m = map[event] ?? { label: event, color: '#888' }
+    return <span className="text-xs font-semibold" style={{ color: m.color }}>{m.label}</span>
+  }
+
+  const typeLabel = (type: string) => type === 'owner_assigned' ? '👤 Owner assigned' : '⏳ Ratification'
+
+  return (
+    <div className="space-y-2">
+      {entries.map((e) => (
+        <div key={e.id} className="rounded-[6px] border border-gray-100 bg-gray-50 px-3 py-2 text-xs space-y-0.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-gray-600">{typeLabel(e.type)}</span>
+            {eventBadge(e.last_event)}
+          </div>
+          <p className="text-gray-400 truncate" title={e.recipients}>{e.recipients}</p>
+          <p className="text-gray-400">{fmt(e.sent_at)}</p>
+        </div>
+      ))}
     </div>
   )
 }

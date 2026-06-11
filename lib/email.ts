@@ -9,6 +9,10 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bramley-bci.vercel.a
 // Use this while Resend domain verification is pending.
 const DEBUG_EMAIL = process.env.DEBUG_EMAIL
 
+function cipRef(id: number): string {
+  return 'CIP-' + String(id).padStart(4, '0')
+}
+
 function firstName(fullName: string | null | undefined): string {
   if (!fullName) return 'Member'
   return fullName.trim().split(/\s+/)[0]
@@ -215,18 +219,20 @@ export async function sendStatusChangeEmail(to: string, opts: {
   statusLabel: string
   emailBody: string
   memberName?: string | null
+  submissionId?: number
 }) {
+  const ref = opts.submissionId ? cipRef(opts.submissionId) : null
   await send({
     from: FROM,
     to,
-    subject: `Update on your Bramley GC improvement idea`,
+    subject: `Update on your Bramley GC improvement idea${ref ? ` [${ref}]` : ''}`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         ${emailHeader('#1a3a5c', 'Bramley Golf Club', 'Continuous Improvement Programme')}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
           <p style="color:#333;font-family:sans-serif">Dear ${firstName(opts.memberName)},</p>
           <div style="background:#f5f7fa;border-radius:8px;padding:16px;margin:0 0 20px">
-            <p style="margin:0 0 6px;font-size:12px;color:#888;font-family:sans-serif;text-transform:uppercase;letter-spacing:0.05em">Your idea</p>
+            <p style="margin:0 0 6px;font-size:12px;color:#888;font-family:sans-serif;text-transform:uppercase;letter-spacing:0.05em">Your idea${ref ? ` · <span style="font-family:monospace;color:#aaa">${ref}</span>` : ''}</p>
             <p style="margin:0;color:#333;font-family:sans-serif">${opts.description}</p>
           </div>
           <div style="white-space:pre-line;color:#333;line-height:1.7;font-family:sans-serif">${opts.emailBody.replace(/\n/g, '<br>')}</div>
@@ -355,11 +361,11 @@ export async function sendRatificationNotification(to: string[], opts: {
   statusLabel: string
   changedBy: string
   changedByRole: string
-  nextRatifier: string | null    // null = final decision, no further ratification needed
+  nextRatifier: string | null
   submissionId: number
-  confirmedCost?: number | null  // cost at time of decision (if set)
-  spendLimit?: number            // actor's spend signoff limit
-  finalisedBySpend?: boolean     // true = chain stopped because cost is within actor's limit
+  confirmedCost?: number | null
+  spendLimit?: number
+  finalisedBySpend?: boolean
 }) {
   if (to.length === 0) return
   const isPending = opts.nextRatifier !== null
@@ -388,7 +394,8 @@ export async function sendRatificationNotification(to: string[], opts: {
         ${emailHeader(isPending ? '#b7770d' : '#1e8449', 'Bramley Golf Club — Continuous Improvement', isPending ? '⏳ Decision pending ratification' : '✓ Decision finalised')}
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
           <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:collapse">
-            <tr><td style="background:#f5f5f5;font-weight:600;width:160px;font-family:sans-serif">Improvement</td><td style="font-family:sans-serif">${opts.description}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;width:160px;font-family:sans-serif">Reference</td><td style="font-family:monospace;color:#555;font-family:sans-serif">${cipRef(opts.submissionId)}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Improvement</td><td style="font-family:sans-serif">${opts.description}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Decision</td><td style="font-family:sans-serif"><strong>${opts.statusLabel}</strong></td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Set by</td><td style="font-family:sans-serif">${opts.changedBy} (${opts.changedByRole})</td></tr>
             ${costRow}
@@ -420,7 +427,8 @@ export async function sendOwnerAssignmentNotification(to: string[], opts: {
         <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
           <p style="color:#333;font-family:sans-serif">A CIP submission has been assigned to <strong>${opts.assignedRole}</strong> by ${opts.assignedBy}. Please review it at your earliest convenience.</p>
           <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:16px 0;border-collapse:collapse">
-            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Improvement</td><td style="font-family:sans-serif">${opts.description}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Reference</td><td style="font-family:monospace;color:#555">${cipRef(opts.submissionId)}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Improvement</td><td style="font-family:sans-serif">${opts.description}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Assigned to</td><td style="font-family:sans-serif">${opts.assignedRole}</td></tr>
             <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Assigned by</td><td style="font-family:sans-serif">${opts.assignedBy}</td></tr>
           </table>

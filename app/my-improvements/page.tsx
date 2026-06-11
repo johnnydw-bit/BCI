@@ -196,6 +196,7 @@ export default function MyImprovementsPage() {
                           )}
                           <span className="line-clamp-2">{s.description}</span>
                         </div>
+                        <span className="text-xs text-gray-400 font-mono">{cipRef(s.id)}</span>
                       </td>
                       <td className="px-4 py-2.5 text-xs text-gray-500 hidden sm:table-cell">{categoryLabel(s.category)}</td>
                       <td className="px-4 py-2.5">
@@ -294,6 +295,8 @@ export default function MyImprovementsPage() {
     </div>
   )
 }
+
+function cipRef(id: number) { return 'CIP-' + String(id).padStart(4, '0') }
 
 function statusClass(status: string): string {
   const map: Record<string, string> = {

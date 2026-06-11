@@ -246,6 +246,7 @@ export async function PATCH(req: NextRequest) {
           statusLabel: STATUS_LABELS[status] ?? status,
           emailBody,
           memberName: row.member_name,
+          submissionId: id,
         })
       } catch (e) {
         console.error('[triage PATCH] Failed to send status change email:', e)

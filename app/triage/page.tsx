@@ -755,6 +755,8 @@ export default function TriagePage() {
   )
 }
 
+function cipRef(id: number) { return 'CIP-' + String(id).padStart(4, '0') }
+
 // ── Spreadsheet table ───────────────────────────────────────────────────────
 
 function SpreadsheetTable({
@@ -812,6 +814,7 @@ function SpreadsheetTable({
                 {/* Summary */}
                 <td className="py-1.5 px-2 max-w-0">
                   <p className="truncate font-medium text-gray-800">{s.ai_summary ?? s.description}</p>
+                  <p className="text-gray-400 font-mono">{cipRef(s.id)}</p>
                 </td>
 
                 {/* Area */}
@@ -1213,8 +1216,9 @@ function SpreadsheetDetailPanel({
         )}
 
         <p className="text-xs text-gray-400">
-          {s.recognition !== 'anonymous' && s.member_name && <>Submitted by {s.member_name} · </>}
-          {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+          <span className="font-mono font-semibold">{cipRef(s.id)}</span>
+          {s.recognition !== 'anonymous' && s.member_name && <> · Submitted by {s.member_name}</>}
+          {' · '}{new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
         </p>
       </div>
     </div>

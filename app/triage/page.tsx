@@ -184,6 +184,7 @@ export default function TriagePage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterFlag, setFilterFlag] = useState<string>('all')
   const [filterOwner, setFilterOwner] = useState<string>('all')
+  const [filterSubmitter, setFilterSubmitter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
 
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
@@ -337,6 +338,7 @@ export default function TriagePage() {
       if (filterFlag === 'cost_threshold' && !s.cost_threshold_flag) return false
       if (filterOwner === 'board_members' && !s.from_board) return false
       if (filterOwner !== 'all' && filterOwner !== 'board_members' && s.suggested_owner !== filterOwner) return false
+      if (filterSubmitter !== 'all' && s.member_name !== filterSubmitter) return false
       return true
     })
   }
@@ -462,6 +464,22 @@ export default function TriagePage() {
               </select>
             </div>
           )}
+          {(() => {
+            const submitters = Array.from(new Set(
+              data.submissions.map((s) => s.member_name).filter((n): n is string => !!n)
+            )).sort()
+            return submitters.length > 1 ? (
+              <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+                <label className="text-xs text-gray-500 shrink-0">Submitter</label>
+                <select className="bramley-input text-sm py-1.5 flex-1" value={filterSubmitter} onChange={(e) => setFilterSubmitter(e.target.value)}>
+                  <option value="all">All members</option>
+                  {submitters.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+            ) : null
+          })()}
           <div className="flex items-center gap-2">
             <label className="text-xs text-gray-500 shrink-0">Sort</label>
             <div className="flex rounded-[8px] overflow-hidden border border-gray-200">

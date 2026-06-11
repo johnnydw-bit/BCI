@@ -160,7 +160,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
   })
 }
 
-export async function sendSubmissionConfirmation(to: string, description: string, memberName?: string | null, submissionId?: number) {
+export async function sendSubmissionConfirmation(to: string, description: string, memberName?: string | null, submissionId?: number, memberMsg?: string | null) {
   const ref = submissionId ? cipRef(submissionId) : null
   await send({
     from: FROM,
@@ -178,7 +178,17 @@ export async function sendSubmissionConfirmation(to: string, description: string
             <p style="margin:0;color:#333;font-family:sans-serif">${description}</p>
           </div>
 
-          <p style="color:#555;line-height:1.6;font-family:sans-serif">Your idea will be fully evaluated overnight — scored for feasibility, cost and member impact, and considered alongside all other current priorities before the Board reviews it.</p>
+          ${memberMsg ? `
+          <div style="border:1px solid #dde;border-radius:8px;overflow:hidden;margin:16px 0">
+            <div style="background:#1a3a5c;padding:10px 16px">
+              <p style="margin:0;font-size:13px;color:#fff;font-weight:600;font-family:sans-serif">Initial thoughts</p>
+            </div>
+            <div style="padding:16px;background:#fff">
+              <p style="margin:0 0 12px;color:#333;line-height:1.6;font-family:sans-serif;white-space:pre-line">${memberMsg}</p>
+              <p style="margin:0;color:#888;font-size:12px;font-family:sans-serif;border-top:1px solid #eee;padding-top:10px">These are initial AI-generated thoughts, not a Board decision. All submissions are reviewed by the Board alongside other current priorities.</p>
+            </div>
+          </div>
+          ` : `<p style="color:#555;line-height:1.6;font-family:sans-serif">Your idea will be fully evaluated overnight — scored for feasibility, cost and member impact, and considered alongside all other current priorities before the Board reviews it.</p>`}
 
           ${emailButton(`${APP_URL}/my-improvements`, 'View my improvements →')}
 

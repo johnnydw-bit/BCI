@@ -399,12 +399,14 @@ function rowHtml(s: Record<string, unknown>, isUrgent: boolean): string {
   const statusLabel   = STATUS_LABELS[s.status as string]     ?? String(s.status ?? 'Received')
   const border        = isUrgent ? 'border:2px solid #c0392b' : 'border:1px solid #ddd'
   const statusColour  = isUrgent ? '#c0392b' : '#1a3a5c'
+  const ref           = 'CIP-' + String(Number(s.id)).padStart(4, '0')
 
   return `
     <div style="${border};border-radius:8px;padding:14px;margin-bottom:10px;background:${isUrgent ? '#fff8f8' : '#fff'}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
         <span style="background:${statusColour};color:white;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">${statusLabel}</span>
         <span style="color:#666;font-size:12px">${categoryLabel}</span>
+        <span style="font-family:monospace;color:#aaa;font-size:11px">${ref}</span>
         ${s.cluster_theme ? `<span style="background:#2471a3;color:white;padding:2px 8px;border-radius:20px;font-size:11px">Cluster: ${s.cluster_theme}</span>` : ''}
         ${isUrgent ? `<span style="background:#c0392b;color:white;padding:2px 8px;border-radius:20px;font-size:11px">⚠️ H&amp;S</span>` : ''}
       </div>

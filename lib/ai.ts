@@ -305,7 +305,7 @@ SCORING DIMENSIONS (weighted 0-10 per dimension, weights are configurable):
 IMPORTANT — vague suggestions: If a suggestion is directional rather than specific (e.g. "reduce competitions" without data or a concrete proposal), treat it as low-actionability: reduce member_impact by 1-2 points and note this in the ai_narrative. The Board cannot act on direction alone.
 
 MULTIPLIERS (applied after weighted score, cap final at 10.0):
-- H&S flag: x${weights.multHs} (safety or compliance dimension)
+- H&S flag: x${weights.multHs} — set h_and_s_flag: true ONLY for genuine, active Health & Safety risks: trip/slip hazards, structural or electrical safety, fire safety, food hygiene violations, or immediate danger to members or staff if left unaddressed. Do NOT flag improvements that merely mention "safety" in passing, have incidental safety benefits, or represent good practice without an existing risk. Ask yourself: would a reasonable person consider this a reportable H&S concern if nothing were done?
 - Budget year alignment: x${weights.multBudgetYear} (implementable in current financial year)
 - Spans multiple categories: x${weights.multMultiCategory}
 

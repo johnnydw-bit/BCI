@@ -217,7 +217,7 @@ export async function PATCH(req: NextRequest) {
     const spendNote = !finalised && effectiveCost !== null
       ? ` (cost £${effectiveCost.toLocaleString()} exceeds signoff limit — pending ratification)`
       : ''
-    await sql`
+    if (status !== oldStatus) await sql`
       INSERT INTO status_log (submission_id, old_status, new_status, changed_by, note)
       VALUES (${id}, ${oldStatus}, ${status}, ${session.directorName}, ${spendNote || null})
     `
@@ -320,7 +320,15 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (category) {
+    const prevCat = await sql`SELECT category FROM submissions WHERE id = ${id}`
+    const oldCategory = (prevCat[0] as { category: string })?.category
     await sql`UPDATE submissions SET category = ${category} WHERE id = ${id}`
+    if (category !== oldCategory) {
+      await sql`
+        INSERT INTO status_log (submission_id, old_status, new_status, changed_by, note)
+        VALUES (${id}, ${oldCategory ?? ''}, ${oldCategory ?? ''}, ${session.directorName}, ${'Category changed from ' + (oldCategory ?? '?') + ' to ' + category})
+      `
+    }
   }
 
   return NextResponse.json({ ok: true, spendLimits })

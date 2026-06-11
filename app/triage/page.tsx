@@ -1317,16 +1317,19 @@ function ScoreOverridePanel({ s, onUpdate, updating }: {
 function AuditRow({ entry }: { entry: AuditEntry }) {
   const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   const isScoreOverride = entry.note?.startsWith('Score overridden')
+  const isCategoryChange = entry.note?.startsWith('Category changed')
   return (
     <div className="flex items-start gap-2 text-xs text-gray-500">
-      <span className="shrink-0 mt-0.5">{isScoreOverride ? '🎯' : '↻'}</span>
+      <span className="shrink-0 mt-0.5">{isScoreOverride ? '🎯' : isCategoryChange ? '📂' : '↻'}</span>
       <div>
         <span className="font-medium text-gray-700">{entry.changed_by}</span>
         {isScoreOverride
           ? <span> {entry.note}</span>
+          : isCategoryChange
+          ? <span> {entry.note}</span>
           : <span> changed status to <span className="font-medium text-gray-700">{STATUS_LABELS[entry.new_status] ?? entry.new_status}</span></span>
         }
-        {entry.note && !isScoreOverride && <span className="text-gray-400"> · {entry.note}</span>}
+        {entry.note && !isScoreOverride && !isCategoryChange && <span className="text-gray-400"> · {entry.note}</span>}
         <span className="text-gray-400 ml-1">· {fmt(entry.changed_at)}</span>
       </div>
     </div>

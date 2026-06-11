@@ -4,7 +4,7 @@ import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { DIRECTOR_CATEGORIES, getCategoriesForRole, isManager, roleToAuthority, canOverrideAuthority, AUTHORITY_LEVELS, DEFAULT_SPEND_LIMITS, isDecisionFinalised } from '@/lib/categories'
 import { generateStatusEmail } from '@/lib/ai'
-import { sendStatusChangeEmail, sendRatificationNotification } from '@/lib/email'
+import { sendStatusChangeEmail, sendRatificationNotification, sendOwnerAssignmentNotification } from '@/lib/email'
 
 /** Load spend limits from the config table, falling back to defaults */
 async function loadSpendLimits(): Promise<Record<string, number>> {
@@ -118,6 +118,25 @@ export async function PATCH(req: NextRequest) {
 
   if (suggested_owner !== undefined) {
     await sql`UPDATE submissions SET suggested_owner = ${suggested_owner || null} WHERE id = ${id}`
+    if (suggested_owner) {
+      try {
+        const subRow = await sql`SELECT description FROM submissions WHERE id = ${id}`
+        const description = (subRow[0] as { description: string })?.description ?? ''
+        const ownerDirectors = await sql`
+          SELECT email FROM director_roles
+          WHERE role = ${suggested_owner} AND active = TRUE AND email IS NOT NULL
+        `
+        const ownerEmails = (ownerDirectors as Array<{ email: string }>).map((r) => r.email)
+        await sendOwnerAssignmentNotification(ownerEmails, {
+          description,
+          assignedRole: suggested_owner,
+          assignedBy: session.directorName,
+          submissionId: id,
+        })
+      } catch (e) {
+        console.error('[triage PATCH] Failed to send owner assignment notification:', e)
+      }
+    }
   }
 
   if (notes !== undefined) {

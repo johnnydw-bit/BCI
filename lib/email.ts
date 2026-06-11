@@ -402,6 +402,35 @@ export async function sendRatificationNotification(to: string[], opts: {
   })
 }
 
+/** Notification to a director when a submission is assigned to their role. */
+export async function sendOwnerAssignmentNotification(to: string[], opts: {
+  description: string
+  assignedRole: string
+  assignedBy: string
+  submissionId: number
+}) {
+  if (to.length === 0) return
+  await send({
+    from: FROM,
+    to,
+    subject: `CIP: A submission has been assigned to you`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#1a3a5c', 'Bramley Golf Club — Continuous Improvement', 'Submission assigned to you')}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="color:#333;font-family:sans-serif">A CIP submission has been assigned to <strong>${opts.assignedRole}</strong> by ${opts.assignedBy}. Please review it at your earliest convenience.</p>
+          <table width="100%" cellpadding="8" cellspacing="0" border="0" style="margin:16px 0;border-collapse:collapse">
+            <tr><td style="background:#f5f5f5;font-weight:600;width:140px;font-family:sans-serif">Improvement</td><td style="font-family:sans-serif">${opts.description}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Assigned to</td><td style="font-family:sans-serif">${opts.assignedRole}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Assigned by</td><td style="font-family:sans-serif">${opts.assignedBy}</td></tr>
+          </table>
+          ${emailButton(`${APP_URL}/triage`, 'Open Triage Board →')}
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendTriageReport(to: string[], periodStart: Date, periodEnd: Date, nextRunAt: Date, htmlReport: string) {
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 

@@ -334,6 +334,7 @@ export default function TriagePage() {
     return items.filter((s) => {
       if (filterCategory !== 'all' && s.category !== filterCategory) return false
       if (filterStatus !== 'all' && s.status !== filterStatus) return false
+      if (filterFlag === 'board_review' && !s.cost_threshold_flag && s.suggested_owner !== 'Chair of the Board') return false
       if (filterFlag === 'quick_win' && !s.quick_win_flag) return false
       if (filterFlag === 'h_and_s' && !s.h_and_s_flag) return false
       if (filterFlag === 'revenue' && !s.revenue_opportunity) return false
@@ -455,6 +456,7 @@ export default function TriagePage() {
             <label className="text-xs text-gray-500 shrink-0">Flag</label>
             <select className="bramley-input text-sm py-1.5 flex-1" value={filterFlag} onChange={(e) => setFilterFlag(e.target.value)}>
               <option value="all">All flags</option>
+              <option value="board_review">🏛 Board review</option>
               <option value="quick_win">⚡ Quick wins</option>
               <option value="h_and_s">⚠️ Health &amp; Safety</option>
               <option value="revenue">💰 Revenue opportunity</option>
@@ -909,6 +911,7 @@ function SpreadsheetTable({
                 <td className="py-1.5 px-2 text-center hidden sm:table-cell">
                   <div className="flex gap-0.5 justify-center flex-wrap">
                     {s.h_and_s_flag && <span title="H&S" className="text-red-600">⚠</span>}
+                    {(s.cost_threshold_flag || s.suggested_owner === 'Chair of the Board') && <span title="Board review required">🏛</span>}
                     {s.quick_win_flag && <span title="Quick win">⚡</span>}
                     {s.revenue_opportunity && <span title="Revenue">💰</span>}
                     {s.cost_threshold_flag && <span title="Board approval" className="text-orange-600 font-bold text-xs">£</span>}
@@ -959,6 +962,7 @@ function SpreadsheetDetailPanel({
     confirmed_cost: s.confirmed_cost != null ? String(s.confirmed_cost) : '',
     notes: s.notes ?? '',
   })
+  const [boardConfirmPending, setBoardConfirmPending] = useState(false)
 
   // Reset draft when a different submission is selected
   useEffect(() => {
@@ -970,6 +974,7 @@ function SpreadsheetDetailPanel({
       confirmed_cost: s.confirmed_cost != null ? String(s.confirmed_cost) : '',
       notes: s.notes ?? '',
     })
+    setBoardConfirmPending(false)
   }, [s.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isDirty = draft.status !== s.status
@@ -1011,6 +1016,20 @@ function SpreadsheetDetailPanel({
   // Whether save needs to warn about cost exceeding limit
   const costExceedsMyLimit = effectiveCost !== null && effectiveCost > mySpendLimit
 
+  // Auto-derived: requires board-level discussion before Chair approves
+  const needsBoardReview = s.cost_threshold_flag || s.suggested_owner === 'Chair of the Board'
+  const isChair = myAuthority === 'chairman'
+  const savingApproval = draft.status === 'approved' || draft.status === 'implemented'
+
+  function handleSaveClick() {
+    if (isChair && needsBoardReview && savingApproval && !boardConfirmPending) {
+      setBoardConfirmPending(true)
+      return
+    }
+    setBoardConfirmPending(false)
+    onSave(s.id, draft)
+  }
+
   function SaveBtn({ className }: { className?: string }) {
     let label: string
     if (isDirectorLevel) {
@@ -1025,14 +1044,37 @@ function SpreadsheetDetailPanel({
       label = 'Save changes'
     }
     return (
-      <button
-        onClick={() => onSave(s.id, draft)}
-        disabled={updating || !isDirty || isLocked}
-        className={`bramley-btn py-1.5 text-xs px-4 ${className ?? ''}`}
-        style={{ width: 'auto', opacity: (isDirty && canDecide) ? 1 : 0.35 }}
-      >
-        {updating ? <span className="spinner" style={{ width: 14, height: 14 }} /> : isDirty ? label : saved ? '✓ Saved' : 'No changes'}
-      </button>
+      <div className="flex flex-col gap-2">
+        {boardConfirmPending && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 space-y-2">
+            <p className="font-semibold">🏛 Board concurrence required</p>
+            <p>This improvement is flagged for board-level review before approval. Please confirm it has been discussed and agreed by the Board.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setBoardConfirmPending(false); onSave(s.id, draft) }}
+                className="bramley-btn py-1 px-3 text-xs"
+                style={{ background: '#b7770d' }}
+              >
+                Confirmed — board agreed
+              </button>
+              <button
+                onClick={() => setBoardConfirmPending(false)}
+                className="text-xs text-gray-500 hover:text-gray-700 underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={handleSaveClick}
+          disabled={updating || !isDirty || isLocked}
+          className={`bramley-btn py-1.5 text-xs px-4 ${className ?? ''}`}
+          style={{ width: 'auto', opacity: (isDirty && canDecide) ? 1 : 0.35 }}
+        >
+          {updating ? <span className="spinner" style={{ width: 14, height: 14 }} /> : isDirty ? label : saved ? '✓ Saved' : 'No changes'}
+        </button>
+      </div>
     )
   }
 
@@ -1070,6 +1112,7 @@ function SpreadsheetDetailPanel({
         {/* Flags */}
         <div className="flex gap-1 flex-wrap">
           {s.h_and_s_flag && <span className="bramley-badge text-xs bg-red-600">⚠ H&amp;S</span>}
+          {(s.cost_threshold_flag || s.suggested_owner === 'Chair of the Board') && <span className="bramley-badge text-xs" style={{ background: '#6d4c41' }}>🏛 Board review</span>}
           {s.score_band === 'in_plan' && <span className="bramley-badge text-xs" style={{ background: '#2471a3' }}>📋 In plan</span>}
           {s.quick_win_flag && <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>}
           {s.revenue_opportunity && <span className="bramley-badge text-xs" style={{ background: '#6c3483' }}>💰 Revenue</span>}

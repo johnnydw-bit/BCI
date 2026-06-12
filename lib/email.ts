@@ -384,6 +384,7 @@ export async function sendRatificationNotification(to: string[], opts: {
   confirmedCost?: number | null
   spendLimit?: number
   finalisedBySpend?: boolean
+  requiresClubManagerSignoff?: boolean
   cc?: string[]
 }) {
   if (to.length === 0 && (!opts.cc || opts.cc.length === 0)) return null
@@ -394,25 +395,32 @@ export async function sendRatificationNotification(to: string[], opts: {
 
   const fmt = (n: number) => `£${n.toLocaleString('en-GB')}`
 
-  const nextStepHtml = isPending
-    ? `<strong style="color:#b7770d">Awaiting ratification from: ${opts.nextRatifier}</strong>`
-    : opts.finalisedBySpend
-      ? `<span style="color:#1e8449">Final — cost ${opts.confirmedCost !== null && opts.confirmedCost !== undefined ? fmt(opts.confirmedCost) : 'not set'} is within ${opts.changedByRole} signoff limit (${fmt(opts.spendLimit ?? 0)}).</span>`
-      : `<span style="color:#1e8449">Final decision — no further ratification required.</span>`
+  const nextStepHtml = opts.requiresClubManagerSignoff
+    ? `<strong style="color:#b7770d">Awaiting Club Manager sign-off — all approval decisions require Club Manager confirmation</strong>`
+    : isPending
+      ? `<strong style="color:#b7770d">Awaiting ratification from: ${opts.nextRatifier}</strong>`
+      : opts.finalisedBySpend
+        ? `<span style="color:#1e8449">Final — cost ${opts.confirmedCost !== null && opts.confirmedCost !== undefined ? fmt(opts.confirmedCost) : 'not set'} is within ${opts.changedByRole} signoff limit (${fmt(opts.spendLimit ?? 0)}).</span>`
+        : `<span style="color:#1e8449">Final decision — no further ratification required.</span>`
 
   const costRow = opts.confirmedCost !== null && opts.confirmedCost !== undefined
     ? `<tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Confirmed cost</td><td style="font-family:sans-serif">${fmt(opts.confirmedCost)}${opts.spendLimit !== undefined ? ` <span style="color:#888;font-size:12px">(signoff limit: ${fmt(opts.spendLimit)})</span>` : ''}</td></tr>`
     : ''
 
-  const actionCallout = isPending
+  const actionCallout = opts.requiresClubManagerSignoff
     ? `<div style="background:#fff8e1;border-left:4px solid #f5a623;padding:12px 16px;margin:0 0 16px;border-radius:4px">
-        <p style="margin:0;font-weight:600;color:#7a4f00;font-family:sans-serif">Action required — ${opts.nextRatifier}</p>
-        <p style="margin:4px 0 0;color:#555;font-size:13px;font-family:sans-serif">Please open the triage board to review this decision and confirm or override it.</p>
+        <p style="margin:0;font-weight:600;color:#7a4f00;font-family:sans-serif">Action required — Club Manager</p>
+        <p style="margin:4px 0 0;color:#555;font-size:13px;font-family:sans-serif">The confirmed cost${opts.confirmedCost != null ? ` (£${opts.confirmedCost.toLocaleString('en-GB')})` : ''} is within the ${opts.changedByRole}&apos;s spend limit${opts.spendLimit != null ? ` (£${opts.spendLimit.toLocaleString('en-GB')})` : ''}. However, all approval decisions require Club Manager confirmation before taking effect. Please review and confirm or override.</p>
       </div>`
-    : `<div style="background:#f0faf0;border-left:4px solid #2e7d32;padding:12px 16px;margin:0 0 16px;border-radius:4px">
-        <p style="margin:0;font-weight:600;color:#1b5e20;font-family:sans-serif">Decision finalised — no action required</p>
-        <p style="margin:4px 0 0;color:#555;font-size:13px;font-family:sans-serif">This is for your information only. You may override at any time via the triage board.</p>
-      </div>`
+    : isPending
+      ? `<div style="background:#fff8e1;border-left:4px solid #f5a623;padding:12px 16px;margin:0 0 16px;border-radius:4px">
+          <p style="margin:0;font-weight:600;color:#7a4f00;font-family:sans-serif">Action required — ${opts.nextRatifier}</p>
+          <p style="margin:4px 0 0;color:#555;font-size:13px;font-family:sans-serif">Please open the triage board to review this decision and confirm or override it.</p>
+        </div>`
+      : `<div style="background:#f0faf0;border-left:4px solid #2e7d32;padding:12px 16px;margin:0 0 16px;border-radius:4px">
+          <p style="margin:0;font-weight:600;color:#1b5e20;font-family:sans-serif">Decision finalised — no action required</p>
+          <p style="margin:4px 0 0;color:#555;font-size:13px;font-family:sans-serif">This is for your information only. You may override at any time via the triage board.</p>
+        </div>`
 
   const ccNote = opts.cc && opts.cc.length > 0
     ? `<p style="color:#888;font-size:12px;font-family:sans-serif;margin:12px 0 0">Others copied on this email are receiving it for awareness only — no action is required from them.</p>`

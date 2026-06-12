@@ -289,8 +289,16 @@ export async function PATCH(req: NextRequest) {
         club_manager:        'Chair of the Board',
         chairman:            null,
       }
-      // If finalised by spend limit, no further ratification needed regardless of chain position
-      const nextRatifier = finalised ? null : (NEXT_RATIFIER[myAuthority] ?? null)
+
+      // Approval decisions by Director or Ops Manager always require Club Manager sign-off,
+      // even when spend limit is not breached — bypass the normal chain and go straight to Club Manager.
+      const isApproval = status === 'approved' || status === 'implemented'
+      const belowClubManager = myAuthority === 'director' || myAuthority === 'operations_manager'
+      const requiresClubManagerSignoff = isApproval && belowClubManager && finalised
+
+      const nextRatifier = requiresClubManagerSignoff
+        ? 'Club Manager'
+        : finalised ? null : (NEXT_RATIFIER[myAuthority] ?? null)
 
       // When pending: notify up to and including the next ratifier level.
       // When finalised: notify all senior roles (decision announcement).
@@ -352,7 +360,8 @@ export async function PATCH(req: NextRequest) {
         submissionId: id,
         confirmedCost: effectiveCost,
         spendLimit: spendLimits[myAuthority] ?? 0,
-        finalisedBySpend: finalised && myAuthority !== 'chairman',
+        finalisedBySpend: finalised && myAuthority !== 'chairman' && !requiresClubManagerSignoff,
+        requiresClubManagerSignoff,
         cc: ccRecipients,
       })
       if (recipients.length > 0) {

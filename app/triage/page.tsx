@@ -1153,9 +1153,15 @@ function SpreadsheetDetailPanel({
     onSave(s.id, draft)
   }
 
+  // Approval by Director or Ops Manager always needs Club Manager sign-off even within spend limit
+  const belowClubManager = myAuthority === 'director' || myAuthority === 'operations_manager'
+  const requiresClubManagerSignoff = savingApproval && belowClubManager && !costExceedsMyLimit
+
   function SaveBtn({ className }: { className?: string }) {
     let label: string
-    if (isDirectorLevel) {
+    if (requiresClubManagerSignoff) {
+      label = 'Approve & refer to Club Manager'
+    } else if (isDirectorLevel) {
       label = 'Flag for ratification'
     } else if (isPending && myDecisionWillFinalise) {
       label = 'Ratify & finalise'

@@ -590,7 +590,7 @@ export default function TriagePage() {
             const submitters = Array.from(new Set(
               data.submissions.map((s) => s.member_name).filter((n): n is string => !!n)
             )).sort()
-            return submitters.length > 1 ? (
+            return (
               <div className="flex items-center gap-2 flex-1 min-w-[160px]">
                 <label className="text-xs text-gray-500 shrink-0">Submitter</label>
                 <select className="bramley-input text-sm py-1.5 flex-1" value={filterSubmitter} onChange={(e) => setFilterSubmitter(e.target.value)}>
@@ -601,7 +601,7 @@ export default function TriagePage() {
                   ))}
                 </select>
               </div>
-            ) : null
+            )
           })()}
           <div className="flex items-center gap-2 flex-1 min-w-[180px]">
             <label className="text-xs text-gray-500 shrink-0">Search</label>

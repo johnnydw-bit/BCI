@@ -96,6 +96,7 @@ export async function PATCH(req: NextRequest) {
     score_override, score_override_reason,
     confirmed_target_date, confirmed_cost,
     return_email_draft,
+    ratify_only,
   } = await req.json()
 
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
@@ -116,6 +117,118 @@ export async function PATCH(req: NextRequest) {
        confirmed_target_date !== undefined || confirmed_cost !== undefined || category !== undefined) &&
       !hasDecisionAccess) {
     return NextResponse.json({ error: 'This decision has been ratified by a higher authority and cannot be changed.' }, { status: 403 })
+  }
+
+  // Ratify-only: promote decision_authority without changing status or emailing the member
+  if (ratify_only) {
+    const subRow = await sql`
+      SELECT status, decision_authority, decision_by, confirmed_cost, category
+      FROM submissions WHERE id = ${id}
+    `
+    const sub = subRow[0] as { status: string; decision_authority: string | null; decision_by: string | null; confirmed_cost: number | null; category: string | null }
+
+    // Prevent self-ratification
+    if (sub.decision_by === session.directorName) {
+      return NextResponse.json({ error: 'You cannot ratify your own decision.' }, { status: 403 })
+    }
+
+    const prevAuthority = sub.decision_authority ?? 'director'
+    const prevSpendLimit = spendLimits[prevAuthority] ?? 0
+    const cost = sub.confirmed_cost != null ? Number(sub.confirmed_cost) : null
+
+    // Determine expected next ratifier
+    const NEXT_RATIFIER_MAP: Record<string, string> = {
+      director: 'operations_manager',
+      operations_manager: 'club_manager',
+      club_manager: 'chairman',
+    }
+    const isApproval = sub.status === 'approved' || sub.status === 'implemented'
+    const prevBelowClubManager = prevAuthority === 'director' || prevAuthority === 'operations_manager'
+    const wasClubManagerSignoffCase = isApproval && prevBelowClubManager && (cost === null || cost <= prevSpendLimit)
+    const expectedNextAuthority = wasClubManagerSignoffCase ? 'club_manager' : (NEXT_RATIFIER_MAP[prevAuthority] ?? null)
+
+    if (!expectedNextAuthority || myAuthority !== expectedNextAuthority) {
+      return NextResponse.json({ error: 'You are not the expected next ratifier for this submission.' }, { status: 403 })
+    }
+
+    await sql`
+      UPDATE submissions SET decision_authority = ${myAuthority}, decision_by = ${session.directorName}
+      WHERE id = ${id}
+    `
+    await sql`
+      INSERT INTO status_log (submission_id, old_status, new_status, changed_by, note)
+      VALUES (${id}, ${sub.status}, ${sub.status}, ${session.directorName}, ${'Ratified by ' + session.directorName})
+    `
+
+    // Fire ratification notification up the chain
+    try {
+      const ROLE_AUTHORITY_MAP: Record<string, string> = {
+        'Operations Manager': 'operations_manager',
+        'Club Manager':       'club_manager',
+        'Super Admin':        'club_manager',
+        'Chair of the Board': 'chairman',
+      }
+      const AUTHORITY_LEVEL: Record<string, number> = { director: 1, operations_manager: 2, club_manager: 3, chairman: 4 }
+      const NEXT_RATIFIER_ROLE: Record<string, string | null> = {
+        director: 'Operations Manager', operations_manager: 'Club Manager',
+        club_manager: 'Chair of the Board', chairman: null,
+      }
+      const myFinalisedBySpend = isDecisionFinalised(myAuthority, cost, spendLimits)
+      const myIsApproval = sub.status === 'approved' || sub.status === 'implemented'
+      const myBelowClubManager = myAuthority === 'director' || myAuthority === 'operations_manager'
+      const myRequiresCMSignoff = myIsApproval && myBelowClubManager && myFinalisedBySpend
+      const nextRatifier = myRequiresCMSignoff ? 'Club Manager' : myFinalisedBySpend ? null : (NEXT_RATIFIER_ROLE[myAuthority] ?? null)
+
+      const allRows = await sql`SELECT name, email, role FROM director_roles WHERE active = TRUE AND email IS NOT NULL`
+      const allPeople = allRows as Array<{ name: string; email: string; role: string }>
+      const nextLevel = nextRatifier ? (AUTHORITY_LEVEL[ROLE_AUTHORITY_MAP[nextRatifier] ?? ''] ?? 99) : 99
+
+      const toRecipients = allPeople.filter(r => {
+        if (r.email === session.email) return false
+        const auth = ROLE_AUTHORITY_MAP[r.role]
+        if (!auth) return false
+        const level = AUTHORITY_LEVEL[auth] ?? 99
+        return nextRatifier ? level === (AUTHORITY_LEVEL[ROLE_AUTHORITY_MAP[nextRatifier] ?? ''] ?? -1) : level <= nextLevel
+      }).map(r => r.email)
+
+      const ccRecipients = allPeople.filter(r => {
+        if (r.email === session.email) return false
+        if (toRecipients.includes(r.email)) return false
+        if (ROLE_AUTHORITY_MAP[r.role]) return false
+        const cats = getCategoriesForRole(r.role)
+        return sub.category ? cats.includes(sub.category as never) : false
+      }).map(r => r.email)
+
+      const AUTHORITY_ROLE_LABELS: Record<string, string> = {
+        director: session.role, operations_manager: 'Operations Manager',
+        club_manager: 'Club Manager', chairman: 'Chair of the Board',
+      }
+      const statusLabel = STATUS_LABELS[sub.status] ?? sub.status
+      const ratifResendId = await sendRatificationNotification(toRecipients, {
+        description: ((await sql`SELECT description FROM submissions WHERE id = ${id}`)[0] as { description: string }).description,
+        statusLabel,
+        changedBy: session.directorName,
+        changedByRole: AUTHORITY_ROLE_LABELS[myAuthority] ?? session.role,
+        nextRatifier,
+        submissionId: id,
+        confirmedCost: cost,
+        spendLimit: spendLimits[myAuthority] ?? 0,
+        finalisedBySpend: myFinalisedBySpend && myAuthority !== 'chairman' && !myRequiresCMSignoff,
+        requiresClubManagerSignoff: myRequiresCMSignoff,
+        cc: ccRecipients,
+      })
+      const recipients = [...toRecipients, ...ccRecipients]
+      if (recipients.length > 0) {
+        await sql`
+          INSERT INTO notification_log (submission_id, type, recipients, resend_id)
+          VALUES (${id}, 'ratification', ${recipients.join(', ')}, ${ratifResendId ?? null})
+        `
+      }
+    } catch (e) {
+      console.error('[triage PATCH] Failed to send ratification notification after ratify_only:', e)
+    }
+
+    return NextResponse.json({ ok: true, spendLimits })
   }
 
   if (suggested_owner !== undefined) {

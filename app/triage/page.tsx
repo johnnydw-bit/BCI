@@ -688,6 +688,28 @@ export default function TriagePage() {
                   const found = data.submissions.find(x => x.id === id)
                   if (found) setPriorPopup({ id: found.id, description: found.description, ai_narrative: found.ai_narrative, notes: found.notes, score: found.score, created_at: found.created_at, status: found.status })
                 }}
+                directorName={data.directorName}
+                onRatify={async (id) => {
+                  setUpdating(id)
+                  await fetch('/api/triage', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, ratify_only: true }),
+                  })
+                  setAuditLog((a) => { const n = { ...a }; delete n[id]; return n })
+                  fetchAuditLog(id)
+                  setData((d) => d ? {
+                    ...d,
+                    submissions: d.submissions.map((s) => s.id === id ? {
+                      ...s,
+                      decision_authority: roleToAuthority(d.role),
+                      decision_by: d.directorName,
+                    } : s),
+                  } : d)
+                  setUpdating(null)
+                  setSavedId(id)
+                  setTimeout(() => setSavedId(null), 2500)
+                }}
               />
             )
           })()}
@@ -1055,7 +1077,7 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function SpreadsheetDetailPanel({
-  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits, previewEmail, onTogglePreviewEmail, allSubmissions, onShowPrior,
+  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits, previewEmail, onTogglePreviewEmail, allSubmissions, onShowPrior, directorName, onRatify,
 }: {
   s: Submission
   isManager: boolean
@@ -1074,6 +1096,8 @@ function SpreadsheetDetailPanel({
   onTogglePreviewEmail: (v: boolean) => void
   allSubmissions: Submission[]
   onShowPrior: (id: number) => void
+  directorName: string
+  onRatify: (id: number) => void
 }) {
   useEffect(() => { onOpen() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1156,6 +1180,22 @@ function SpreadsheetDetailPanel({
   // Approval by Director or Ops Manager always needs Club Manager sign-off even within spend limit
   const belowClubManager = myAuthority === 'director' || myAuthority === 'operations_manager'
   const requiresClubManagerSignoff = savingApproval && belowClubManager && !costExceedsMyLimit
+
+  // Ratify button logic — show when this user is the expected next ratifier and didn't make the original decision
+  const NEXT_RATIFIER_AUTHORITY: Record<string, string> = {
+    director: 'operations_manager', operations_manager: 'club_manager',
+    club_manager: 'chairman', chairman: '',
+  }
+  const existingCost = s.confirmed_cost != null ? Number(s.confirmed_cost) : null
+  const existingDecisionFinalised = isDecisionFinalised(s.decision_authority, existingCost, spendLimits)
+  const existingIsApproval = s.status === 'approved' || s.status === 'implemented'
+  const existingBelowCM = s.decision_authority === 'director' || s.decision_authority === 'operations_manager'
+  const existingRequiresCMSignoff = existingIsApproval && existingBelowCM && existingDecisionFinalised
+  const expectedNextAuthority = s.decision_authority
+    ? (existingRequiresCMSignoff ? 'club_manager' : NEXT_RATIFIER_AUTHORITY[s.decision_authority])
+    : null
+  const awaitingRatification = (isPending || existingRequiresCMSignoff) && !!s.decision_authority
+  const canRatify = awaitingRatification && myAuthority === expectedNextAuthority && s.decision_by !== directorName
 
   function SaveBtn({ className }: { className?: string }) {
     let label: string
@@ -1413,6 +1453,23 @@ function SpreadsheetDetailPanel({
             />
             Auto-send without reviewing
           </label>
+
+          {canRatify && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-xs space-y-2">
+              <p className="font-semibold text-green-800">✓ Ready to ratify</p>
+              <p className="text-green-700">
+                This decision was made by {s.decision_by}. As the next authority in the chain, you can ratify it to {existingRequiresCMSignoff ? 'confirm the approval' : 'pass it up for final sign-off'}.
+              </p>
+              <button
+                onClick={() => onRatify(s.id)}
+                disabled={!!updating}
+                className="bramley-btn py-1.5 px-4 text-xs"
+                style={{ background: '#1e8449', width: 'auto' }}
+              >
+                {updating ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Ratify this decision'}
+              </button>
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-1">
             <SaveBtn />

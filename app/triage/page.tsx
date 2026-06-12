@@ -594,7 +594,7 @@ export default function TriagePage() {
               <div className="flex items-center gap-2 flex-1 min-w-[160px]">
                 <label className="text-xs text-gray-500 shrink-0">Submitter</label>
                 <select className="bramley-input text-sm py-1.5 flex-1" value={filterSubmitter} onChange={(e) => setFilterSubmitter(e.target.value)}>
-                  <option value="all">All members</option>
+                  <option value="all">All submissions</option>
                   <option value="__mine__">My suggestions</option>
                   {submitters.map((n) => (
                     <option key={n} value={n}>{n}</option>

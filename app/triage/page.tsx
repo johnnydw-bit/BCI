@@ -1422,13 +1422,26 @@ function SpreadsheetDetailPanel({
               {draft.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
             </label>
             <div className="flex gap-1 items-center flex-wrap">
-              <input type="date" className="bramley-input text-sm py-1.5 w-36" value={draft.confirmed_target_date} onChange={(e) => setDraft(d => ({ ...d, confirmed_target_date: e.target.value }))} disabled={updating || isLocked} />
-              {draft.confirmed_target_date && !isLocked && <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
+              {myRole === 'Chair of the Board' || myRole === 'Super Admin' ? (
+                <>
+                  <input type="date" className="bramley-input text-sm py-1.5 w-36" value={draft.confirmed_target_date} onChange={(e) => setDraft(d => ({ ...d, confirmed_target_date: e.target.value }))} disabled={updating || isLocked} />
+                  {draft.confirmed_target_date && !isLocked && <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
+                </>
+              ) : (
+                <span className="text-sm text-gray-500">
+                  {draft.confirmed_target_date
+                    ? new Date(draft.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : <span className="text-gray-400 italic text-xs">Set by Chair of the Board</span>}
+                </span>
+              )}
             </div>
-            {aiDate && !draft.confirmed_target_date && !isLocked && (
+            {aiDate && !draft.confirmed_target_date && (myRole === 'Chair of the Board' || myRole === 'Super Admin') && !isLocked && (
               <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: aiDate }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
                 Use AI estimate ({new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
               </button>
+            )}
+            {aiDate && !draft.confirmed_target_date && myRole !== 'Chair of the Board' && myRole !== 'Super Admin' && (
+              <p className="text-xs text-gray-400 mt-1">AI estimate: {new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} (for reference)</p>
             )}
           </div>
 

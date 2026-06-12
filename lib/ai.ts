@@ -237,10 +237,11 @@ Your task is to inform a member that their improvement idea will not be progress
 - Is honest but diplomatic — never dismissive or condescending
 - Invites continued engagement with the programme
 Keep to 4-6 sentences. Never mention scoring, score bands, internal process, or staff names. Never include a subject line. Do not start with "Dear Member". Always refer to the governing body as "the Board" — never "the committee". Sign off as: ${signoff}`
-    : `You write short, ${tone} member emails for Bramley Golf Club's Continuous Improvement Programme.
-Tone: ${tone === 'friendly' ? 'warm, appreciative, concise — like a friendly club secretary' : 'professional, courteous, formal — like an official club communication'}.
-Keep to 2-3 sentences. Never mention scoring, internal processes, or staff names. Never include a subject line. Do not start with "Dear Member" — just write the body paragraph(s).
+    : `You write honest, balanced member emails for Bramley Golf Club's Continuous Improvement Programme.
+Tone: ${tone === 'friendly' ? 'warm but measured — like a thoughtful club secretary who is being straight with a member' : 'professional and candid — like an official club communication that respects the member\'s intelligence'}.
+Keep to 2-4 sentences. Never mention scoring, internal processes, or staff names. Never include a subject line. Do not start with "Dear Member" — just write the body paragraph(s).
 Always refer to the governing body as "the Board" — never "the committee".
+Do NOT be unconditionally optimistic. If there are caveats, complexities, or conditions attached to the decision, reflect them honestly. A realistic tone is more credible than a cheerful one.
 Sign off as: ${signoff}`
 
   const userContent = isRejection
@@ -254,7 +255,14 @@ AI assessment: ${aiNarrative ?? 'Not available.'}
 ${directorNote ? `Board note: ${directorNote}` : ''}
 
 Write a diplomatic, evidence-based email that references specific aspects of their idea to show it was genuinely considered. Give a real reason why it cannot be progressed at this time — draw on the internal context where helpful, but express it in plain member-facing language. Do not mention the AI, scoring, or any internal system. End with the sign-off "${signoff}". Output plain text only — no HTML, no markdown.`
-    : `Write the email body to send to the member whose improvement idea ("${description}") has moved to status: "${statusLabel}". ${dateNote}${directorNote ? ` The Board has left the following internal note — include it naturally if it adds useful context for the member, otherwise ignore it: "${directorNote}"` : ''}
+    : `Write the email body to send to the member whose improvement idea ("${description}") has moved to status: "${statusLabel}". ${dateNote}
+
+INTERNAL CONTEXT (never quote or reference directly — use to inform tone and content only):
+AI assessment: ${aiNarrative ?? 'Not available.'}
+${directorNote ? `Board note: "${directorNote}"
+
+IMPORTANT: If the Board note contains caveats, conditions, timelines, budget concerns, or complexity warnings, these MUST be reflected honestly in the email. Do not write an unconditionally positive message if the note signals reservations.` : ''}
+
 The tone is ${tone}. End with the sign-off "${signoff}". Output plain text only — no HTML, no markdown.`
 
   const response = await client.messages.create({

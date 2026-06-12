@@ -179,6 +179,7 @@ export interface ScoringResult {
   revenueOpportunity: boolean
   revenueNote: string | null
   memberNarrative: string | null
+  priorRejections: number[]
 }
 
 export interface ScoringWeights {
@@ -278,7 +279,8 @@ export async function scoreBatch(
     impact: number
     categoryCeiling: number
   }>,
-  weights: ScoringWeights = DEFAULT_WEIGHTS
+  weights: ScoringWeights = DEFAULT_WEIGHTS,
+  priorRejected: Array<{ id: number; description: string; category: string; rejected_at: string }> = []
 ): Promise<ScoringResult[]> {
   if (submissions.length === 0) return []
 
@@ -345,9 +347,14 @@ In revenue_note, briefly explain the income mechanism (e.g. "Pay-and-play visito
 Return false and null if there is no direct revenue upside.`,
     messages: [{
       role: 'user',
-      content: `Score these ${submissions.length} improvement(s), estimate costs and implementation time, and detect clusters.
+      content: `Score these ${submissions.length} improvement(s), estimate costs and implementation time, detect clusters, and check for similarity to previously not-progressed submissions.
 
 ${submissionsText}
+
+${priorRejected.length > 0 ? `PREVIOUSLY NOT-PROGRESSED SUBMISSIONS (for reference — check each new submission against these):
+${priorRejected.map(p => `[PRIOR:${p.id}] ${new Date(p.rejected_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} | ${p.category} | ${p.description}`).join('\n')}
+
+For each new submission, identify any prior submissions that are substantially the same improvement idea (same specific ask, not just same broad area). Only match when the core request is essentially identical — not merely related. Return matched prior IDs in prior_rejections. If a match exists, reference it naturally in ai_narrative: e.g. "A similar proposal (CIP-XXXX) was not progressed in [month/year] — the Board may wish to consider whether circumstances have changed." Do not mention prior submissions if prior_rejections is empty.` : ''}
 
 COST ESTIMATION GUIDANCE (Bramley Golf Club scale — private members club, ~500-800 members):
 - Estimate realistic £ costs for a UK private members golf club
@@ -389,6 +396,7 @@ Return a JSON array with one object per improvement in the same order:
     "seasonal_window": "<description or null>",
     "revenue_opportunity": true/false,
     "revenue_note": "<brief explanation or null>",
+    "prior_rejections": [<array of matching PRIOR submission IDs, empty array if none>],
     "member_narrative": "<A short personalised response written directly to the member in plain, warm English — structured as follows (use exactly these labels and a blank line between sections):\n\nOpening: one sentence genuinely acknowledging their idea.\n\nPros:\n• [strength 1]\n• [strength 2 if applicable]\n\nThings to consider:\n• [challenge or constraint 1]\n• [challenge or constraint 2 if applicable]\n\nClosing: one sentence setting realistic expectations about next steps.\n\nRules: never mention scores, bands, ceilings, multipliers, weights, or internal process. Never reference the member's self-assessed impact score or any scoring dimension. Always refer to the governing body as "the Board" — never "the committee". Write as if a thoughtful club official is speaking directly to the member. Keep bullet points concise — one line each.\n\nFOOD & BEVERAGE RULE: If the submission category is restaurant, bar, or refreshments, the 'Things to consider' section MUST address all three of the following where relevant — volume (whether demand is sufficient to justify the change), profitability (margin and pricing implications), and wastage (food waste, over-ordering, or spoilage risk). These are the key operational realities the club must weigh for any F&B change.>"
   }
 ]`,
@@ -419,6 +427,7 @@ Return a JSON array with one object per improvement in the same order:
     seasonal_window: string | null
     revenue_opportunity: boolean
     revenue_note: string | null
+    prior_rejections: number[]
     member_narrative: string | null
   }>
   try {
@@ -477,6 +486,7 @@ Return a JSON array with one object per improvement in the same order:
       revenueOpportunity: r.revenue_opportunity ?? false,
       revenueNote: r.revenue_note ?? null,
       memberNarrative: r.member_narrative ?? null,
+      priorRejections: r.prior_rejections ?? [],
     }
   })
 }

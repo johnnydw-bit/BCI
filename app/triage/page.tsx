@@ -53,6 +53,7 @@ interface Submission {
   confirmed_cost: number | null
   decision_authority: string | null
   decision_by: string | null
+  related_submission_ids: number[]
 }
 
 interface AuditEntry {
@@ -195,6 +196,10 @@ export default function TriagePage() {
   } | null>(null)
   const [emailDraftBody, setEmailDraftBody] = useState<string>('')
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [priorPopup, setPriorPopup] = useState<{
+    id: number; description: string; ai_narrative: string | null
+    notes: string | null; score: number | null; created_at: string; status: string
+  } | null>(null)
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
 
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
@@ -446,6 +451,38 @@ export default function TriagePage() {
         </div>
       )}
 
+      {/* Prior submission popup */}
+      {priorPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setPriorPopup(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col gap-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-gray-800">{cipRef(priorPopup.id)} — Previously not progressed</p>
+                <p className="text-xs text-gray-400 mt-0.5">{new Date(priorPopup.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              </div>
+              <button onClick={() => setPriorPopup(null)} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-800">{priorPopup.description}</div>
+            {priorPopup.ai_narrative && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">AI assessment</p>
+                <p className="text-xs text-gray-600 leading-relaxed">{priorPopup.ai_narrative}</p>
+              </div>
+            )}
+            {priorPopup.notes && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Board notes</p>
+                <p className="text-xs text-gray-600 leading-relaxed">{priorPopup.notes}</p>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-100">
+              {priorPopup.score != null && <span>Score: {Number(priorPopup.score).toFixed(1)}</span>}
+              <span className="capitalize">{priorPopup.status.replace('_', ' ')}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Email preview modal */}
       {emailDraftModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -645,6 +682,11 @@ export default function TriagePage() {
                 onTogglePreviewEmail={(v) => {
                   setPreviewEmail(v)
                   localStorage.setItem('bci_preview_email', v ? 'true' : 'false')
+                }}
+                allSubmissions={data.submissions}
+                onShowPrior={(id) => {
+                  const found = data.submissions.find(x => x.id === id)
+                  if (found) setPriorPopup({ id: found.id, description: found.description, ai_narrative: found.ai_narrative, notes: found.notes, score: found.score, created_at: found.created_at, status: found.status })
                 }}
               />
             )
@@ -1013,7 +1055,7 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function SpreadsheetDetailPanel({
-  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits, previewEmail, onTogglePreviewEmail,
+  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits, previewEmail, onTogglePreviewEmail, allSubmissions, onShowPrior,
 }: {
   s: Submission
   isManager: boolean
@@ -1030,6 +1072,8 @@ function SpreadsheetDetailPanel({
   spendLimits: Record<string, number>
   previewEmail: boolean
   onTogglePreviewEmail: (v: boolean) => void
+  allSubmissions: Submission[]
+  onShowPrior: (id: number) => void
 }) {
   useEffect(() => { onOpen() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1175,6 +1219,28 @@ function SpreadsheetDetailPanel({
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
           </div>
         </div>
+
+        {/* Prior decisions callout */}
+        {s.related_submission_ids?.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs space-y-1.5">
+            <p className="font-semibold text-amber-800">⚠ Similar to a previously not-progressed submission</p>
+            <p className="text-amber-700">The Board may wish to consider whether circumstances have changed.</p>
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {s.related_submission_ids.map(rid => {
+                const prior = allSubmissions.find(x => x.id === rid)
+                return (
+                  <button
+                    key={rid}
+                    onClick={() => onShowPrior(rid)}
+                    className="font-mono text-xs bg-white border border-amber-300 text-amber-800 rounded px-2 py-0.5 hover:bg-amber-100"
+                  >
+                    {cipRef(rid)}{prior ? ` · ${prior.description.slice(0, 30)}…` : ''}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Improvement text */}
         <div>

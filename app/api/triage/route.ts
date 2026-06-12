@@ -59,6 +59,7 @@ export async function GET() {
       s.seasonal_window, s.revenue_opportunity, s.revenue_note,
       s.notes, s.score_override, s.score_override_reason, s.score_override_by,
       s.confirmed_cost, s.decision_authority, s.decision_by,
+      COALESCE(s.related_submission_ids, '{}') AS related_submission_ids,
       c.theme AS cluster_theme, c.size AS cluster_size,
       (d.email IS NOT NULL) AS from_board
     FROM submissions s

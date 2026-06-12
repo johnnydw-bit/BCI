@@ -125,7 +125,21 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
     categoryCeiling: ceilingMap[s.category] ?? CATEGORIES.find((c) => c.value === s.category)?.ceiling ?? 10,
   }))
 
-  const freshResults: ScoringResult[] = scoringInput.length > 0 ? await scoreBatch(scoringInput, weights) : []
+  // Fetch prior not-progressed submissions as context for similarity detection
+  // Cap at 100 most recent to keep prompt size manageable
+  const priorRejectedRows = await sql`
+    SELECT id, description, category, scored_at AS rejected_at
+    FROM submissions
+    WHERE status = 'rejected'
+      AND scored_at IS NOT NULL
+      AND deleted_at IS NULL
+      AND withdrawn_at IS NULL
+    ORDER BY scored_at DESC
+    LIMIT 100
+  `
+  const priorRejected = priorRejectedRows as Array<{ id: number; description: string; category: string; rejected_at: string }>
+
+  const freshResults: ScoringResult[] = scoringInput.length > 0 ? await scoreBatch(scoringInput, weights, priorRejected) : []
 
   // Reconstruct ScoringResult shape for pre-assessed submissions so clustering logic is unified
   const preAssessedResults: ScoringResult[] = preAssessed.map((s) => ({
@@ -154,6 +168,7 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
     clusterTheme: undefined,
     alreadyInPlan: false,
     memberNarrative: null,
+    priorRejections: [],
   }))
 
   const results: ScoringResult[] = [...freshResults, ...preAssessedResults]
@@ -262,7 +277,8 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
         revenue_opportunity     = ${r.revenueOpportunity},
         revenue_note            = ${r.revenueNote},
         scored_at               = NOW(),
-        status                  = CASE WHEN ${r.alreadyInPlan} THEN 'rejected' ELSE status END
+        status                  = CASE WHEN ${r.alreadyInPlan} THEN 'rejected' ELSE status END,
+        related_submission_ids  = ${r.priorRejections.length > 0 ? JSON.stringify(r.priorRejections) : '{}'}::integer[]
       WHERE id = ${r.submissionId}
     `
 

@@ -233,6 +233,7 @@ export async function initDb() {
   // Ratification hierarchy
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS decision_authority TEXT`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS decision_by TEXT`
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS related_submission_ids INTEGER[] NOT NULL DEFAULT '{}'`
 
   // Login rate limiting
   await sql`

@@ -323,20 +323,28 @@ export async function PATCH(req: NextRequest) {
       : existingConfirmedCost
     const finalised = isDecisionFinalised(myAuthority, effectiveCost, spendLimits)
 
+    // Detect reversal: moving back from an approved/planned state to an open or negative state
+    const wasApproved = oldStatus === 'approved' || oldStatus === 'in_plan'
+    const isOpenStatus = status === 'new' || status === 'under_consideration'
+    const isReversal = wasApproved && isOpenStatus
+    const isCancellation = wasApproved && status === 'rejected'
+
+    // On reversal to an open status, clear decision fields so the chain can start fresh.
+    // On cancellation (→ rejected) keep the actor as decision authority.
     await sql`
       UPDATE submissions
       SET status = ${status},
           confirmed_target_date = COALESCE(${confirmed_target_date || null}, confirmed_target_date),
-          decision_authority = ${myAuthority},
-          decision_by = ${session.directorName}
+          decision_authority = ${isReversal ? null : myAuthority},
+          decision_by = ${isReversal ? null : session.directorName}
       WHERE id = ${id}
     `
-    const spendNote = !finalised && effectiveCost !== null
-      ? ` (cost £${effectiveCost.toLocaleString()} exceeds signoff limit — pending ratification)`
-      : ''
+    const reversalNote = isReversal ? 'Approval reversed — returned for reconsideration'
+      : isCancellation ? 'Approval cancelled — marked not progressed'
+      : (!finalised && effectiveCost !== null ? ` (cost £${effectiveCost.toLocaleString()} exceeds signoff limit — pending ratification)` : '')
     if (status !== oldStatus) await sql`
       INSERT INTO status_log (submission_id, old_status, new_status, changed_by, note)
-      VALUES (${id}, ${oldStatus}, ${status}, ${session.directorName}, ${spendNote || null})
+      VALUES (${id}, ${oldStatus}, ${status}, ${session.directorName}, ${reversalNote || null})
     `
 
     // Generate and send (or return as draft) AI email to member

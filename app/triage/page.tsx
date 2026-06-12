@@ -1118,6 +1118,7 @@ function SpreadsheetDetailPanel({
     notes: s.notes ?? '',
   })
   const [boardConfirmPending, setBoardConfirmPending] = useState(false)
+  const [reversalConfirmPending, setReversalConfirmPending] = useState(false)
 
   // Reset draft when a different submission is selected
   useEffect(() => {
@@ -1176,12 +1177,22 @@ function SpreadsheetDetailPanel({
   const isChair = myAuthority === 'chairman'
   const savingApproval = draft.status === 'approved' || draft.status === 'implemented'
 
+  const wasApproved = s.status === 'approved' || s.status === 'in_plan'
+  const isDowngrade = wasApproved && (draft.status === 'new' || draft.status === 'under_consideration')
+  const isCancellation = wasApproved && draft.status === 'rejected'
+  const isReversal = isDowngrade || isCancellation
+
   function handleSaveClick() {
+    if (isReversal && !reversalConfirmPending) {
+      setReversalConfirmPending(true)
+      return
+    }
     if (isChair && needsBoardReview && savingApproval && !boardConfirmPending) {
       setBoardConfirmPending(true)
       return
     }
     setBoardConfirmPending(false)
+    setReversalConfirmPending(false)
     onSave(s.id, draft)
   }
 
@@ -1222,6 +1233,30 @@ function SpreadsheetDetailPanel({
     }
     return (
       <div className="flex flex-col gap-2">
+        {reversalConfirmPending && (
+          <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-xs text-red-900 space-y-2">
+            <p className="font-semibold">⚠ Reversing an approved decision</p>
+            <p>{isDowngrade
+              ? 'This submission has been approved. Returning it for reconsideration will clear the existing decision and allow the chain to re-evaluate.'
+              : 'This submission has been approved. Marking it as Not Progressed will cancel the approval.'
+            } Are you sure?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setReversalConfirmPending(false); onSave(s.id, draft) }}
+                className="bramley-btn py-1 px-3 text-xs"
+                style={{ background: '#b91c1c' }}
+              >
+                {isDowngrade ? 'Yes, return for reconsideration' : 'Yes, cancel approval'}
+              </button>
+              <button
+                onClick={() => setReversalConfirmPending(false)}
+                className="text-xs text-gray-500 hover:text-gray-700 underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         {boardConfirmPending && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 space-y-2">
             <p className="font-semibold">🏛 Board concurrence required</p>

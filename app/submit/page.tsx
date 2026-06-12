@@ -147,6 +147,13 @@ export default function SubmitPage() {
             <p className="text-amber-800 text-sm">{message}</p>
           </div>
           <button onClick={() => setStep('form')} className="bramley-btn">Try again</button>
+          {sessionType === 'member' && (
+            <button onClick={() => router.push('/my-improvements')} className="bramley-btn-secondary">View my improvements</button>
+          )}
+          {sessionType === 'director' && (
+            <button onClick={() => router.push('/triage')} className="bramley-btn-secondary">Back to triage</button>
+          )}
+          <button onClick={handleLogout} className="text-sm text-gray-400 w-full py-2 hover:text-gray-600">Sign out</button>
         </div>
       </div></div>
     )

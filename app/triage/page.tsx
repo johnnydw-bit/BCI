@@ -185,6 +185,7 @@ export default function TriagePage() {
   const [filterFlag, setFilterFlag] = useState<string>('all')
   const [filterOwner, setFilterOwner] = useState<string>('all')
   const [filterSubmitter, setFilterSubmitter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
 
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
@@ -329,6 +330,7 @@ export default function TriagePage() {
   const triageItems = data.submissions.filter((s) => !s.moderation_reason)
 
   function applyFilters(items: Submission[]) {
+    const q = searchQuery.trim().toLowerCase()
     return items.filter((s) => {
       if (filterCategory !== 'all' && s.category !== filterCategory) return false
       if (filterStatus !== 'all' && s.status !== filterStatus) return false
@@ -341,6 +343,13 @@ export default function TriagePage() {
       if (filterOwner === 'board_members' && !s.from_board) return false
       if (filterOwner !== 'all' && filterOwner !== 'board_members' && s.suggested_owner !== filterOwner) return false
       if (filterSubmitter !== 'all' && s.member_name !== filterSubmitter) return false
+      if (q) {
+        const ref = cipRef(s.id).toLowerCase()
+        const numStr = String(s.id)
+        const desc = (s.description ?? '').toLowerCase()
+        const name = (s.member_name ?? '').toLowerCase()
+        if (!ref.includes(q) && !numStr.includes(q) && !desc.includes(q) && !name.includes(q)) return false
+      }
       return true
     })
   }
@@ -482,6 +491,16 @@ export default function TriagePage() {
               </div>
             ) : null
           })()}
+          <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+            <label className="text-xs text-gray-500 shrink-0">Search</label>
+            <input
+              type="text"
+              className="bramley-input text-sm py-1.5 flex-1"
+              placeholder="CIP-0006, keyword…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
           <div className="flex items-center gap-2">
             <label className="text-xs text-gray-500 shrink-0">Sort</label>
             <div className="flex rounded-[8px] overflow-hidden border border-gray-200">

@@ -28,9 +28,9 @@ export const STATUS_LABELS: Record<string, string> = {
   new:                 'Awaiting Decision',
   under_consideration: 'Under Consideration',
   approved:            'Approved',
+  in_plan:             'In Plan',
   implemented:         'Implemented',
   rejected:            'Not Progressed',
-  in_plan:             'In Plan',
   withdrawn:           'Withdrawn',
 }
 

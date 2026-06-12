@@ -447,40 +447,6 @@ export default function AdminPage() {
             })}
           </div>
 
-          {/* Spend limits */}
-          <div className="bramley-card overflow-hidden p-0">
-            <div className="px-3 py-2 border-b border-gray-200" style={{ background: 'var(--bramley-primary)' }}>
-              <p className="text-xs font-semibold text-white">Decision Spend Limits</p>
-              <p className="text-xs text-white opacity-60 mt-0.5">Maximum cost each authority level can approve without escalating</p>
-            </div>
-            <table className="w-full text-sm border-collapse">
-              <tbody>
-                {([
-                  ['SPEND_LIMIT_DIRECTOR',           'Director'],
-                  ['SPEND_LIMIT_OPERATIONS_MANAGER', 'Operations Manager'],
-                  ['SPEND_LIMIT_CLUB_MANAGER',       'Club Manager'],
-                  ['SPEND_LIMIT_CHAIRMAN',           'Chair of the Board'],
-                ] as [string, string][]).map(([key, label], i) => (
-                  <tr key={key} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-3 py-2 text-gray-600 w-48">{label}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-400">£</span>
-                        <input
-                          type="number" min={0} step={500}
-                          className="bramley-input !w-32 py-1 text-sm"
-                          value={configValue(key) || ''}
-                          onChange={(e) => handleEdit(key, e.target.value)}
-                          placeholder="e.g. 5000"
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
           {/* Save bar */}
           <div className="bramley-card flex items-center gap-3 py-3 px-4">
             <button onClick={saveConfig} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={saving || Object.keys(edits).length === 0}>

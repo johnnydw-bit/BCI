@@ -175,6 +175,8 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  let emailDraft: { to: string; subject: string; body: string; memberName: string | null; description: string; statusLabel: string } | null = null
+
   if (status) {
     const validStatuses = ['new', 'under_consideration', 'approved', 'implemented', 'rejected', 'in_plan']
     if (!validStatuses.includes(status)) {
@@ -224,7 +226,6 @@ export async function PATCH(req: NextRequest) {
     `
 
     // Generate and send (or return as draft) AI email to member
-    let emailDraft: { to: string; subject: string; body: string; memberName: string | null; description: string; statusLabel: string } | null = null
     if (row?.member_email && !row.email_opt_out) {
       try {
         const configRows = await sql`SELECT key, value FROM config WHERE key IN ('COMMS_TONE', 'COMMS_SIGNOFF')`

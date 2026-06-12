@@ -661,7 +661,11 @@ export default function TriagePage() {
               spendLimits={data.spendLimits ?? DEFAULT_SPEND_LIMITS}
             />
             {urgent.length === 0 && normal.length === 0 && (
-              <p className="text-center text-gray-500 py-12 text-sm">No improvements to triage.</p>
+              <p className="text-center text-gray-500 py-12 text-sm">
+                {searchQuery.trim()
+                  ? <>No results for <span className="font-mono">{searchQuery.trim()}</span> — it may be in a category you cannot access.</>
+                  : 'No improvements to triage.'}
+              </p>
             )}
           </div>
           {sidePanelId != null && (() => {

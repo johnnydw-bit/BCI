@@ -661,6 +661,35 @@ export default function AdminPage() {
                   />
                 </div>
               </div>
+              <div className="rounded-[8px] border border-gray-100 bg-gray-50 p-4 space-y-3">
+                <div>
+                  <h3 className="font-semibold text-gray-800 text-sm mb-0.5">Decision spend limits (£)</h3>
+                  <p className="text-xs text-gray-500">Maximum confirmed cost each authority level can approve without escalating to the next level in the ratification chain.</p>
+                </div>
+                {([
+                  ['SPEND_LIMIT_DIRECTOR',           'Director'],
+                  ['SPEND_LIMIT_OPERATIONS_MANAGER', 'Operations Manager'],
+                  ['SPEND_LIMIT_CLUB_MANAGER',       'Club Manager'],
+                  ['SPEND_LIMIT_CHAIRMAN',           'Chair of the Board'],
+                ] as [string, string][]).map(([key, label]) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <label className="text-sm text-gray-600 w-48 shrink-0">{label}</label>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-gray-400 text-sm">£</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={500}
+                        className="bramley-input !w-32 py-1.5 text-sm"
+                        value={configValue(key) || ''}
+                        onChange={(e) => handleEdit(key, e.target.value)}
+                        placeholder="e.g. 5000"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div className="flex items-center gap-3">
                 <button onClick={saveConfig} style={{ width: 'auto' }} className="bramley-btn px-8 py-2.5 text-sm" disabled={saving || Object.keys(edits).length === 0}>
                   {saving ? <span className="spinner" /> : 'Save changes'}

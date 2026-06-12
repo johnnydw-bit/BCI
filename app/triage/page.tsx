@@ -367,11 +367,13 @@ export default function TriagePage() {
       if (filterSubmitter === '__mine__' && s.member_name !== data.directorName) return false
       if (filterSubmitter !== 'all' && filterSubmitter !== '__mine__' && s.member_name !== filterSubmitter) return false
       if (q) {
-        const ref = cipRef(s.id).toLowerCase()
-        const numStr = String(s.id)
+        const ref = cipRef(s.id).toLowerCase()          // e.g. "cip-0006"
+        const numStr = String(s.id)                     // e.g. "6"
+        // strip "cip-" prefix so "CIP-6" matches "cip-0006" via numeric comparison
+        const qNum = q.replace(/^cip-0*/, '')
         const desc = (s.description ?? '').toLowerCase()
         const name = (s.member_name ?? '').toLowerCase()
-        if (!ref.includes(q) && !numStr.includes(q) && !desc.includes(q) && !name.includes(q)) return false
+        if (!ref.includes(q) && !numStr.includes(q) && !(qNum && numStr === qNum) && !desc.includes(q) && !name.includes(q)) return false
       }
       return true
     })

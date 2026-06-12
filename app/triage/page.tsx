@@ -1466,7 +1466,7 @@ function SpreadsheetDetailPanel({
                 <span className="text-sm text-gray-500">
                   {draft.confirmed_target_date
                     ? new Date(draft.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : <span className="text-gray-400 italic text-xs">Set by Chair of the Board</span>}
+                    : <span className="text-gray-400 italic text-xs">Set by Club Manager or Chair</span>}
                 </span>
               )}
             </div>

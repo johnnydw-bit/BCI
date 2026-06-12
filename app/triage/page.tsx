@@ -364,7 +364,8 @@ export default function TriagePage() {
       if (filterFlag === 'cost_threshold' && !s.cost_threshold_flag) return false
       if (filterOwner === 'board_members' && !s.from_board) return false
       if (filterOwner !== 'all' && filterOwner !== 'board_members' && s.suggested_owner !== filterOwner) return false
-      if (filterSubmitter !== 'all' && s.member_name !== filterSubmitter) return false
+      if (filterSubmitter === '__mine__' && s.member_name !== data.directorName) return false
+      if (filterSubmitter !== 'all' && filterSubmitter !== '__mine__' && s.member_name !== filterSubmitter) return false
       if (q) {
         const ref = cipRef(s.id).toLowerCase()
         const numStr = String(s.id)
@@ -595,6 +596,7 @@ export default function TriagePage() {
                 <label className="text-xs text-gray-500 shrink-0">Submitter</label>
                 <select className="bramley-input text-sm py-1.5 flex-1" value={filterSubmitter} onChange={(e) => setFilterSubmitter(e.target.value)}>
                   <option value="all">All members</option>
+                  <option value="__mine__">My suggestions</option>
                   {submitters.map((n) => (
                     <option key={n} value={n}>{n}</option>
                   ))}

@@ -1,7 +1,7 @@
 # Bramley Golf Club — Continuous Improvement Programme
 ## Board & Director Guide
 
-*Version 1.1 — June 2026*
+*Version 1.2 — June 2026*
 
 ---
 
@@ -206,6 +206,10 @@ When multiple submissions address the same specific issue, they are grouped into
 
 ## 7. Filters and sorting
 
+### Search
+
+The search box filters by **CIP number** (e.g. `CIP-0042` or just `42`), submission description, or member name. Results update as you type.
+
 ### Category filter
 
 Filters by area of the club. Club Managers and Super Admins (who see all categories) can filter to a single area.
@@ -223,6 +227,7 @@ Filters by special attributes:
 - 🔁 Recurring themes
 - 📋 In Plan
 - £ Cost threshold (above Board escalation level)
+- 🏛 Board review required
 
 ### Owner filter
 
@@ -245,31 +250,54 @@ All directors can access the Board Decision section in the sidebar for submissio
 
 | Role | Can act | Effect |
 |---|---|---|
-| **Director** | Recommend | Flagged ⏳ Awaiting ratification |
-| **Operations Manager** | Ratify or override | Confirmed at ops level |
+| **Director** | Recommend | Pending ratification by Operations Manager |
+| **Operations Manager** | Ratify or override | Confirmed at ops level; routed to Club Manager |
 | **Club Manager** | Ratify or override | Confirmed at manager level |
 | **Chair of the Board** | Final decision | Cannot be overridden |
 
 Once a higher authority has acted, lower roles cannot change the decision. The section becomes read-only with a note showing who set the decision.
 
+### Spend limits and when ratification is required
+
+Each authority level has a **spend limit** — the maximum confirmed cost they can finalise without escalation. If the confirmed cost exceeds your limit, the decision is passed up the chain regardless of your role.
+
+When a Director or Operations Manager approves a submission and the cost is **within their spend limit**, the approval is still routed to the **Club Manager** for final sign-off before being considered fully approved. The ratification email explains this clearly.
+
+If the cost **exceeds** your limit, the decision follows the standard escalation chain (Director → Operations Manager → Club Manager → Chair).
+
+Spend limits are configured in the Admin panel under **Scoring Config → Director Spend Signoff Limits**.
+
 ### Ratification notifications
 
-Whenever anyone in the chain acts — whether recommending, ratifying, or overriding — **every other member of the chain receives an email**. The email shows:
+When anyone in the chain acts, the **next person in the chain** receives a direct email (To), and directors below them in the chain are copied (CC). The email includes:
 - The improvement and the decision made
 - Who made the change and their role
-- Who is next expected to ratify (or confirms it is final if the Chair has acted)
+- What action is expected (ratify, review, or FYI only)
+- Whether the lower-level spend limit has been satisfied
 
-This keeps everyone informed at all times without requiring them to log in to check.
+This ensures the right person knows they need to act, without creating confusion about who is responsible.
+
+### Ratifying a decision
+
+When a submission has been approved by a lower authority and you are the **next in the chain**, a green **"Ready to ratify"** callout appears in the sidebar. Click **Ratify this decision** to confirm and pass it up (or finalise it if you are the final authority).
+
+> **You cannot ratify your own decision.** The Ratify button is hidden when you are the director who originally set the decision.
 
 ### How saving works
 
-The sidebar uses a **draft model**. Make as many changes as you need across all fields, then click **Save** (or **Flag for ratification** if you are a director) once. A single save:
+The sidebar uses a **draft model**. Make as many changes as you need across all fields, then click **Save** once. A single save:
 - Updates all changed fields in the database in one operation
 - Sends a status-change email to the member (if the status changed and they have an email address and have not opted out)
-- Sends ratification notifications to the rest of the chain
+- Sends ratification notifications to the appropriate members of the chain
 - Updates the audit trail
 
 Nothing is saved and no emails are sent until you click Save.
+
+### Reviewing emails before they are sent
+
+By default, before a status-change email is sent to a member, you are shown a **preview of the AI-generated email** and given the opportunity to edit the body text. Click **Send** to dispatch it, or **Don't send** to save the status change without emailing the member.
+
+If you prefer emails to be sent automatically without reviewing, tick **Auto-send without reviewing** in the sidebar.
 
 ### Status options
 
@@ -277,8 +305,8 @@ Nothing is saved and no emails are sent until you click Save.
 |---|---|
 | **Awaiting Decision** | Default — no decision made yet |
 | **Under Consideration** | Actively being reviewed by the Board |
-| **In Plan** | Included in the club improvement plan |
 | **Approved** | Approved for implementation — pending action |
+| **In Plan** | Included in the club improvement plan |
 | **Implemented** | Completed |
 | **Not Progressed** | Will not be taken forward at this time |
 
@@ -289,6 +317,18 @@ When you save a status change, the member receives a **personalised, AI-generate
 - Uses the AI assessment narrative as background context
 - For **Not Progressed** only: also uses your Board notes as private context to craft a more specific explanation — the notes themselves are never quoted or sent to the member
 - Never mentions internal scores, bands, weights, or process details
+
+### Board review flag
+
+Submissions assigned to the **Chair of the Board**, or those where the AI has flagged a cost threshold, are automatically marked with a 🏛 **Board review** badge in the table and sidebar. This acts as a soft reminder that the Chair should consider these at Board level before approving.
+
+When the Chair moves a flagged submission to **In Plan**, the soft block is cleared and the decision is recorded.
+
+### Prior decisions
+
+During overnight scoring, the system checks whether any new submission is **substantially similar** to a previously not-progressed idea. If a match is found, an amber **"Prior decisions"** callout appears in the sidebar listing the earlier submission(s). Click any entry to view the full details of the prior submission in a popup — including the original description, AI narrative, Board notes, and score.
+
+If you decide to progress the new submission, you can cluster it with the prior one or treat it independently.
 
 ### Deleting a submission
 
@@ -496,6 +536,16 @@ Controls all parameters that influence the AI scoring process. Changes take effe
 - Board escalation threshold (£) — above this cost, the cost_threshold flag is set
 - Quick win cost threshold (£) — below this cost, the quick_win flag may be set
 - Quick win implementation weeks — at or below this, the quick_win flag may be set
+
+**Director spend signoff limits (£)**
+The maximum confirmed cost each authority level can finalise without escalation. Set to `999999` for unlimited. If a submission's confirmed cost exceeds an authority's limit, the decision is automatically escalated to the next level in the chain.
+
+| Authority | Default limit |
+|---|---|
+| Director | £0 (always escalates) |
+| Operations Manager | £2,500 |
+| Club Manager | £10,000 |
+| Chair of the Board | Unlimited |
 
 Click **Save changes** after editing any values.
 

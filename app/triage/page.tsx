@@ -187,7 +187,7 @@ export default function TriagePage() {
   const [filterSubmitter, setFilterSubmitter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [previewEmail, setPreviewEmail] = useState<boolean>(() =>
-    typeof window !== 'undefined' && localStorage.getItem('bci_preview_email') === 'true'
+    typeof window !== 'undefined' ? localStorage.getItem('bci_preview_email') !== 'false' : true
   )
   const [emailDraftModal, setEmailDraftModal] = useState<{
     to: string; subject: string; body: string
@@ -1336,10 +1336,10 @@ function SpreadsheetDetailPanel({
           <label className="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer select-none">
             <input
               type="checkbox"
-              checked={previewEmail}
-              onChange={(e) => onTogglePreviewEmail(e.target.checked)}
+              checked={!previewEmail}
+              onChange={(e) => onTogglePreviewEmail(!e.target.checked)}
             />
-            Preview email before sending
+            Auto-send without reviewing
           </label>
 
           <div className="flex items-center justify-between pt-1">

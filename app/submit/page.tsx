@@ -126,10 +126,12 @@ export default function SubmitPage() {
           <button onClick={() => { setStep('form'); setDescription(''); setBenefit(''); setCategory(''); setImpact(''); setMemberMsg(null) }} className="bramley-btn">
             Submit another improvement
           </button>
-          {sessionType === 'member'
-            ? <button onClick={() => router.push('/my-improvements')} className="bramley-btn-secondary">View my improvements</button>
-            : <button onClick={() => router.push('/triage')} className="bramley-btn-secondary">Back to triage</button>
-          }
+          {sessionType === 'member' && (
+            <button onClick={() => router.push('/my-improvements')} className="bramley-btn-secondary">View my improvements</button>
+          )}
+          {sessionType === 'director' && (
+            <button onClick={() => router.push('/triage')} className="bramley-btn-secondary">Back to triage</button>
+          )}
           <button onClick={handleLogout} className="text-sm text-gray-400 w-full py-2 hover:text-gray-600">Sign out</button>
         </div>
       </div></div>

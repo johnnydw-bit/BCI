@@ -256,7 +256,7 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    // Send ratification chain notification to everyone in the chain except the actor
+    // Send ratification chain notification — next ratifier + category directors
     try {
       const ROLE_AUTHORITY_MAP: Record<string, string> = {
         'Operations Manager': 'operations_manager',
@@ -264,22 +264,9 @@ export async function PATCH(req: NextRequest) {
         'Super Admin':        'club_manager',
         'Chair of the Board': 'chairman',
       }
-      // All active directors with email — category directors for this submission + all senior roles
-      const allRows = await sql`
-        SELECT name, email, role FROM director_roles
-        WHERE active = TRUE AND email IS NOT NULL
-      `
-      const categoryForSubmission = row.category ?? null
-      const recipients = (allRows as Array<{ name: string; email: string; role: string }>)
-        .filter(r => {
-          if (r.email === session.email) return false // exclude actor
-          const authority = ROLE_AUTHORITY_MAP[r.role]
-          if (authority) return true // always include Ops Manager, Club Manager, Chair
-          // For director-level roles, only include if they cover this category
-          const theirCategories = getCategoriesForRole(r.role)
-          return categoryForSubmission ? theirCategories.includes(categoryForSubmission as never) : false
-        })
-        .map(r => r.email)
+      const AUTHORITY_LEVEL: Record<string, number> = {
+        director: 1, operations_manager: 2, club_manager: 3, chairman: 4,
+      }
 
       const NEXT_RATIFIER: Record<string, string | null> = {
         director:            'Operations Manager',
@@ -290,6 +277,50 @@ export async function PATCH(req: NextRequest) {
       // If finalised by spend limit, no further ratification needed regardless of chain position
       const nextRatifier = finalised ? null : (NEXT_RATIFIER[myAuthority] ?? null)
 
+      // When pending: notify up to and including the next ratifier level.
+      // When finalised: notify all senior roles (decision announcement).
+      const nextRatifierLevel = nextRatifier
+        ? (AUTHORITY_LEVEL[ROLE_AUTHORITY_MAP[nextRatifier] ?? ''] ?? 99)
+        : 99 // finalised — include everyone
+
+      const allRows = await sql`
+        SELECT name, email, role FROM director_roles
+        WHERE active = TRUE AND email IS NOT NULL
+      `
+      const categoryForSubmission = row.category ?? null
+      const allPeople = allRows as Array<{ name: string; email: string; role: string }>
+
+      // Primary recipients (TO): only those whose role matches the next ratifier title
+      // (or all senior roles up to the top when finalised — decision announcement)
+      const toRecipients = allPeople
+        .filter(r => {
+          if (r.email === session.email) return false
+          const authority = ROLE_AUTHORITY_MAP[r.role]
+          if (!authority) return false
+          const level = AUTHORITY_LEVEL[authority] ?? 99
+          if (nextRatifier) {
+            // Send to only the next ratifier level
+            return level === (AUTHORITY_LEVEL[ROLE_AUTHORITY_MAP[nextRatifier] ?? ''] ?? -1)
+          }
+          // Finalised: send TO all senior roles (announcement)
+          return level <= nextRatifierLevel
+        })
+        .map(r => r.email)
+
+      // CC: category directors for this submission (for awareness; no action needed)
+      const ccRecipients = allPeople
+        .filter(r => {
+          if (r.email === session.email) return false
+          if (toRecipients.includes(r.email)) return false // don't double-up
+          const authority = ROLE_AUTHORITY_MAP[r.role]
+          if (authority) return false // senior roles are handled in TO
+          const theirCategories = getCategoriesForRole(r.role)
+          return categoryForSubmission ? theirCategories.includes(categoryForSubmission as never) : false
+        })
+        .map(r => r.email)
+
+      const recipients = [...toRecipients, ...ccRecipients]
+
       const AUTHORITY_ROLE_LABELS: Record<string, string> = {
         director:            session.role,
         operations_manager:  'Operations Manager',
@@ -297,7 +328,7 @@ export async function PATCH(req: NextRequest) {
         chairman:            'Chair of the Board',
       }
 
-      const ratifResendId = await sendRatificationNotification(recipients, {
+      const ratifResendId = await sendRatificationNotification(toRecipients, {
         description: row.description,
         statusLabel: STATUS_LABELS[status] ?? status,
         changedBy: session.directorName,
@@ -307,6 +338,7 @@ export async function PATCH(req: NextRequest) {
         confirmedCost: effectiveCost,
         spendLimit: spendLimits[myAuthority] ?? 0,
         finalisedBySpend: finalised && myAuthority !== 'chairman',
+        cc: ccRecipients,
       })
       if (recipients.length > 0) {
         await sql`

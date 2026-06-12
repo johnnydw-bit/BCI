@@ -293,9 +293,13 @@ The sidebar uses a **draft model**. Make as many changes as you need across all 
 
 Nothing is saved and no emails are sent until you click Save.
 
+### Member notification on full approval
+
+When a submission's ratification chain is complete — the Chair or Club Manager has given final sign-off — the member receives a separate **"Fully Approved"** email from the Club Manager confirming that all required Board approvals are now in place. This is in addition to the initial status-change email they received when the Director first approved the submission.
+
 ### Reviewing emails before they are sent
 
-By default, before a status-change email is sent to a member, you are shown a **preview of the AI-generated email** and given the opportunity to edit the body text. Click **Send** to dispatch it, or **Don't send** to save the status change without emailing the member.
+Every status-change email is shown as a draft before it is sent. You can review and edit the AI-generated body, then click **OK to send** to dispatch it, or **Don't send** to save the status change without emailing the member.
 
 If you prefer emails to be sent automatically without reviewing, tick **Auto-send without reviewing** in the sidebar.
 
@@ -328,7 +332,9 @@ When the Chair moves a flagged submission to **In Plan**, the soft block is clea
 
 During overnight scoring, the system checks whether any new submission is **substantially similar** to a previously not-progressed idea. If a match is found, an amber **"Prior decisions"** callout appears in the sidebar listing the earlier submission(s). Click any entry to view the full details of the prior submission in a popup — including the original description, AI narrative, Board notes, and score.
 
-If you decide to progress the new submission, you can cluster it with the prior one or treat it independently.
+### Reviving a prior submission
+
+When you progress a new submission (move it to Under Consideration or higher) and it has a linked prior submission, a **revival prompt** appears. You can choose to **Revive** the prior submission — which moves it back to Under Consideration so it can be reconsidered alongside the new one — or **Keep separate** to leave it as not progressed. Revival is available to managers who have access to all categories.
 
 ### Deleting a submission
 

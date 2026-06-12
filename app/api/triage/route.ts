@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { DIRECTOR_CATEGORIES, getCategoriesForRole, isManager, roleToAuthority, canOverrideAuthority, AUTHORITY_LEVELS, DEFAULT_SPEND_LIMITS, isDecisionFinalised } from '@/lib/categories'
-import { generateStatusEmail } from '@/lib/ai'
+import { generateStatusEmail, generateFinalApprovalEmail } from '@/lib/ai'
 import { sendStatusChangeEmail, sendRatificationNotification, sendOwnerAssignmentNotification } from '@/lib/email'
 
 /** Load spend limits from the config table, falling back to defaults */
@@ -226,6 +226,37 @@ export async function PATCH(req: NextRequest) {
       }
     } catch (e) {
       console.error('[triage PATCH] Failed to send ratification notification after ratify_only:', e)
+    }
+
+    // Send final approval email to member when ratification chain is complete
+    const isFullyFinalised = isDecisionFinalised(myAuthority, cost, spendLimits) && myAuthority === 'chairman'
+      || (isDecisionFinalised(myAuthority, cost, spendLimits) && myAuthority === 'club_manager')
+    const isApprovalStatus = sub.status === 'approved' || sub.status === 'in_plan'
+    if (isFullyFinalised && isApprovalStatus) {
+      try {
+        const memberRow = await sql`SELECT member_email, member_name, email_opt_out FROM submissions WHERE id = ${id}`
+        const member = memberRow[0] as { member_email: string | null; member_name: string | null; email_opt_out: boolean }
+        if (member?.member_email && !member.email_opt_out) {
+          const configRows = await sql`SELECT key, value FROM config WHERE key IN ('COMMS_TONE', 'COMMS_SIGNOFF')`
+          const cfg = Object.fromEntries((configRows as Array<{ key: string; value: string }>).map((r) => [r.key, r.value]))
+          const tone = (cfg['COMMS_TONE'] ?? 'friendly') as 'friendly' | 'formal'
+          const signoff = cfg['COMMS_SIGNOFF'] ?? 'The Board, Bramley Golf Club'
+          const cmRow = await sql`SELECT name FROM director_roles WHERE role IN ('Club Manager', 'Super Admin') AND active = TRUE LIMIT 1`
+          const clubManagerName = (cmRow[0] as { name: string } | undefined)?.name ?? 'Club Manager'
+          const descRow = await sql`SELECT description FROM submissions WHERE id = ${id}`
+          const description = (descRow[0] as { description: string }).description
+          const emailBody = await generateFinalApprovalEmail({ description, tone, signoff, clubManagerName })
+          await sendStatusChangeEmail(member.member_email, {
+            description,
+            statusLabel: 'Fully Approved',
+            emailBody,
+            memberName: member.member_name,
+            submissionId: id,
+          })
+        }
+      } catch (e) {
+        console.error('[triage PATCH] Failed to send final approval email to member:', e)
+      }
     }
 
     return NextResponse.json({ ok: true, spendLimits })

@@ -197,6 +197,8 @@ export default function TriagePage() {
     id: number; description: string; ai_narrative: string | null
     notes: string | null; score: number | null; created_at: string; status: string
   } | null>(null)
+  const [revivalPrompt, setRevivalPrompt] = useState<{ newId: number; relatedIds: number[] } | null>(null)
+  const [reviving, setReviving] = useState<number | null>(null)
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
 
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
@@ -302,6 +304,12 @@ export default function TriagePage() {
     if (statusChanging) {
       setAuditLog((a) => { const n = { ...a }; delete n[id]; return n })
       fetchAuditLog(id)
+      // Offer revival of related not-progressed submissions when moving to a positive status
+      const positiveStatus = ['under_consideration', 'approved', 'in_plan', 'implemented'].includes(draft.status)
+      const related = prev?.related_submission_ids ?? []
+      if (positiveStatus && related.length > 0 && prev?.status === 'new') {
+        setRevivalPrompt({ newId: id, relatedIds: related })
+      }
     }
     setUpdating(null)
     setSavedId(id)
@@ -482,6 +490,61 @@ export default function TriagePage() {
           </div>
         </div>
       )}
+
+      {/* Revival prompt modal */}
+      {revivalPrompt && (() => {
+        const relatedSubs = revivalPrompt.relatedIds
+          .map(rid => data.submissions.find(x => x.id === rid))
+          .filter((x): x is Submission => !!x)
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-5 space-y-4">
+              <div>
+                <p className="font-semibold text-gray-800 text-sm">Similar prior submission{revivalPrompt.relatedIds.length > 1 ? 's' : ''} found</p>
+                <p className="text-xs text-gray-500 mt-1">The following not-progressed submission{revivalPrompt.relatedIds.length > 1 ? 's are' : ' is'} closely related to this one. Would you like to revive {revivalPrompt.relatedIds.length > 1 ? 'them' : 'it'} and bring {revivalPrompt.relatedIds.length > 1 ? 'them' : 'it'} back under consideration?</p>
+              </div>
+              {revivalPrompt.relatedIds.map(rid => {
+                const sub = data.submissions.find(x => x.id === rid)
+                return (
+                  <div key={rid} className="border border-gray-200 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs text-gray-500">{cipRef(rid)}</span>
+                      <span className="text-xs text-gray-400">{sub ? new Date(sub.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : ''}</span>
+                    </div>
+                    {sub && <p className="text-xs text-gray-700">{sub.description}</p>}
+                    <button
+                      disabled={reviving === rid}
+                      onClick={async () => {
+                        setReviving(rid)
+                        await fetch('/api/triage', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: rid, status: 'under_consideration' }),
+                        })
+                        setData(d => d ? {
+                          ...d,
+                          submissions: d.submissions.map(s => s.id === rid ? { ...s, status: 'under_consideration' } : s),
+                        } : d)
+                        setReviving(null)
+                        setRevivalPrompt(prev => prev ? { ...prev, relatedIds: prev.relatedIds.filter(x => x !== rid) } : null)
+                      }}
+                      className="bramley-btn py-1 px-3 text-xs w-full"
+                    >
+                      {reviving === rid ? <span className="spinner" style={{ width: 12, height: 12 }} /> : `Revive ${cipRef(rid)}`}
+                    </button>
+                  </div>
+                )
+              })}
+              <button
+                onClick={() => setRevivalPrompt(null)}
+                className="text-xs text-gray-500 hover:text-gray-700 underline w-full text-center"
+              >
+                Keep separate — don't revive
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Email preview modal */}
       {emailDraftModal && (

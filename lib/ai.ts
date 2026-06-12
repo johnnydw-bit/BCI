@@ -210,6 +210,29 @@ export const DEFAULT_WEIGHTS: ScoringWeights = {
  * For "rejected" status, pass aiNarrative and directorNote as private context
  * to produce a diplomatic, evidence-based explanation — neither is quoted verbatim.
  */
+export async function generateFinalApprovalEmail(opts: {
+  description: string
+  tone: 'friendly' | 'formal'
+  signoff: string
+  clubManagerName: string
+}): Promise<string> {
+  const { description, tone, signoff, clubManagerName } = opts
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 300,
+    system: `You write short, ${tone} member emails for Bramley Golf Club's Continuous Improvement Programme.
+Tone: ${tone === 'friendly' ? 'warm and positive — this is good news worth celebrating briefly' : 'professional and congratulatory'}.
+Keep to 2-3 sentences. Never mention scoring, internal processes, or staff names other than the Club Manager. Never include a subject line. Do not start with "Dear Member" — just write the body paragraph(s).
+Always refer to the governing body as "the Board" — never "the committee".
+Sign off as: ${signoff}`,
+    messages: [{
+      role: 'user',
+      content: `Write a short email to a member confirming that their improvement idea ("${description}") has been fully approved and signed off at Board level. This is the final confirmation — all required approvals are now in place. The email is sent on behalf of the Club Manager, ${clubManagerName}. End with the sign-off "${signoff}". Output plain text only — no HTML, no markdown.`,
+    }],
+  })
+  return (response.content[0] as { text: string }).text.trim()
+}
+
 export async function generateStatusEmail(opts: {
   description: string
   benefit?: string

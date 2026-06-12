@@ -94,6 +94,7 @@ export async function PATCH(req: NextRequest) {
     id, status, category, suggested_owner, notes,
     score_override, score_override_reason,
     confirmed_target_date, confirmed_cost,
+    return_email_draft,
   } = await req.json()
 
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
@@ -222,14 +223,14 @@ export async function PATCH(req: NextRequest) {
       VALUES (${id}, ${oldStatus}, ${status}, ${session.directorName}, ${spendNote || null})
     `
 
-    // Send AI-generated email to member if they have email and haven't opted out
+    // Generate and send (or return as draft) AI email to member
+    let emailDraft: { to: string; subject: string; body: string; memberName: string | null; description: string; statusLabel: string } | null = null
     if (row?.member_email && !row.email_opt_out) {
       try {
         const configRows = await sql`SELECT key, value FROM config WHERE key IN ('COMMS_TONE', 'COMMS_SIGNOFF')`
         const cfg = Object.fromEntries((configRows as Array<{ key: string; value: string }>).map((r) => [r.key, r.value]))
         const tone = (cfg['COMMS_TONE'] ?? 'friendly') as 'friendly' | 'formal'
         const signoff = cfg['COMMS_SIGNOFF'] ?? 'The Board, Bramley Golf Club'
-        // Only share a target date with the member once the decision is finalised (Chair has signed off)
         const targetDate = finalised ? (confirmed_target_date ?? row.confirmed_target_date ?? null) : null
 
         const emailBody = await generateStatusEmail({
@@ -244,15 +245,27 @@ export async function PATCH(req: NextRequest) {
           directorNote: row.notes ?? null,
         })
 
-        await sendStatusChangeEmail(row.member_email!, {
-          description: row.description,
-          statusLabel: STATUS_LABELS[status] ?? status,
-          emailBody,
-          memberName: row.member_name,
-          submissionId: id,
-        })
+        if (return_email_draft) {
+          const cipRefStr = 'CIP-' + String(id).padStart(4, '0')
+          emailDraft = {
+            to: row.member_email!,
+            subject: `Update on your Bramley GC improvement idea [${cipRefStr}]`,
+            body: emailBody,
+            memberName: row.member_name,
+            description: row.description,
+            statusLabel: STATUS_LABELS[status] ?? status,
+          }
+        } else {
+          await sendStatusChangeEmail(row.member_email!, {
+            description: row.description,
+            statusLabel: STATUS_LABELS[status] ?? status,
+            emailBody,
+            memberName: row.member_name,
+            submissionId: id,
+          })
+        }
       } catch (e) {
-        console.error('[triage PATCH] Failed to send status change email:', e)
+        console.error('[triage PATCH] Failed to generate/send status change email:', e)
       }
     }
 
@@ -363,7 +376,7 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, spendLimits })
+  return NextResponse.json({ ok: true, spendLimits, ...(emailDraft ? { emailDraft } : {}) })
 }
 
 export async function DELETE(req: NextRequest) {

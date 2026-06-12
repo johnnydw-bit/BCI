@@ -186,6 +186,15 @@ export default function TriagePage() {
   const [filterOwner, setFilterOwner] = useState<string>('all')
   const [filterSubmitter, setFilterSubmitter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [previewEmail, setPreviewEmail] = useState<boolean>(() =>
+    typeof window !== 'undefined' && localStorage.getItem('bci_preview_email') === 'true'
+  )
+  const [emailDraftModal, setEmailDraftModal] = useState<{
+    to: string; subject: string; body: string
+    memberName: string | null; description: string; statusLabel: string; submissionId: number
+  } | null>(null)
+  const [emailDraftBody, setEmailDraftBody] = useState<string>('')
+  const [sendingEmail, setSendingEmail] = useState(false)
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
 
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
@@ -253,7 +262,9 @@ export default function TriagePage() {
 
   async function savePanel(id: number, draft: { status: string; suggested_owner: string; category: string; confirmed_target_date: string; confirmed_cost: string; notes: string }) {
     setUpdating(id)
-    await fetch('/api/triage', {
+    const prev = data?.submissions.find((s) => s.id === id)
+    const statusChanging = draft.status !== prev?.status
+    const res = await fetch('/api/triage', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -264,9 +275,14 @@ export default function TriagePage() {
         confirmed_target_date: draft.confirmed_target_date,
         confirmed_cost: draft.confirmed_cost,
         notes: draft.notes,
+        return_email_draft: previewEmail && statusChanging,
       }),
     })
-    const prev = data?.submissions.find((s) => s.id === id)
+    const json = await res.json()
+    if (json.emailDraft) {
+      setEmailDraftModal({ ...json.emailDraft, submissionId: id })
+      setEmailDraftBody(json.emailDraft.body)
+    }
     setData((d) => d ? {
       ...d,
       submissions: d.submissions.map((s) => s.id === id ? {
@@ -281,7 +297,7 @@ export default function TriagePage() {
         decision_by: d.directorName,
       } : s),
     } : d)
-    if (draft.status !== prev?.status) {
+    if (statusChanging) {
       setAuditLog((a) => { const n = { ...a }; delete n[id]; return n })
       fetchAuditLog(id)
     }
@@ -430,6 +446,62 @@ export default function TriagePage() {
         </div>
       )}
 
+      {/* Email preview modal */}
+      {emailDraftModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl flex flex-col gap-4 p-6">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-gray-800">Review member email</p>
+                <p className="text-xs text-gray-500 mt-0.5">To: {emailDraftModal.memberName ?? emailDraftModal.to} · {emailDraftModal.to}</p>
+                <p className="text-xs text-gray-500">Subject: {emailDraftModal.subject}</p>
+              </div>
+              <button onClick={() => setEmailDraftModal(null)} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
+              <span className="font-semibold text-gray-700">Your idea · {emailDraftModal.description}</span>
+            </div>
+            <textarea
+              className="bramley-input text-sm w-full resize-none"
+              rows={10}
+              value={emailDraftBody}
+              onChange={(e) => setEmailDraftBody(e.target.value)}
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setEmailDraftModal(null)}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                Don&apos;t send
+              </button>
+              <button
+                disabled={sendingEmail}
+                onClick={async () => {
+                  setSendingEmail(true)
+                  await fetch('/api/triage/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      to: emailDraftModal.to,
+                      body: emailDraftBody,
+                      memberName: emailDraftModal.memberName,
+                      description: emailDraftModal.description,
+                      statusLabel: emailDraftModal.statusLabel,
+                      submissionId: emailDraftModal.submissionId,
+                    }),
+                  })
+                  setSendingEmail(false)
+                  setEmailDraftModal(null)
+                }}
+                className="bramley-btn py-1.5 px-4 text-sm"
+              >
+                {sendingEmail ? 'Sending…' : 'Send email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filter & sort bar */}
       <div className="bramley-card">
         <div className="bramley-body py-3 flex flex-wrap gap-3 items-center">
@@ -569,6 +641,11 @@ export default function TriagePage() {
                 auditLog={auditLog[s.id] ?? []}
                 onOpen={() => fetchAuditLog(s.id)}
                 spendLimits={data.spendLimits ?? DEFAULT_SPEND_LIMITS}
+                previewEmail={previewEmail}
+                onTogglePreviewEmail={(v) => {
+                  setPreviewEmail(v)
+                  localStorage.setItem('bci_preview_email', v ? 'true' : 'false')
+                }}
               />
             )
           })()}
@@ -936,7 +1013,7 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function SpreadsheetDetailPanel({
-  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits,
+  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits, previewEmail, onTogglePreviewEmail,
 }: {
   s: Submission
   isManager: boolean
@@ -951,6 +1028,8 @@ function SpreadsheetDetailPanel({
   auditLog: AuditEntry[]
   onOpen: () => void
   spendLimits: Record<string, number>
+  previewEmail: boolean
+  onTogglePreviewEmail: (v: boolean) => void
 }) {
   useEffect(() => { onOpen() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1253,6 +1332,15 @@ function SpreadsheetDetailPanel({
             <label className="text-xs text-gray-600 block mb-1">Board notes</label>
             <textarea rows={3} className="bramley-input text-xs py-1 w-full resize-none" placeholder="Notes visible to all directors…" value={draft.notes} onChange={(e) => setDraft(d => ({ ...d, notes: e.target.value }))} disabled={updating || isLocked} />
           </div>
+
+          <label className="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={previewEmail}
+              onChange={(e) => onTogglePreviewEmail(e.target.checked)}
+            />
+            Preview email before sending
+          </label>
 
           <div className="flex items-center justify-between pt-1">
             <SaveBtn />

@@ -187,9 +187,6 @@ export default function TriagePage() {
   const [filterOwner, setFilterOwner] = useState<string>('all')
   const [filterSubmitter, setFilterSubmitter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
-  const [previewEmail, setPreviewEmail] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('bci_preview_email') !== 'false' : true
-  )
   const [emailDraftModal, setEmailDraftModal] = useState<{
     to: string; subject: string; body: string
     memberName: string | null; description: string; statusLabel: string; submissionId: number
@@ -280,7 +277,7 @@ export default function TriagePage() {
         confirmed_target_date: draft.confirmed_target_date,
         confirmed_cost: draft.confirmed_cost,
         notes: draft.notes,
-        return_email_draft: previewEmail && statusChanging,
+        return_email_draft: statusChanging,
       }),
     })
     const json = await res.json()
@@ -535,7 +532,7 @@ export default function TriagePage() {
                 }}
                 className="bramley-btn py-1.5 px-4 text-sm"
               >
-                {sendingEmail ? 'Sending…' : 'Send email'}
+                {sendingEmail ? 'Sending…' : 'OK to send'}
               </button>
             </div>
           </div>
@@ -686,11 +683,6 @@ export default function TriagePage() {
                 auditLog={auditLog[s.id] ?? []}
                 onOpen={() => fetchAuditLog(s.id)}
                 spendLimits={data.spendLimits ?? DEFAULT_SPEND_LIMITS}
-                previewEmail={previewEmail}
-                onTogglePreviewEmail={(v) => {
-                  setPreviewEmail(v)
-                  localStorage.setItem('bci_preview_email', v ? 'true' : 'false')
-                }}
                 allSubmissions={data.submissions}
                 onShowPrior={(id) => {
                   const found = data.submissions.find(x => x.id === id)
@@ -1085,7 +1077,7 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function SpreadsheetDetailPanel({
-  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits, previewEmail, onTogglePreviewEmail, allSubmissions, onShowPrior, directorName, onRatify,
+  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits, allSubmissions, onShowPrior, directorName, onRatify,
 }: {
   s: Submission
   isManager: boolean
@@ -1100,8 +1092,6 @@ function SpreadsheetDetailPanel({
   auditLog: AuditEntry[]
   onOpen: () => void
   spendLimits: Record<string, number>
-  previewEmail: boolean
-  onTogglePreviewEmail: (v: boolean) => void
   allSubmissions: Submission[]
   onShowPrior: (id: number) => void
   directorName: string
@@ -1500,15 +1490,6 @@ function SpreadsheetDetailPanel({
             <label className="text-xs text-gray-600 block mb-1">Board notes</label>
             <textarea rows={3} className="bramley-input text-xs py-1 w-full resize-none" placeholder="Notes visible to all directors…" value={draft.notes} onChange={(e) => setDraft(d => ({ ...d, notes: e.target.value }))} disabled={updating || isLocked} />
           </div>
-
-          <label className="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={!previewEmail}
-              onChange={(e) => onTogglePreviewEmail(!e.target.checked)}
-            />
-            Auto-send without reviewing
-          </label>
 
           {canRatify && (
             <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-xs space-y-2">

@@ -65,7 +65,7 @@ export async function GET() {
     FROM submissions s
     LEFT JOIN clusters c ON c.id = s.cluster_id
     LEFT JOIN director_roles d ON d.email = s.member_email AND d.active = TRUE
-    WHERE s.category = ANY(${allowedCategories})
+    WHERE (s.category = ANY(${allowedCategories}) OR s.member_name = ${session.directorName})
       AND s.deleted_at IS NULL
       AND s.withdrawn_at IS NULL
     ORDER BY s.h_and_s_flag DESC, s.score DESC NULLS LAST, s.created_at DESC

@@ -62,7 +62,7 @@ interface Director { id: number; role: string; name: string; email: string; acti
 
 export default function AdminPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<'config' | 'comms' | 'directors' | 'dashboard' | 'budget' | 'setup'>('config')
+  const [tab, setTab] = useState<'config' | 'comms' | 'directors' | 'dashboard' | 'setup'>('config')
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -168,7 +168,7 @@ export default function AdminPage() {
         setDirectorRole(cfg.role ?? '')
       }
       if (dirs) setDirectors(dirs.directors)
-    }).finally(() => setLoading(false))
+    }).finally(() => { setLoading(false); loadBudget() })
   }, [router])
 
   function handleEdit(key: string, value: string) {
@@ -430,12 +430,11 @@ export default function AdminPage() {
               ['comms', 'Communications'],
               ['directors', 'Directors'],
               ['dashboard', 'Dashboard'],
-              ['budget', 'Budget'],
               ['setup', 'Setup'],
             ] as const).map(([t, label]) => (
               <button
                 key={t}
-                onClick={() => { setTab(t); if (t === 'dashboard' && !dashboard) loadDashboard(); if (t === 'budget' && !budgetData) loadBudget() }}
+                onClick={() => { setTab(t); if (t === 'dashboard' && !dashboard) loadDashboard(); if (t === 'config' && !budgetData) loadBudget() }}
                 className={`px-4 py-2 rounded-t-[8px] text-sm font-semibold transition-all ${tab === t ? 'text-white' : 'text-gray-500 hover:text-gray-700'}`}
                 style={tab === t ? { background: 'var(--bramley-navy)' } : {}}
               >
@@ -501,6 +500,154 @@ export default function AdminPage() {
                 </div>
               )
             })}
+          </div>
+
+          {/* Budget allocation table */}
+          <div className="bramley-card overflow-hidden p-0">
+            <div className="px-3 py-2 border-b border-gray-200" style={{ background: 'var(--bramley-primary)' }}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <h3 className="text-sm font-semibold text-white">Annual Budget Allocations</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-white/70">FY</span>
+                  <select
+                    className="text-xs rounded px-1.5 py-0.5 border-0"
+                    value={budgetYear}
+                    onChange={(e) => { const y = Number(e.target.value); setBudgetYear(y); loadBudget(y) }}
+                  >
+                    {[budgetYear - 1, budgetYear, budgetYear + 1].map(y => (
+                      <option key={y} value={y}>{y}/{String(y + 1).slice(2)}</option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-white/70">Total £</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    className="text-xs rounded px-1.5 py-0.5 border-0 w-24"
+                    value={budgetTotal}
+                    onChange={(e) => setBudgetTotal(e.target.value)}
+                    placeholder="e.g. 50000"
+                  />
+                </div>
+              </div>
+            </div>
+            {budgetLoading ? (
+              <div className="px-3 py-4 flex items-center gap-2 text-sm text-gray-400"><span className="spinner" /> Loading…</div>
+            ) : (
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left px-3 py-1.5 text-xs font-semibold text-gray-500">Category</th>
+                    <th className="text-right px-3 py-1.5 text-xs font-semibold text-gray-500 w-24">%</th>
+                    <th className="text-right px-3 py-1.5 text-xs font-semibold text-gray-500 w-28">Allocated</th>
+                    <th className="text-right px-3 py-1.5 text-xs font-semibold text-gray-500 w-24">Spent</th>
+                    <th className="text-right px-3 py-1.5 text-xs font-semibold text-gray-500 w-28">Available</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {BUDGET_CATEGORIES.map((cat, i) => {
+                    const pct = Number(budgetAllocs[cat] ?? 0)
+                    const allocated = budgetTotal ? (Number(budgetTotal) * pct) / 100 : null
+                    const spendRow = budgetData?.spend.find(s => s.category === cat)
+                    const spent = spendRow ? Number(spendRow.spent) : 0
+                    const available = allocated !== null ? allocated - spent : null
+                    return (
+                      <tr key={cat} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-3 py-1.5 text-gray-700">{cat}</td>
+                        <td className="px-3 py-1.5 text-right">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.5"
+                            className="w-16 text-right border border-gray-200 rounded px-1.5 py-0.5 text-sm"
+                            value={budgetAllocs[cat] ?? '0'}
+                            onChange={(e) => setBudgetAllocs(prev => ({ ...prev, [cat]: e.target.value }))}
+                          />
+                          <span className="text-gray-400 ml-1">%</span>
+                        </td>
+                        <td className="px-3 py-1.5 text-right text-gray-600">{allocated !== null ? `£${allocated.toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : '—'}</td>
+                        <td className="px-3 py-1.5 text-right text-gray-500">{spent > 0 ? `£${spent.toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : '—'}</td>
+                        <td className={`px-3 py-1.5 text-right font-medium ${available !== null && available < 0 ? 'text-red-600' : 'text-green-700'}`}>
+                          {available !== null ? `£${Math.max(0, available).toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  <tr className="bg-gray-100 border-t border-gray-200 font-semibold">
+                    <td className="px-3 py-1.5 text-gray-600 text-xs">Total</td>
+                    <td className={`px-3 py-1.5 text-right text-xs ${Math.abs(Object.values(budgetAllocs).reduce((s, v) => s + Number(v || 0), 0) - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+                      {Object.values(budgetAllocs).reduce((s, v) => s + Number(v || 0), 0).toFixed(1)}%
+                    </td>
+                    <td colSpan={3} />
+                  </tr>
+                </tbody>
+              </table>
+            )}
+            <div className="px-3 py-2 border-t border-gray-100 flex items-center gap-3">
+              <button onClick={saveBudget} disabled={budgetSaving} style={{ width: 'auto' }} className="bramley-btn px-6 py-1.5 text-xs">
+                {budgetSaving ? <><span className="spinner" /> Saving…</> : 'Save budget'}
+              </button>
+              {budgetError && <span className="text-xs text-red-600">{budgetError}</span>}
+              {budgetData?.pendingRequests.filter(r => r.status === 'pending').length ? (
+                <span className="text-xs text-amber-600 font-semibold">⚠ {budgetData.pendingRequests.filter(r => r.status === 'pending').length} pending fund request(s)</span>
+              ) : null}
+            </div>
+
+            {/* Pending requests inline */}
+            {budgetData && budgetData.pendingRequests.filter(r => r.status === 'pending').length > 0 && (
+              <div className="border-t border-amber-200">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-amber-50">
+                      <th className="text-left px-3 py-1.5 text-xs font-semibold text-amber-700">Fund request</th>
+                      <th className="text-right px-3 py-1.5 text-xs font-semibold text-amber-700 w-24">Amount</th>
+                      <th className="px-3 py-1.5 text-xs font-semibold text-amber-700 w-40"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {budgetData.pendingRequests.filter(r => r.status === 'pending').map(req => (
+                      <>
+                        <tr key={req.id} className="border-t border-amber-100">
+                          <td className="px-3 py-1.5 text-gray-700">
+                            <span className="font-medium">{req.type === 'transfer' ? 'Transfer' : 'Overspend'}</span>
+                            {' — '}{req.to_category}
+                            {req.from_category && <span className="text-gray-400"> (from {req.from_category})</span>}
+                            <span className="text-gray-400 ml-2">· {req.requested_by}</span>
+                          </td>
+                          <td className="px-3 py-1.5 text-right font-semibold text-gray-800">£{Number(req.amount).toLocaleString('en-GB', { maximumFractionDigits: 0 })}</td>
+                          <td className="px-3 py-1.5 text-right">
+                            {decidingRequest === req.id ? (
+                              <div className="flex items-center gap-1 justify-end">
+                                <button onClick={() => decideBudgetRequest(req.id, 'approved')} style={{ width: 'auto' }} className="bramley-btn px-2 py-0.5 text-xs">Approve</button>
+                                <button onClick={() => decideBudgetRequest(req.id, 'rejected')} style={{ width: 'auto', background: '#7f1d1d' }} className="bramley-btn px-2 py-0.5 text-xs">Decline</button>
+                                <button onClick={() => setDecidingRequest(null)} className="text-xs text-gray-400 hover:text-gray-600 px-1">✕</button>
+                              </div>
+                            ) : (
+                              <button onClick={() => { setDecidingRequest(req.id); setDecisionNote('') }} style={{ width: 'auto' }} className="bramley-btn px-3 py-0.5 text-xs">Review</button>
+                            )}
+                          </td>
+                        </tr>
+                        {decidingRequest === req.id && (
+                          <tr key={`${req.id}-note`} className="bg-amber-50">
+                            <td colSpan={3} className="px-3 pb-2">
+                              <p className="text-xs text-gray-500 mb-1"><em>{req.justification}</em></p>
+                              <input
+                                type="text"
+                                className="bramley-input text-xs py-1"
+                                placeholder="Decision note (optional)"
+                                value={decisionNote}
+                                onChange={(e) => setDecisionNote(e.target.value)}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Save bar */}
@@ -827,177 +974,6 @@ export default function AdminPage() {
               </>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Budget tab */}
-      {tab === 'budget' && (
-        <div className="space-y-4">
-          {budgetLoading ? (
-            <div className="bramley-card"><div className="bramley-body flex items-center gap-3 py-8"><span className="spinner" /><span className="text-gray-500">Loading budget…</span></div></div>
-          ) : (
-            <>
-              {/* Year selector + pot setup */}
-              <div className="bramley-card">
-                <div className="bramley-body space-y-4">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <label className="bramley-label mb-0 shrink-0">Financial year</label>
-                    <select
-                      className="bramley-input"
-                      style={{ width: 'auto' }}
-                      value={budgetYear}
-                      onChange={(e) => { const y = Number(e.target.value); setBudgetYear(y); loadBudget(y) }}
-                    >
-                      {[budgetYear - 1, budgetYear, budgetYear + 1].map(y => (
-                        <option key={y} value={y}>{y}/{String(y + 1).slice(2)} (Jul {y} – Jun {y + 1})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="bramley-label">Total miscellaneous expense budget (£)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="100"
-                      className="bramley-input"
-                      style={{ maxWidth: 200 }}
-                      value={budgetTotal}
-                      onChange={(e) => setBudgetTotal(e.target.value)}
-                      placeholder="e.g. 50000"
-                    />
-                  </div>
-
-                  <div>
-                    <p className="bramley-label mb-2">Category allocations (must sum to 100%)</p>
-                    <div className="space-y-2">
-                      {BUDGET_CATEGORIES.map(cat => {
-                        const allocated = budgetTotal && budgetAllocs[cat] ? ((Number(budgetTotal) * Number(budgetAllocs[cat])) / 100) : null
-                        const spendRow = budgetData?.spend.find(s => s.category === cat)
-                        const spent = spendRow ? Number(spendRow.spent) : 0
-                        const available = allocated !== null ? allocated - spent : null
-                        return (
-                          <div key={cat} className="flex items-center gap-3 flex-wrap">
-                            <span className="text-sm text-gray-700 w-48 shrink-0">{cat}</span>
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.5"
-                                className="bramley-input text-right"
-                                style={{ width: 70 }}
-                                value={budgetAllocs[cat] ?? '0'}
-                                onChange={(e) => setBudgetAllocs(prev => ({ ...prev, [cat]: e.target.value }))}
-                              />
-                              <span className="text-sm text-gray-500">%</span>
-                            </div>
-                            {allocated !== null && (
-                              <span className="text-sm text-gray-500">
-                                £{allocated.toLocaleString('en-GB', { minimumFractionDigits: 0 })} allocated
-                                {' · '}
-                                <span className={available !== null && available < 0 ? 'text-red-600 font-semibold' : 'text-green-700'}>
-                                  £{Math.max(0, available ?? 0).toLocaleString('en-GB', { minimumFractionDigits: 0 })} available
-                                </span>
-                                {spent > 0 && <span className="text-gray-400"> (£{spent.toLocaleString('en-GB', { minimumFractionDigits: 0 })} spent)</span>}
-                              </span>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                    <p className="text-sm text-gray-400 mt-2">
-                      Total allocated: {Object.values(budgetAllocs).reduce((s, v) => s + Number(v || 0), 0).toFixed(1)}%
-                    </p>
-                  </div>
-
-                  {budgetError && <p className="text-sm text-red-600">{budgetError}</p>}
-
-                  <button
-                    onClick={saveBudget}
-                    disabled={budgetSaving}
-                    style={{ width: 'auto' }}
-                    className="bramley-btn px-8 py-2.5 text-sm"
-                  >
-                    {budgetSaving ? <><span className="spinner" /> Saving…</> : 'Save budget'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Pending requests */}
-              {budgetData && budgetData.pendingRequests.filter(r => r.status === 'pending').length > 0 && (
-                <div className="bramley-card">
-                  <div className="bramley-body">
-                    <h3 className="font-semibold text-gray-800 mb-3">Pending budget requests</h3>
-                    <div className="space-y-4">
-                      {budgetData.pendingRequests.filter(r => r.status === 'pending').map(req => (
-                        <div key={req.id} className="border border-amber-200 bg-amber-50 rounded-[8px] p-4 space-y-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <span className="text-sm font-semibold text-gray-800">
-                                {req.type === 'transfer' ? 'Fund Transfer' : 'Overspend'} — £{Number(req.amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                              </span>
-                              <span className="text-sm text-gray-500 ml-2">requested by {req.requested_by}</span>
-                            </div>
-                          </div>
-                          {req.type === 'transfer' && req.from_category && (
-                            <p className="text-sm text-gray-600">Transfer from <strong>{req.from_category}</strong> to <strong>{req.to_category}</strong></p>
-                          )}
-                          {req.type === 'overspend' && (
-                            <p className="text-sm text-gray-600">Overspend for <strong>{req.to_category}</strong></p>
-                          )}
-                          {req.submission_description && (
-                            <p className="text-sm text-gray-500">Submission: {req.submission_description}</p>
-                          )}
-                          <p className="text-sm text-gray-700"><em>{req.justification}</em></p>
-
-                          {decidingRequest === req.id ? (
-                            <div className="space-y-2">
-                              <textarea
-                                className="bramley-input text-sm resize-none"
-                                rows={2}
-                                placeholder="Decision note (optional)"
-                                value={decisionNote}
-                                onChange={(e) => setDecisionNote(e.target.value)}
-                              />
-                              <div className="flex gap-2">
-                                <button onClick={() => decideBudgetRequest(req.id, 'approved')} style={{ width: 'auto' }} className="bramley-btn px-4 py-1.5 text-sm">Approve</button>
-                                <button onClick={() => decideBudgetRequest(req.id, 'rejected')} style={{ width: 'auto', background: '#7f1d1d' }} className="bramley-btn px-4 py-1.5 text-sm">Decline</button>
-                                <button onClick={() => setDecidingRequest(null)} className="text-sm text-gray-500 hover:text-gray-700 px-2">Cancel</button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button onClick={() => { setDecidingRequest(req.id); setDecisionNote('') }} style={{ width: 'auto' }} className="bramley-btn px-4 py-1.5 text-sm">
-                              Review request
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Recent decisions */}
-              {budgetData && budgetData.pendingRequests.filter(r => r.status !== 'pending').length > 0 && (
-                <div className="bramley-card">
-                  <div className="bramley-body">
-                    <h3 className="font-semibold text-gray-800 mb-3">Recent decisions</h3>
-                    <div className="space-y-2">
-                      {budgetData.pendingRequests.filter(r => r.status !== 'pending').slice(0, 5).map(req => (
-                        <div key={req.id} className={`text-sm p-3 rounded-[6px] ${req.status === 'approved' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                          <span className="font-semibold">{req.status === 'approved' ? '✓ Approved' : '✕ Declined'}</span>
-                          {' — '}
-                          {req.type === 'transfer' ? 'Transfer' : 'Overspend'} of £{Number(req.amount).toLocaleString('en-GB')} for {req.to_category}
-                          {req.decided_by && <span className="text-gray-500"> (by {req.decided_by})</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
         </div>
       )}
 

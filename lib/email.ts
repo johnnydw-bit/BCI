@@ -561,6 +561,44 @@ export async function sendBudgetDecisionEmail(
   })
 }
 
+export async function sendOwnerNudge(to: string, opts: {
+  ownerName: string
+  submissions: Array<{ id: number; description: string; status: string; daysSinceUpdate: number }>
+}) {
+  const fmt = (n: number) => `${n} day${n !== 1 ? 's' : ''}`
+  const rows = opts.submissions.map(s => `
+    <tr>
+      <td style="padding:8px 12px;font-family:sans-serif;font-size:14px;border-bottom:1px solid #eee">
+        <strong>${cipRef(s.id)}</strong> — ${s.description}
+      </td>
+      <td style="padding:8px 12px;font-family:sans-serif;font-size:13px;color:#777;border-bottom:1px solid #eee;white-space:nowrap">
+        ${s.status.replace(/_/g, ' ')} · no update for ${fmt(s.daysSinceUpdate)}
+      </td>
+    </tr>
+  `).join('')
+
+  await send({
+    from: FROM,
+    to,
+    subject: `BCI action reminder — ${opts.submissions.length} improvement${opts.submissions.length !== 1 ? 's' : ''} awaiting progress`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#1a3a5c', 'Improvement Action Reminder', 'Bramley Golf Club CIP')}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="font-family:sans-serif;color:#333;font-size:14px">Hi ${firstName(opts.ownerName)},</p>
+          <p style="font-family:sans-serif;color:#333;font-size:14px">
+            The following improvement${opts.submissions.length !== 1 ? 's' : ''} ${opts.submissions.length !== 1 ? 'are' : 'is'} assigned to you and ${opts.submissions.length !== 1 ? 'have' : 'has'} not had a status update in over two weeks. Please log in and update the status or add a note.
+          </p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #eee;border-radius:6px;overflow:hidden;margin-bottom:16px">
+            ${rows}
+          </table>
+          ${emailButton(`${APP_URL}/triage`, 'Open Triage Board →')}
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendTriageReport(to: string[], periodStart: Date, periodEnd: Date, nextRunAt: Date, htmlReport: string) {
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 

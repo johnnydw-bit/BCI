@@ -19,13 +19,9 @@ const CONFIG_GROUPS = [
     keys: ['WEIGHT_MEMBER_IMPACT', 'WEIGHT_STRATEGIC', 'WEIGHT_FEASIBILITY', 'WEIGHT_COST_BENEFIT', 'WEIGHT_NOVELTY', 'WEIGHT_EXPERIENCE_DELTA'],
   },
   {
-    title: 'Score Multipliers',
-    keys: ['MULT_HS', 'MULT_BUDGET_YEAR', 'MULT_MULTI_CATEGORY'],
-  },
-  {
-    title: 'Score Band Thresholds',
-    note: 'Minimum score to reach each band (out of 10)',
-    keys: ['BAND_PRIORITY', 'BAND_ACTIVE', 'BAND_HOLDING', 'BAND_LOW'],
+    title: 'Multipliers & Score Bands',
+    note: 'Multipliers applied to base score · Band thresholds (out of 10)',
+    keys: ['MULT_HS', 'MULT_BUDGET_YEAR', 'MULT_MULTI_CATEGORY', 'BAND_PRIORITY', 'BAND_ACTIVE', 'BAND_HOLDING', 'BAND_LOW'],
   },
   {
     title: 'Category Impact Ceilings',
@@ -33,18 +29,13 @@ const CONFIG_GROUPS = [
     keys: ['CEILING_COURSE', 'CEILING_COMPETITIONS', 'CEILING_CLUBHOUSE', 'CEILING_GROUNDS', 'CEILING_REFRESHMENTS', 'CEILING_RESTAURANT', 'CEILING_BAR', 'CEILING_PRO_SHOP'],
   },
   {
-    title: 'Cluster Consensus Bonuses',
-    note: 'Additive bonus applied when submissions form a cluster',
-    keys: ['CLUSTER_BONUS_2', 'CLUSTER_BONUS_3', 'CLUSTER_BONUS_4', 'CLUSTER_BONUS_5'],
-  },
-  {
-    title: 'Cost & Implementation Thresholds',
-    note: 'Used to flag quick wins and escalate high-cost items',
-    keys: ['COST_THRESHOLD_QUICKWIN', 'COST_THRESHOLD_COMMITTEE', 'IMPL_QUICKWIN_WEEKS'],
+    title: 'Clusters, Cost & Thresholds',
+    note: 'Consensus bonuses · Quick win and committee escalation thresholds',
+    keys: ['CLUSTER_BONUS_2', 'CLUSTER_BONUS_3', 'CLUSTER_BONUS_4', 'CLUSTER_BONUS_5', 'COST_THRESHOLD_QUICKWIN', 'COST_THRESHOLD_COMMITTEE', 'IMPL_QUICKWIN_WEEKS'],
   },
   {
     title: 'Director Spend Signoff Limits (£)',
-    note: 'Maximum confirmed cost each authority level can finalise without escalation. Set to 999999 for unlimited.',
+    note: 'Max cost each authority level can finalise. 999999 = unlimited.',
     keys: ['SPEND_LIMIT_DIRECTOR', 'SPEND_LIMIT_OPERATIONS_MANAGER', 'SPEND_LIMIT_CLUB_MANAGER', 'SPEND_LIMIT_CHAIRMAN'],
   },
 ]
@@ -180,11 +171,14 @@ export default function AdminPage() {
   async function saveConfig() {
     setSaving(true)
     const updates = Object.entries(edits).map(([key, value]) => ({ key, value }))
-    await fetch('/api/admin/config', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updates }),
-    })
+    await Promise.all([
+      fetch('/api/admin/config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates }),
+      }),
+      budgetTotal ? saveBudget() : Promise.resolve(),
+    ])
     setConfig((prev) => prev.map((r) => edits[r.key] !== undefined ? { ...r, value: edits[r.key] } : r))
     setEdits({})
     setSaving(false)
@@ -449,10 +443,10 @@ export default function AdminPage() {
       {/* Config tab */}
       {tab === 'config' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {[...CONFIG_GROUPS.slice(0, 5),
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 items-start gap-4">
+            {[...CONFIG_GROUPS.slice(0, 4),
               null, // budget card placeholder
-              ...CONFIG_GROUPS.slice(5),
+              ...CONFIG_GROUPS.slice(4),
             ].map((group, gi) => {
               // Budget card in place of the null placeholder
               if (group === null) return (
@@ -491,10 +485,10 @@ export default function AdminPage() {
                           const available = allocated !== null ? allocated - spent : null
                           return (
                             <tr key={cat.value} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                              <td className="px-3 py-1 text-gray-700">{cat.label}</td>
-                              <td className="px-2 py-1 text-right">
+                              <td className="px-3 py-0.5 text-gray-700">{cat.label}</td>
+                              <td className="px-2 py-0.5 text-right">
                                 <input type="text" inputMode="decimal"
-                                  className="w-14 text-right border border-gray-200 rounded px-1 py-0.5 text-xs"
+                                  className="w-14 text-right border border-gray-200 rounded px-1 py-0 text-xs"
                                   value={budgetAllocs[cat.value] ?? '0'}
                                   onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
@@ -503,16 +497,16 @@ export default function AdminPage() {
                                   }}
                                 />
                               </td>
-                              <td className="px-2 py-1 text-right text-gray-500">{allocated !== null ? `£${Math.round(allocated).toLocaleString('en-GB')}` : '—'}</td>
-                              <td className={`px-2 py-1 text-right font-medium ${available !== null && available < 0 ? 'text-red-600' : 'text-green-700'}`}>
+                              <td className="px-2 py-0.5 text-right text-gray-500">{allocated !== null ? `£${Math.round(allocated).toLocaleString('en-GB')}` : '—'}</td>
+                              <td className={`px-2 py-0.5 text-right font-medium ${available !== null && available < 0 ? 'text-red-600' : 'text-green-700'}`}>
                                 {available !== null ? `£${Math.max(0, Math.round(available)).toLocaleString('en-GB')}` : '—'}
                               </td>
                             </tr>
                           )
                         })}
                         <tr className="bg-gray-100 border-t border-gray-200">
-                          <td className="px-3 py-1 text-gray-500 font-semibold">Total</td>
-                          <td className={`px-2 py-1 text-right font-bold ${Math.abs(BUDGET_CATEGORIES.reduce((s, c) => s + Number(budgetAllocs[c.value] || 0), 0) - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+                          <td className="px-3 py-0.5 text-gray-500 font-semibold">Total</td>
+                          <td className={`px-2 py-0.5 text-right font-bold ${Math.abs(BUDGET_CATEGORIES.reduce((s, c) => s + Number(budgetAllocs[c.value] || 0), 0) - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
                             {BUDGET_CATEGORIES.reduce((s, c) => s + Number(budgetAllocs[c.value] || 0), 0).toFixed(1)}%
                           </td>
                           <td colSpan={2} />
@@ -520,15 +514,14 @@ export default function AdminPage() {
                       </tbody>
                     </table>
                   )}
-                  <div className="px-3 py-1.5 border-t border-gray-100 flex items-center gap-2 flex-wrap">
-                    <button onClick={saveBudget} disabled={budgetSaving} style={{ width: 'auto' }} className="bramley-btn px-4 py-1 text-xs">
-                      {budgetSaving ? <><span className="spinner" /> Saving…</> : 'Save budget'}
-                    </button>
-                    {budgetError && <span className="text-xs text-red-600">{budgetError}</span>}
-                    {(budgetData?.pendingRequests.filter(r => r.status === 'pending').length ?? 0) > 0 && (
-                      <span className="text-xs text-amber-600 font-semibold">⚠ {budgetData!.pendingRequests.filter(r => r.status === 'pending').length} pending request(s)</span>
-                    )}
-                  </div>
+                  {(budgetError || (budgetData?.pendingRequests.filter(r => r.status === 'pending').length ?? 0) > 0) && (
+                    <div className="px-3 py-1 border-t border-gray-100 flex items-center gap-2">
+                      {budgetError && <span className="text-xs text-red-600">{budgetError}</span>}
+                      {(budgetData?.pendingRequests.filter(r => r.status === 'pending').length ?? 0) > 0 && (
+                        <span className="text-xs text-amber-600 font-semibold">⚠ {budgetData!.pendingRequests.filter(r => r.status === 'pending').length} pending request(s)</span>
+                      )}
+                    </div>
+                  )}
                   {budgetData && budgetData.pendingRequests.filter(r => r.status === 'pending').length > 0 && (
                     <div className="border-t border-amber-200">
                       {budgetData.pendingRequests.filter(r => r.status === 'pending').map(req => (
@@ -563,24 +556,24 @@ export default function AdminPage() {
               const weightsOk = Math.abs(weightsTotal - 1) < 0.001
               return (
                 <div key={group!.title} className="bramley-card overflow-hidden p-0">
-                  <div className="px-3 py-2 border-b border-gray-200" style={{ background: 'var(--bramley-primary)' }}>
+                  <div className="px-3 py-1.5 border-b border-gray-200" style={{ background: 'var(--bramley-primary)' }}>
                     <p className="text-xs font-semibold text-white">{group!.title}</p>
-                    {group!.note && <p className="text-xs text-white opacity-60 mt-0.5">{group!.note}</p>}
+                    {group!.note && <p className="text-xs text-white/60 leading-tight">{group!.note}</p>}
                   </div>
-                  <table className="w-full text-sm border-collapse">
+                  <table className="w-full text-xs border-collapse">
                     <tbody>
                       {group!.keys.map((key, i) => {
                         const row = config.find((r) => r.key === key)
                         const dirty = edits[key] !== undefined
                         return (
                           <tr key={key} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                            <td className="px-3 py-1.5 text-xs text-gray-600 leading-tight">
+                            <td className="px-3 py-0.5 text-gray-600 leading-tight">
                               {shortLabel(row?.label ?? key)}
                               {dirty && <span className="ml-1 text-amber-500">●</span>}
                             </td>
-                            <td className="px-2 py-1 text-right w-24">
+                            <td className="px-2 py-0.5 text-right w-20">
                               <input type="number" step="any"
-                                className="w-full border border-gray-200 rounded px-2 py-0.5 text-right text-xs text-gray-800 focus:outline-none focus:border-blue-400 bg-white"
+                                className="w-full border border-gray-200 rounded px-1.5 py-0 text-right text-xs text-gray-800 focus:outline-none focus:border-blue-400 bg-white"
                                 value={configValue(key)}
                                 onChange={(e) => handleEdit(key, e.target.value)}
                               />
@@ -590,8 +583,8 @@ export default function AdminPage() {
                       })}
                       {isWeights && (
                         <tr className="bg-gray-50 border-t border-gray-200">
-                          <td className="px-3 py-1.5 text-xs font-semibold text-gray-500">Total</td>
-                          <td className={`px-3 py-1.5 text-right text-xs font-bold ${weightsOk ? 'text-green-600' : 'text-red-600'}`}>
+                          <td className="px-3 py-0.5 text-xs font-semibold text-gray-500">Total</td>
+                          <td className={`px-3 py-0.5 text-right text-xs font-bold ${weightsOk ? 'text-green-600' : 'text-red-600'}`}>
                             {weightsTotal.toFixed(2)} {weightsOk ? '✓' : '✗'}
                           </td>
                         </tr>

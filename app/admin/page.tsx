@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BramleyHeader from '@/components/BramleyHeader'
 import FullscreenButton from '@/components/FullscreenButton'
+import { CATEGORIES } from '@/lib/categories'
 
 const ROLES = [
   'Club Manager', 'Super Admin', 'Operations Manager', 'Finance Director',
@@ -117,7 +118,7 @@ export default function AdminPage() {
   const [decidingRequest, setDecidingRequest] = useState<number | null>(null)
   const [decisionNote, setDecisionNote] = useState('')
 
-  const BUDGET_CATEGORIES = ['Course', 'Competitions & Matches', 'Clubhouse', 'Grounds', 'On-course Refreshments', 'Restaurant / Catering', 'Bar', 'Pro Shop']
+  const BUDGET_CATEGORIES = CATEGORIES
 
   function loadBudget(year = budgetYear) {
     setBudgetLoading(true)
@@ -128,12 +129,12 @@ export default function AdminPage() {
         const allocMap: Record<string, string> = {}
         for (const a of d.allocations) allocMap[a.category] = String(a.percentage)
         // Fill zeros for missing
-        for (const cat of BUDGET_CATEGORIES) if (!allocMap[cat]) allocMap[cat] = '0'
+        for (const cat of BUDGET_CATEGORIES) if (!allocMap[cat.value]) allocMap[cat.value] = '0'
         setBudgetAllocs(allocMap)
       } else {
         setBudgetTotal('')
         const allocMap: Record<string, string> = {}
-        for (const cat of BUDGET_CATEGORIES) allocMap[cat] = '0'
+        for (const cat of BUDGET_CATEGORIES) allocMap[cat.value] = '0'
         setBudgetAllocs(allocMap)
       }
     }).finally(() => setBudgetLoading(false))
@@ -144,7 +145,7 @@ export default function AdminPage() {
     setBudgetSaving(true)
     const total = Number(budgetTotal)
     if (!total || total <= 0) { setBudgetError('Enter a total budget amount'); setBudgetSaving(false); return }
-    const allocations = BUDGET_CATEGORIES.map(cat => ({ category: cat, percentage: Number(budgetAllocs[cat] ?? 0) }))
+    const allocations = BUDGET_CATEGORIES.map(cat => ({ category: cat.value, percentage: Number(budgetAllocs[cat.value] ?? 0) }))
     const sum = allocations.reduce((s, a) => s + a.percentage, 0)
     if (Math.abs(sum - 100) > 0.01) { setBudgetError(`Allocations must sum to 100% (currently ${sum.toFixed(1)}%)`); setBudgetSaving(false); return }
     const res = await fetch('/api/budget', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'setup', year: budgetYear, totalAmount: total, allocations }) })
@@ -546,14 +547,14 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {BUDGET_CATEGORIES.map((cat, i) => {
-                    const pct = Number(budgetAllocs[cat] ?? 0)
+                    const pct = Number(budgetAllocs[cat.value] ?? 0)
                     const allocated = budgetTotal ? (Number(budgetTotal) * pct) / 100 : null
-                    const spendRow = budgetData?.spend.find(s => s.category === cat)
+                    const spendRow = budgetData?.spend.find(s => s.category === cat.value)
                     const spent = spendRow ? Number(spendRow.spent) : 0
                     const available = allocated !== null ? allocated - spent : null
                     return (
-                      <tr key={cat} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-3 py-1.5 text-gray-700">{cat}</td>
+                      <tr key={cat.value} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-3 py-1.5 text-gray-700">{cat.label}</td>
                         <td className="px-3 py-1.5 text-right">
                           <input
                             type="number"
@@ -561,8 +562,8 @@ export default function AdminPage() {
                             max="100"
                             step="0.5"
                             className="w-16 text-right border border-gray-200 rounded px-1.5 py-0.5 text-sm"
-                            value={budgetAllocs[cat] ?? '0'}
-                            onChange={(e) => setBudgetAllocs(prev => ({ ...prev, [cat]: e.target.value }))}
+                            value={budgetAllocs[cat.value] ?? '0'}
+                            onChange={(e) => setBudgetAllocs(prev => ({ ...prev, [cat.value]: e.target.value }))}
                           />
                           <span className="text-gray-400 ml-1">%</span>
                         </td>
@@ -576,8 +577,8 @@ export default function AdminPage() {
                   })}
                   <tr className="bg-gray-100 border-t border-gray-200 font-semibold">
                     <td className="px-3 py-1.5 text-gray-600 text-xs">Total</td>
-                    <td className={`px-3 py-1.5 text-right text-xs ${Math.abs(Object.values(budgetAllocs).reduce((s, v) => s + Number(v || 0), 0) - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
-                      {Object.values(budgetAllocs).reduce((s, v) => s + Number(v || 0), 0).toFixed(1)}%
+                    <td className={`px-3 py-1.5 text-right text-xs ${Math.abs(BUDGET_CATEGORIES.reduce((s, c) => s + Number(budgetAllocs[c.value] || 0), 0) - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+                      {BUDGET_CATEGORIES.reduce((s, c) => s + Number(budgetAllocs[c.value] || 0), 0).toFixed(1)}%
                     </td>
                     <td colSpan={3} />
                   </tr>

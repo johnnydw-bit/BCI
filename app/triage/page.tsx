@@ -110,13 +110,17 @@ export default function TriagePage() {
   const [expandedTrackingId, setExpandedTrackingId] = useState<number | null>(null)
   const [savingTracking, setSavingTracking] = useState<number | null>(null)
 
+  const [loadError, setLoadError] = useState<string | null>(null)
+
   useEffect(() => {
     fetch('/api/triage')
       .then((r) => {
         if (r.status === 403) { router.push('/board'); return null }
+        if (!r.ok) { return r.text().then(t => { throw new Error(t) }) }
         return r.json()
       })
       .then((d) => { if (d) setData(d) })
+      .catch((e) => setLoadError(String(e)))
       .finally(() => setLoading(false))
   }, [router])
 
@@ -349,7 +353,23 @@ export default function TriagePage() {
     )
   }
 
-  if (!data) return null
+  if (!data) {
+    return (
+      <div className="bramley-card">
+        <BramleyHeader subtitle="Triage Report" />
+        <div className="bramley-body space-y-3 py-8">
+          <p className="text-red-700 font-semibold">Failed to load triage data.</p>
+          {loadError && loadError.includes('budget_request_id') && (
+            <p className="text-sm text-gray-600">A database migration is required. Go to <strong>Admin → Setup → Initialise database</strong> and click the button, then reload this page.</p>
+          )}
+          {loadError && !loadError.includes('budget_request_id') && (
+            <p className="text-sm text-gray-500">{loadError}</p>
+          )}
+          <button onClick={() => window.location.reload()} className="bramley-btn-secondary" style={{ width: 'auto', padding: '6px 20px' }}>Reload</button>
+        </div>
+      </div>
+    )
+  }
 
   const STATUS_ORDER: Record<string, number> = {
     new: 0, under_consideration: 1, approved: 2, implemented: 3, rejected: 4,

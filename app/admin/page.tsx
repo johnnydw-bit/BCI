@@ -493,10 +493,14 @@ export default function AdminPage() {
                             <tr key={cat.value} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                               <td className="px-3 py-1 text-gray-700">{cat.label}</td>
                               <td className="px-2 py-1 text-right">
-                                <input type="number" min="0" max="100" step="0.5"
+                                <input type="text" inputMode="decimal"
                                   className="w-14 text-right border border-gray-200 rounded px-1 py-0.5 text-xs"
                                   value={budgetAllocs[cat.value] ?? '0'}
-                                  onChange={(e) => setBudgetAllocs(prev => ({ ...prev, [cat.value]: e.target.value }))}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => {
+                                    const v = e.target.value.replace(/[^0-9.]/g, '')
+                                    if ((v.match(/\./g) ?? []).length <= 1) setBudgetAllocs(prev => ({ ...prev, [cat.value]: v }))
+                                  }}
                                 />
                               </td>
                               <td className="px-2 py-1 text-right text-gray-500">{allocated !== null ? `£${Math.round(allocated).toLocaleString('en-GB')}` : '—'}</td>

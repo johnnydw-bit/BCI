@@ -426,11 +426,11 @@ export default function AdminPage() {
         <div className="bramley-body pb-0">
           <div className="flex gap-2 flex-wrap">
             {([
-              ['config', 'Scoring Config'],
+              ['config', 'Setup'],
               ['comms', 'Communications'],
               ['directors', 'Directors'],
               ['dashboard', 'Dashboard'],
-              ['setup', 'Setup'],
+              ['setup', 'Application Management'],
             ] as const).map(([t, label]) => (
               <button
                 key={t}

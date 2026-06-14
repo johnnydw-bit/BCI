@@ -450,23 +450,122 @@ export default function AdminPage() {
       {tab === 'config' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {CONFIG_GROUPS.map((group) => {
-              const isWeights = group.title === 'Scoring Weights'
+            {[...CONFIG_GROUPS.slice(0, 5),
+              null, // budget card placeholder
+              ...CONFIG_GROUPS.slice(5),
+            ].map((group, gi) => {
+              // Budget card in place of the null placeholder
+              if (group === null) return (
+                <div key="__budget__" className="bramley-card overflow-hidden p-0">
+                  <div className="px-3 py-2 border-b border-gray-200" style={{ background: 'var(--bramley-primary)' }}>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <p className="text-xs font-semibold text-white">Annual Budget Allocations</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white/70">FY</span>
+                        <select className="text-xs rounded px-1.5 py-0.5 border-0" value={budgetYear} onChange={(e) => { const y = Number(e.target.value); setBudgetYear(y); loadBudget(y) }}>
+                          {[budgetYear - 1, budgetYear, budgetYear + 1].map(y => <option key={y} value={y}>{y}/{String(y + 1).slice(2)}</option>)}
+                        </select>
+                        <span className="text-xs text-white/70">Total £</span>
+                        <input type="number" min="0" step="100" className="text-xs rounded px-1.5 py-0.5 border-0 w-20" value={budgetTotal} onChange={(e) => setBudgetTotal(e.target.value)} placeholder="50000" />
+                      </div>
+                    </div>
+                  </div>
+                  {budgetLoading ? (
+                    <div className="px-3 py-4 flex items-center gap-2 text-xs text-gray-400"><span className="spinner" /> Loading…</div>
+                  ) : (
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="text-left px-3 py-1.5 font-semibold text-gray-500">Category</th>
+                          <th className="text-right px-2 py-1.5 font-semibold text-gray-500 w-20">%</th>
+                          <th className="text-right px-2 py-1.5 font-semibold text-gray-500 w-20">Alloc</th>
+                          <th className="text-right px-2 py-1.5 font-semibold text-gray-500 w-20">Avail</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {BUDGET_CATEGORIES.map((cat, i) => {
+                          const pct = Number(budgetAllocs[cat.value] ?? 0)
+                          const allocated = budgetTotal ? (Number(budgetTotal) * pct) / 100 : null
+                          const spendRow = budgetData?.spend.find(s => s.category === cat.value)
+                          const spent = spendRow ? Number(spendRow.spent) : 0
+                          const available = allocated !== null ? allocated - spent : null
+                          return (
+                            <tr key={cat.value} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                              <td className="px-3 py-1 text-gray-700">{cat.label}</td>
+                              <td className="px-2 py-1 text-right">
+                                <input type="number" min="0" max="100" step="0.5"
+                                  className="w-14 text-right border border-gray-200 rounded px-1 py-0.5 text-xs"
+                                  value={budgetAllocs[cat.value] ?? '0'}
+                                  onChange={(e) => setBudgetAllocs(prev => ({ ...prev, [cat.value]: e.target.value }))}
+                                />
+                              </td>
+                              <td className="px-2 py-1 text-right text-gray-500">{allocated !== null ? `£${Math.round(allocated).toLocaleString('en-GB')}` : '—'}</td>
+                              <td className={`px-2 py-1 text-right font-medium ${available !== null && available < 0 ? 'text-red-600' : 'text-green-700'}`}>
+                                {available !== null ? `£${Math.max(0, Math.round(available)).toLocaleString('en-GB')}` : '—'}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                        <tr className="bg-gray-100 border-t border-gray-200">
+                          <td className="px-3 py-1 text-gray-500 font-semibold">Total</td>
+                          <td className={`px-2 py-1 text-right font-bold ${Math.abs(BUDGET_CATEGORIES.reduce((s, c) => s + Number(budgetAllocs[c.value] || 0), 0) - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+                            {BUDGET_CATEGORIES.reduce((s, c) => s + Number(budgetAllocs[c.value] || 0), 0).toFixed(1)}%
+                          </td>
+                          <td colSpan={2} />
+                        </tr>
+                      </tbody>
+                    </table>
+                  )}
+                  <div className="px-3 py-1.5 border-t border-gray-100 flex items-center gap-2 flex-wrap">
+                    <button onClick={saveBudget} disabled={budgetSaving} style={{ width: 'auto' }} className="bramley-btn px-4 py-1 text-xs">
+                      {budgetSaving ? <><span className="spinner" /> Saving…</> : 'Save budget'}
+                    </button>
+                    {budgetError && <span className="text-xs text-red-600">{budgetError}</span>}
+                    {(budgetData?.pendingRequests.filter(r => r.status === 'pending').length ?? 0) > 0 && (
+                      <span className="text-xs text-amber-600 font-semibold">⚠ {budgetData!.pendingRequests.filter(r => r.status === 'pending').length} pending request(s)</span>
+                    )}
+                  </div>
+                  {budgetData && budgetData.pendingRequests.filter(r => r.status === 'pending').length > 0 && (
+                    <div className="border-t border-amber-200">
+                      {budgetData.pendingRequests.filter(r => r.status === 'pending').map(req => (
+                        <div key={req.id} className="px-3 py-2 border-b border-amber-100 bg-amber-50 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-gray-700 font-medium">{req.type === 'transfer' ? 'Transfer' : 'Overspend'} — {req.to_category} · £{Number(req.amount).toLocaleString('en-GB')}</span>
+                            {decidingRequest === req.id ? (
+                              <div className="flex gap-1">
+                                <button onClick={() => decideBudgetRequest(req.id, 'approved')} style={{ width: 'auto' }} className="bramley-btn px-2 py-0.5 text-xs">✓</button>
+                                <button onClick={() => decideBudgetRequest(req.id, 'rejected')} style={{ width: 'auto', background: '#7f1d1d' }} className="bramley-btn px-2 py-0.5 text-xs">✕</button>
+                                <button onClick={() => setDecidingRequest(null)} className="text-gray-400 px-1">–</button>
+                              </div>
+                            ) : (
+                              <button onClick={() => { setDecidingRequest(req.id); setDecisionNote('') }} style={{ width: 'auto' }} className="bramley-btn px-2 py-0.5 text-xs">Review</button>
+                            )}
+                          </div>
+                          <p className="text-gray-400 mt-0.5">{req.requested_by} · <em>{req.justification}</em></p>
+                          {decidingRequest === req.id && (
+                            <input type="text" className="bramley-input text-xs py-0.5 mt-1" placeholder="Decision note (optional)" value={decisionNote} onChange={(e) => setDecisionNote(e.target.value)} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+
+              const isWeights = group!.title === 'Scoring Weights'
               const weightsTotal = isWeights
                 ? WEIGHT_KEYS.reduce((sum, k) => sum + (parseFloat(configValue(k)) || 0), 0)
                 : 0
               const weightsOk = Math.abs(weightsTotal - 1) < 0.001
               return (
-                <div key={group.title} className="bramley-card overflow-hidden p-0">
-                  {/* Group header */}
+                <div key={group!.title} className="bramley-card overflow-hidden p-0">
                   <div className="px-3 py-2 border-b border-gray-200" style={{ background: 'var(--bramley-primary)' }}>
-                    <p className="text-xs font-semibold text-white">{group.title}</p>
-                    {group.note && <p className="text-xs text-white opacity-60 mt-0.5">{group.note}</p>}
+                    <p className="text-xs font-semibold text-white">{group!.title}</p>
+                    {group!.note && <p className="text-xs text-white opacity-60 mt-0.5">{group!.note}</p>}
                   </div>
-                  {/* Spreadsheet rows */}
                   <table className="w-full text-sm border-collapse">
                     <tbody>
-                      {group.keys.map((key, i) => {
+                      {group!.keys.map((key, i) => {
                         const row = config.find((r) => r.key === key)
                         const dirty = edits[key] !== undefined
                         return (
@@ -476,9 +575,7 @@ export default function AdminPage() {
                               {dirty && <span className="ml-1 text-amber-500">●</span>}
                             </td>
                             <td className="px-2 py-1 text-right w-24">
-                              <input
-                                type="number"
-                                step="any"
+                              <input type="number" step="any"
                                 className="w-full border border-gray-200 rounded px-2 py-0.5 text-right text-xs text-gray-800 focus:outline-none focus:border-blue-400 bg-white"
                                 value={configValue(key)}
                                 onChange={(e) => handleEdit(key, e.target.value)}
@@ -487,7 +584,6 @@ export default function AdminPage() {
                           </tr>
                         )
                       })}
-                      {/* Weights total */}
                       {isWeights && (
                         <tr className="bg-gray-50 border-t border-gray-200">
                           <td className="px-3 py-1.5 text-xs font-semibold text-gray-500">Total</td>
@@ -501,154 +597,6 @@ export default function AdminPage() {
                 </div>
               )
             })}
-          </div>
-
-          {/* Budget allocation table */}
-          <div className="bramley-card overflow-hidden p-0">
-            <div className="px-3 py-2 border-b border-gray-200" style={{ background: 'var(--bramley-primary)' }}>
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <h3 className="text-sm font-semibold text-white">Annual Budget Allocations</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-white/70">FY</span>
-                  <select
-                    className="text-xs rounded px-1.5 py-0.5 border-0"
-                    value={budgetYear}
-                    onChange={(e) => { const y = Number(e.target.value); setBudgetYear(y); loadBudget(y) }}
-                  >
-                    {[budgetYear - 1, budgetYear, budgetYear + 1].map(y => (
-                      <option key={y} value={y}>{y}/{String(y + 1).slice(2)}</option>
-                    ))}
-                  </select>
-                  <span className="text-xs text-white/70">Total £</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="100"
-                    className="text-xs rounded px-1.5 py-0.5 border-0 w-24"
-                    value={budgetTotal}
-                    onChange={(e) => setBudgetTotal(e.target.value)}
-                    placeholder="e.g. 50000"
-                  />
-                </div>
-              </div>
-            </div>
-            {budgetLoading ? (
-              <div className="px-3 py-4 flex items-center gap-2 text-sm text-gray-400"><span className="spinner" /> Loading…</div>
-            ) : (
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left px-3 py-1.5 text-xs font-semibold text-gray-500">Category</th>
-                    <th className="text-right px-3 py-1.5 text-xs font-semibold text-gray-500 w-24">%</th>
-                    <th className="text-right px-3 py-1.5 text-xs font-semibold text-gray-500 w-28">Allocated</th>
-                    <th className="text-right px-3 py-1.5 text-xs font-semibold text-gray-500 w-24">Spent</th>
-                    <th className="text-right px-3 py-1.5 text-xs font-semibold text-gray-500 w-28">Available</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {BUDGET_CATEGORIES.map((cat, i) => {
-                    const pct = Number(budgetAllocs[cat.value] ?? 0)
-                    const allocated = budgetTotal ? (Number(budgetTotal) * pct) / 100 : null
-                    const spendRow = budgetData?.spend.find(s => s.category === cat.value)
-                    const spent = spendRow ? Number(spendRow.spent) : 0
-                    const available = allocated !== null ? allocated - spent : null
-                    return (
-                      <tr key={cat.value} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-3 py-1.5 text-gray-700">{cat.label}</td>
-                        <td className="px-3 py-1.5 text-right">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.5"
-                            className="w-16 text-right border border-gray-200 rounded px-1.5 py-0.5 text-sm"
-                            value={budgetAllocs[cat.value] ?? '0'}
-                            onChange={(e) => setBudgetAllocs(prev => ({ ...prev, [cat.value]: e.target.value }))}
-                          />
-                          <span className="text-gray-400 ml-1">%</span>
-                        </td>
-                        <td className="px-3 py-1.5 text-right text-gray-600">{allocated !== null ? `£${allocated.toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : '—'}</td>
-                        <td className="px-3 py-1.5 text-right text-gray-500">{spent > 0 ? `£${spent.toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : '—'}</td>
-                        <td className={`px-3 py-1.5 text-right font-medium ${available !== null && available < 0 ? 'text-red-600' : 'text-green-700'}`}>
-                          {available !== null ? `£${Math.max(0, available).toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : '—'}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                  <tr className="bg-gray-100 border-t border-gray-200 font-semibold">
-                    <td className="px-3 py-1.5 text-gray-600 text-xs">Total</td>
-                    <td className={`px-3 py-1.5 text-right text-xs ${Math.abs(BUDGET_CATEGORIES.reduce((s, c) => s + Number(budgetAllocs[c.value] || 0), 0) - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
-                      {BUDGET_CATEGORIES.reduce((s, c) => s + Number(budgetAllocs[c.value] || 0), 0).toFixed(1)}%
-                    </td>
-                    <td colSpan={3} />
-                  </tr>
-                </tbody>
-              </table>
-            )}
-            <div className="px-3 py-2 border-t border-gray-100 flex items-center gap-3">
-              <button onClick={saveBudget} disabled={budgetSaving} style={{ width: 'auto' }} className="bramley-btn px-6 py-1.5 text-xs">
-                {budgetSaving ? <><span className="spinner" /> Saving…</> : 'Save budget'}
-              </button>
-              {budgetError && <span className="text-xs text-red-600">{budgetError}</span>}
-              {budgetData?.pendingRequests.filter(r => r.status === 'pending').length ? (
-                <span className="text-xs text-amber-600 font-semibold">⚠ {budgetData.pendingRequests.filter(r => r.status === 'pending').length} pending fund request(s)</span>
-              ) : null}
-            </div>
-
-            {/* Pending requests inline */}
-            {budgetData && budgetData.pendingRequests.filter(r => r.status === 'pending').length > 0 && (
-              <div className="border-t border-amber-200">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-amber-50">
-                      <th className="text-left px-3 py-1.5 text-xs font-semibold text-amber-700">Fund request</th>
-                      <th className="text-right px-3 py-1.5 text-xs font-semibold text-amber-700 w-24">Amount</th>
-                      <th className="px-3 py-1.5 text-xs font-semibold text-amber-700 w-40"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {budgetData.pendingRequests.filter(r => r.status === 'pending').map(req => (
-                      <>
-                        <tr key={req.id} className="border-t border-amber-100">
-                          <td className="px-3 py-1.5 text-gray-700">
-                            <span className="font-medium">{req.type === 'transfer' ? 'Transfer' : 'Overspend'}</span>
-                            {' — '}{req.to_category}
-                            {req.from_category && <span className="text-gray-400"> (from {req.from_category})</span>}
-                            <span className="text-gray-400 ml-2">· {req.requested_by}</span>
-                          </td>
-                          <td className="px-3 py-1.5 text-right font-semibold text-gray-800">£{Number(req.amount).toLocaleString('en-GB', { maximumFractionDigits: 0 })}</td>
-                          <td className="px-3 py-1.5 text-right">
-                            {decidingRequest === req.id ? (
-                              <div className="flex items-center gap-1 justify-end">
-                                <button onClick={() => decideBudgetRequest(req.id, 'approved')} style={{ width: 'auto' }} className="bramley-btn px-2 py-0.5 text-xs">Approve</button>
-                                <button onClick={() => decideBudgetRequest(req.id, 'rejected')} style={{ width: 'auto', background: '#7f1d1d' }} className="bramley-btn px-2 py-0.5 text-xs">Decline</button>
-                                <button onClick={() => setDecidingRequest(null)} className="text-xs text-gray-400 hover:text-gray-600 px-1">✕</button>
-                              </div>
-                            ) : (
-                              <button onClick={() => { setDecidingRequest(req.id); setDecisionNote('') }} style={{ width: 'auto' }} className="bramley-btn px-3 py-0.5 text-xs">Review</button>
-                            )}
-                          </td>
-                        </tr>
-                        {decidingRequest === req.id && (
-                          <tr key={`${req.id}-note`} className="bg-amber-50">
-                            <td colSpan={3} className="px-3 pb-2">
-                              <p className="text-xs text-gray-500 mb-1"><em>{req.justification}</em></p>
-                              <input
-                                type="text"
-                                className="bramley-input text-xs py-1"
-                                placeholder="Decision note (optional)"
-                                value={decisionNote}
-                                onChange={(e) => setDecisionNote(e.target.value)}
-                              />
-                            </td>
-                          </tr>
-                        )}
-                      </>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
 
           {/* Save bar */}

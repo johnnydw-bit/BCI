@@ -4,11 +4,7 @@ import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { isManager, DEFAULT_SPEND_LIMITS, isDecisionFinalised } from '@/lib/categories'
 import { sendBudgetRequestEmail, sendBudgetDecisionEmail } from '@/lib/email'
-
-export function financialYear(date = new Date()): number {
-  // July 1 start: month >= 6 (0-indexed July) means we're in the new FY
-  return date.getMonth() >= 6 ? date.getFullYear() : date.getFullYear() - 1
-}
+import { financialYear } from '@/lib/budget'
 
 async function loadSpendLimits(): Promise<Record<string, number>> {
   const rows = await sql`SELECT key, value FROM config WHERE key IN ('SPEND_LIMIT_DIRECTOR','SPEND_LIMIT_OPERATIONS_MANAGER','SPEND_LIMIT_CLUB_MANAGER','SPEND_LIMIT_CHAIRMAN')`

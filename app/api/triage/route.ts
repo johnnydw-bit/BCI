@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 import { DIRECTOR_CATEGORIES, getCategoriesForRole, isManager, roleToAuthority, canOverrideAuthority, AUTHORITY_LEVELS, DEFAULT_SPEND_LIMITS, isDecisionFinalised } from '@/lib/categories'
+import { financialYear } from '@/lib/budget'
 import { generateStatusEmail, generateFinalApprovalEmail } from '@/lib/ai'
 import { sendStatusChangeEmail, sendRatificationNotification, sendOwnerAssignmentNotification } from '@/lib/email'
 
@@ -358,7 +359,6 @@ export async function PATCH(req: NextRequest) {
     // Budget check: block approval if category allocation is exhausted
     const isApprovalMove = (status === 'approved' || status === 'in_plan') && oldStatus !== 'approved' && oldStatus !== 'in_plan'
     if (isApprovalMove && effectiveCost !== null && effectiveCost > 0) {
-      const { financialYear } = await import('@/app/api/budget/route')
       const fy = financialYear()
       const potRows = await sql`SELECT bp.id, bp.total_amount, ba.percentage
         FROM budget_pots bp
@@ -393,7 +393,7 @@ export async function PATCH(req: NextRequest) {
 
     // On reversal to an open status, clear decision fields so the chain can start fresh.
     // On cancellation (→ rejected) keep the actor as decision authority.
-    const newBudgetYear = isApprovalMove ? (async () => { const { financialYear } = await import('@/app/api/budget/route'); return financialYear() })() : Promise.resolve(null)
+    const newBudgetYear = isApprovalMove ? Promise.resolve(financialYear()) : Promise.resolve(null)
     const budgetYear = await newBudgetYear
     await sql`
       UPDATE submissions

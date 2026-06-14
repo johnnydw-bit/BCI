@@ -482,6 +482,85 @@ export async function sendOwnerAssignmentNotification(to: string[], opts: {
   })
 }
 
+export async function sendBudgetRequestEmail(
+  to: string[],
+  opts: {
+    requestedBy: string
+    type: 'transfer' | 'overspend'
+    fromCategory?: string
+    toCategory: string
+    amount: number
+    justification: string
+    submissionDescription: string
+    submissionId: number
+  }
+) {
+  const typeLabel = opts.type === 'transfer' ? 'Fund Transfer Request' : 'Overspend Request'
+  const fmt = (n: number) => `£${n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+  await send({
+    from: FROM,
+    to,
+    subject: `BCI Budget: ${typeLabel} from ${opts.requestedBy}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader('#1a3a5c', 'Budget Request', `${typeLabel} — ${cipRef(opts.submissionId)}`)}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-size:14px;margin-bottom:16px">
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif;width:140px">Requested by</td><td style="font-family:sans-serif">${opts.requestedBy}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Request type</td><td style="font-family:sans-serif">${typeLabel}</td></tr>
+            ${opts.fromCategory ? `<tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Transfer from</td><td style="font-family:sans-serif">${opts.fromCategory}</td></tr>` : ''}
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">${opts.type === 'transfer' ? 'Transfer to' : 'Category'}</td><td style="font-family:sans-serif">${opts.toCategory}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Amount</td><td style="font-family:sans-serif;font-weight:bold">${fmt(opts.amount)}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Submission</td><td style="font-family:sans-serif">${cipRef(opts.submissionId)} — ${opts.submissionDescription}</td></tr>
+            <tr><td style="background:#f5f5f5;font-weight:600;font-family:sans-serif">Justification</td><td style="font-family:sans-serif">${opts.justification}</td></tr>
+          </table>
+          ${emailButton(`${APP_URL}/triage`, 'Review in Triage Board →')}
+        </div>
+      </div>
+    `,
+  })
+}
+
+export async function sendBudgetDecisionEmail(
+  to: string,
+  opts: {
+    requestedBy: string
+    decidedBy: string
+    decision: 'approved' | 'rejected'
+    decisionNote?: string
+    type: 'transfer' | 'overspend'
+    toCategory: string
+    amount: number
+    submissionId?: number
+  }
+) {
+  const typeLabel = opts.type === 'transfer' ? 'fund transfer' : 'overspend'
+  const fmt = (n: number) => `£${n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const approved = opts.decision === 'approved'
+
+  await send({
+    from: FROM,
+    to,
+    subject: `BCI Budget: Your ${typeLabel} request has been ${approved ? 'approved' : 'declined'}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        ${emailHeader(approved ? '#1a5c3a' : '#5c1a1a', `Budget Request ${approved ? 'Approved' : 'Declined'}`, `${fmt(opts.amount)} ${typeLabel} — ${opts.toCategory}`)}
+        <div style="padding:24px;background:#fff;border-radius:0 0 10px 10px;border:1px solid #ddd;border-top:none">
+          <p style="font-family:sans-serif;color:#333;font-size:14px">Hi ${firstName(opts.requestedBy)},</p>
+          <p style="font-family:sans-serif;color:#333;font-size:14px">
+            Your ${typeLabel} request for ${fmt(opts.amount)} to <strong>${opts.toCategory}</strong> has been
+            <strong>${approved ? 'approved' : 'declined'}</strong> by ${opts.decidedBy}.
+          </p>
+          ${opts.decisionNote ? `<p style="font-family:sans-serif;color:#555;font-size:14px;padding:12px;background:#f5f5f5;border-radius:6px">${opts.decisionNote}</p>` : ''}
+          ${approved ? `<p style="font-family:sans-serif;color:#333;font-size:14px">The submission can now be approved in the triage board.</p>` : `<p style="font-family:sans-serif;color:#333;font-size:14px">Please contact the Chair or Club Manager if you wish to discuss further.</p>`}
+          ${emailButton(`${APP_URL}/triage`, 'Open Triage Board →')}
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendTriageReport(to: string[], periodStart: Date, periodEnd: Date, nextRunAt: Date, htmlReport: string) {
   const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 

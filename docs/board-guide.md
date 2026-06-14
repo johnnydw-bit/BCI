@@ -26,7 +26,8 @@
 17. [The member view](#17-the-member-view)
 18. [Session security](#18-session-security)
 19. [Admin panel](#19-admin-panel)
-20. [Frequently asked questions](#20-frequently-asked-questions)
+20. [Budget management](#20-budget-management)
+21. [Frequently asked questions](#21-frequently-asked-questions)
 
 ---
 
@@ -657,7 +658,54 @@ Use after changing scoring weights to re-score everything with the new configura
 
 ---
 
-## 20. Frequently asked questions
+## 20. Budget management
+
+The Budget tab in the Admin panel lets the Club Manager or Chair set up an annual miscellaneous expense pot and distribute it across categories.
+
+### Setting up the budget
+
+1. Go to **Admin → Budget**.
+2. Select the financial year (runs July 1 – June 30).
+3. Enter the **total budget** (£) for miscellaneous improvements.
+4. Set each category's **percentage allocation** — these must sum to exactly 100%.
+5. Click **Save budget**.
+
+The live spend and remaining balance are shown next to each allocation and update automatically as submissions are approved.
+
+### Budget checks on approval
+
+When a director tries to approve a submission, the system checks whether the category has sufficient remaining budget:
+
+- If funds are available, the approval proceeds normally.
+- If funds are **exhausted** (the confirmed cost exceeds the remaining allocation), the approval is **blocked** and a modal appears.
+
+The 🏦 badge on a row indicates a pending budget request for that submission.
+
+### Requesting additional funds
+
+When an approval is blocked:
+
+1. Choose the request type:
+   - **Overspend** — request extra budget from the overall pot for this category.
+   - **Transfer** — propose moving funds from another category to this one.
+2. Enter a justification explaining why the approval is important enough to warrant additional funds.
+3. Click **Submit request**.
+
+The Chair and Club Manager are notified by email immediately.
+
+### Approving or declining requests
+
+Budget requests appear under **Admin → Budget → Pending budget requests**.
+
+- The request can be approved by whoever has signoff authority for the amount (using the same spend limit hierarchy as other decisions).
+- If the amount exceeds the Club Manager's limit, it requires Chair approval.
+- On approval of a transfer, allocations are adjusted automatically.
+- The requesting director is notified by email of the decision.
+- Once approved, the director can return to the submission and complete the approval.
+
+---
+
+## 21. Frequently asked questions
 
 **A member says they never received a status-change email — what should I check?**
 First confirm the submission has a member email address stored (visible in the DB or via the submission record). If the member opted out of emails at submission time, they won't receive updates for that submission. Also check that the status was saved (the Save button was clicked, not just the dropdown changed). Finally ask them to check spam for emails from the club's sending address.

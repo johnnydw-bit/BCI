@@ -235,6 +235,45 @@ export async function initDb() {
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS decision_by TEXT`
   await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS related_submission_ids INTEGER[] NOT NULL DEFAULT '{}'`
 
+  // Budget management
+  await sql`ALTER TABLE submissions ADD COLUMN IF NOT EXISTS budget_request_id INTEGER`
+  await sql`
+    CREATE TABLE IF NOT EXISTS budget_pots (
+      id             SERIAL PRIMARY KEY,
+      financial_year INTEGER NOT NULL UNIQUE,
+      total_amount   NUMERIC(10,2) NOT NULL,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+  await sql`
+    CREATE TABLE IF NOT EXISTS budget_allocations (
+      id            SERIAL PRIMARY KEY,
+      budget_pot_id INTEGER NOT NULL REFERENCES budget_pots(id) ON DELETE CASCADE,
+      category      TEXT NOT NULL,
+      percentage    NUMERIC(5,2) NOT NULL DEFAULT 0,
+      UNIQUE (budget_pot_id, category)
+    )
+  `
+  await sql`
+    CREATE TABLE IF NOT EXISTS budget_requests (
+      id              SERIAL PRIMARY KEY,
+      budget_pot_id   INTEGER NOT NULL REFERENCES budget_pots(id),
+      submission_id   INTEGER REFERENCES submissions(id),
+      type            TEXT NOT NULL,
+      from_category   TEXT,
+      to_category     TEXT NOT NULL,
+      amount          NUMERIC(10,2) NOT NULL,
+      justification   TEXT NOT NULL,
+      requested_by    TEXT NOT NULL,
+      status          TEXT NOT NULL DEFAULT 'pending',
+      decided_by      TEXT,
+      decided_at      TIMESTAMPTZ,
+      decision_note   TEXT,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+
   // Login rate limiting
   await sql`
     CREATE TABLE IF NOT EXISTS login_attempts (

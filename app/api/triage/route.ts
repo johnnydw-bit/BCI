@@ -60,6 +60,7 @@ export async function GET() {
       s.notes, s.score_override, s.score_override_reason, s.score_override_by,
       s.confirmed_cost, s.decision_authority, s.decision_by,
       COALESCE(s.related_submission_ids, '{}') AS related_submission_ids,
+      s.budget_request_id,
       c.theme AS cluster_theme, c.size AS cluster_size,
       (d.email IS NOT NULL) AS from_board
     FROM submissions s
@@ -354,6 +355,36 @@ export async function PATCH(req: NextRequest) {
       : existingConfirmedCost
     const finalised = isDecisionFinalised(myAuthority, effectiveCost, spendLimits)
 
+    // Budget check: block approval if category allocation is exhausted
+    const isApprovalMove = (status === 'approved' || status === 'in_plan') && oldStatus !== 'approved' && oldStatus !== 'in_plan'
+    if (isApprovalMove && effectiveCost !== null && effectiveCost > 0) {
+      const { financialYear } = await import('@/app/api/budget/route')
+      const fy = financialYear()
+      const potRows = await sql`SELECT bp.id, bp.total_amount, ba.percentage
+        FROM budget_pots bp
+        JOIN budget_allocations ba ON ba.budget_pot_id = bp.id
+        WHERE bp.financial_year = ${fy} AND ba.category = ${row.category}`
+      if (potRows.length > 0) {
+        const pot = potRows[0] as { id: number; total_amount: number; percentage: number }
+        const allocated = (Number(pot.total_amount) * Number(pot.percentage)) / 100
+        const spentRows = await sql`
+          SELECT COALESCE(SUM(confirmed_cost), 0) AS spent FROM submissions
+          WHERE budget_year = ${fy} AND category = ${row.category}
+            AND status IN ('approved','in_plan','implemented')
+            AND deleted_at IS NULL AND withdrawn_at IS NULL AND id != ${id}`
+        const spent = Number((spentRows[0] as { spent: number }).spent)
+        const available = allocated - spent
+        if (effectiveCost > available) {
+          return NextResponse.json({
+            budgetBlocked: true,
+            available: Math.max(0, available),
+            shortfall: effectiveCost - available,
+            category: row.category,
+          })
+        }
+      }
+    }
+
     // Detect reversal: moving back from an approved/planned state to an open or negative state
     const wasApproved = oldStatus === 'approved' || oldStatus === 'in_plan'
     const isOpenStatus = status === 'new' || status === 'under_consideration'
@@ -362,12 +393,15 @@ export async function PATCH(req: NextRequest) {
 
     // On reversal to an open status, clear decision fields so the chain can start fresh.
     // On cancellation (→ rejected) keep the actor as decision authority.
+    const newBudgetYear = isApprovalMove ? (async () => { const { financialYear } = await import('@/app/api/budget/route'); return financialYear() })() : Promise.resolve(null)
+    const budgetYear = await newBudgetYear
     await sql`
       UPDATE submissions
       SET status = ${status},
           confirmed_target_date = COALESCE(${confirmed_target_date || null}, confirmed_target_date),
           decision_authority = ${isReversal ? null : myAuthority},
-          decision_by = ${isReversal ? null : session.directorName}
+          decision_by = ${isReversal ? null : session.directorName},
+          budget_year = COALESCE(${budgetYear}, budget_year)
       WHERE id = ${id}
     `
     const reversalNote = isReversal ? 'Approval reversed — returned for reconsideration'

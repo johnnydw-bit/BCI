@@ -54,6 +54,7 @@ interface Submission {
   decision_authority: string | null
   decision_by: string | null
   related_submission_ids: number[]
+  budget_request_id: number | null
 }
 
 interface AuditEntry {
@@ -199,6 +200,10 @@ export default function TriagePage() {
   } | null>(null)
   const [revivalPrompt, setRevivalPrompt] = useState<{ newId: number; relatedIds: number[] } | null>(null)
   const [reviving, setReviving] = useState<number | null>(null)
+  const [budgetBlockModal, setBudgetBlockModal] = useState<{ submissionId: number; category: string; available: number; shortfall: number; pendingDraft: Parameters<typeof savePanel>[1] } | null>(null)
+  const [budgetRequestType, setBudgetRequestType] = useState<'transfer' | 'overspend'>('overspend')
+  const [budgetRequestJustification, setBudgetRequestJustification] = useState('')
+  const [submittingBudgetRequest, setSubmittingBudgetRequest] = useState(false)
   const [sortBy, setSortBy] = useState<'score' | 'date' | 'status'>('score')
 
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
@@ -283,6 +288,13 @@ export default function TriagePage() {
       }),
     })
     const json = await res.json()
+
+    if (json.budgetBlocked) {
+      setUpdating(null)
+      setBudgetBlockModal({ submissionId: id, category: json.category, available: json.available, shortfall: json.shortfall, pendingDraft: draft })
+      return
+    }
+
     if (json.emailDraft) {
       setEmailDraftModal({ ...json.emailDraft, submissionId: id })
       setEmailDraftBody(json.emailDraft.body)
@@ -486,6 +498,84 @@ export default function TriagePage() {
             <div className="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-100">
               {priorPopup.score != null && <span>Score: {Number(priorPopup.score).toFixed(1)}</span>}
               <span className="capitalize">{priorPopup.status.replace('_', ' ')}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Budget blocked modal */}
+      {budgetBlockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col gap-4 p-6">
+            <h2 className="text-lg font-bold text-red-700">Insufficient budget</h2>
+            <p className="text-sm text-gray-700">
+              The <strong>{budgetBlockModal.category}</strong> budget has only{' '}
+              <strong>£{budgetBlockModal.available.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</strong> remaining.
+              This approval requires an additional{' '}
+              <strong>£{budgetBlockModal.shortfall.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</strong>.
+            </p>
+            <p className="text-sm text-gray-600">
+              Request additional funds from the Chair or Club Manager to proceed. They will be notified by email.
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="bramley-label text-xs">Request type</label>
+                <select className="bramley-input text-sm" value={budgetRequestType} onChange={e => setBudgetRequestType(e.target.value as 'transfer' | 'overspend')}>
+                  <option value="overspend">Overspend — request extra budget for this category</option>
+                  <option value="transfer">Transfer — move funds from another category</option>
+                </select>
+              </div>
+              <div>
+                <label className="bramley-label text-xs">Justification</label>
+                <textarea
+                  className="bramley-input text-sm resize-none"
+                  rows={3}
+                  placeholder="Why is this approval important enough to warrant additional funds?"
+                  value={budgetRequestJustification}
+                  onChange={e => setBudgetRequestJustification(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              <button
+                disabled={submittingBudgetRequest || !budgetRequestJustification.trim()}
+                onClick={async () => {
+                  setSubmittingBudgetRequest(true)
+                  const res = await fetch('/api/budget', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      action: 'request',
+                      submissionId: budgetBlockModal.submissionId,
+                      type: budgetRequestType,
+                      fromCategory: null,
+                      toCategory: budgetBlockModal.category,
+                      amount: budgetBlockModal.shortfall,
+                      justification: budgetRequestJustification,
+                    }),
+                  })
+                  if (res.ok) {
+                    setBudgetBlockModal(null)
+                    setBudgetRequestJustification('')
+                  } else {
+                    const d = await res.json()
+                    alert(d.error ?? 'Failed to submit request')
+                  }
+                  setSubmittingBudgetRequest(false)
+                }}
+                style={{ width: 'auto' }}
+                className="bramley-btn px-4 py-2 text-sm"
+              >
+                {submittingBudgetRequest ? <><span className="spinner" /> Sending…</> : 'Submit request'}
+              </button>
+              <button
+                onClick={() => { setBudgetBlockModal(null); setBudgetRequestJustification('') }}
+                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
@@ -1122,6 +1212,7 @@ function SpreadsheetTable({
                     {s.needs_external_approval && <span title="External approval">⚖</span>}
                     {s.seasonal_window && <span title="Seasonal">📅</span>}
                     {s.recurring_flag && <span title={`Recurring ×${s.recurring_run_count + 1}`}>🔁</span>}
+                    {s.budget_request_id && <span title="Budget request pending">🏦</span>}
                     {s.cluster_theme && <span title={`Cluster: ${s.cluster_theme}`} className="text-blue-600 font-bold text-xs">C</span>}
                   </div>
                 </td>
@@ -1404,6 +1495,7 @@ function SpreadsheetDetailPanel({
           {s.quick_win_flag && <span className="bramley-badge text-xs" style={{ background: '#1e8449' }}>⚡ Quick win</span>}
           {s.revenue_opportunity && <span className="bramley-badge text-xs" style={{ background: '#6c3483' }}>💰 Revenue</span>}
           {s.cost_threshold_flag && <span className="bramley-badge text-xs" style={{ background: '#d35400' }}>£ Board</span>}
+          {s.budget_request_id && <span className="bramley-badge text-xs" style={{ background: '#7e4f12' }}>🏦 Budget pending</span>}
           {s.needs_external_approval && <span className="bramley-badge text-xs" style={{ background: '#7d6608' }}>⚖ Approval</span>}
           {s.suggested_owner && <span className="bramley-badge text-xs" style={{ background: '#117a65' }}>👤 {s.suggested_owner}</span>}
           {s.seasonal_window && <span className="bramley-badge text-xs" style={{ background: '#1a5276' }}>📅 Seasonal</span>}

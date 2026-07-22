@@ -266,7 +266,7 @@ export default function SubmitPage() {
           </div>
 
           <div className="pt-2 space-y-3">
-            <button type="submit" disabled={description.length > DESC_MAX || benefit.length > BENEFIT_MAX} className="bramley-btn">
+            <button type="submit" disabled={step === 'submitting' || description.length > DESC_MAX || benefit.length > BENEFIT_MAX} className="bramley-btn">
               Submit improvement
             </button>
             {sessionType === 'director'

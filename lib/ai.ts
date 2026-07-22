@@ -359,7 +359,8 @@ Always return the single most appropriate role to own this improvement (never nu
 - "Estate Director" — buildings, grounds, car park, maintenance, capital works
 - "F&B Director" — bar, restaurant, halfway house, on-course refreshments
 - "Commercial Director" — pro shop, visitor revenue, external partnerships, marketing
-- "Club Manager" — member communications, staff, policies, cross-cutting or admin issues
+- "Operations Manager" — day-to-day operations, staff scheduling, member services, facilities management, issues that span departments
+- "Club Manager" — member communications, governance, policies, strategic or cross-cutting issues requiring senior sign-off
 
 EXTERNAL APPROVAL:
 Set needs_external_approval: true if implementation would require sign-off from any external body.

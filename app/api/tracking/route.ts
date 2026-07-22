@@ -29,6 +29,7 @@ export async function GET() {
       LEFT JOIN clusters c ON c.id = s.cluster_id
       WHERE s.category = ANY(${allowedCategories})
         AND s.status IN ('approved', 'implemented')
+        AND s.deleted_at IS NULL AND s.withdrawn_at IS NULL
     ) t
     ORDER BY target_date ASC NULLS LAST, score DESC NULLS LAST
   `

@@ -1000,6 +1000,25 @@ export default function AdminPage() {
             <hr className="border-gray-200" />
 
             <div>
+              <h3 className="font-semibold text-gray-800 mb-1">Clear all submissions</h3>
+              <p className="text-sm text-gray-500 mb-3">
+                Soft-deletes every submission to give a clean slate for production. Export a backup first.
+                Only available to <strong>Super Admin</strong>.
+              </p>
+              <button
+                onClick={clearAllData}
+                disabled={clearingAll}
+                className="bramley-btn px-6 py-2.5 text-sm"
+                style={{ width: 'auto', background: '#7b241c' }}
+              >
+                {clearingAll ? <><span className="spinner" /> Clearing…</> : '⚠ Clear all submissions'}
+              </button>
+              {clearAllStatus && <p className="text-sm mt-2 text-gray-700">{clearAllStatus}</p>}
+            </div>
+
+            <hr className="border-gray-200" />
+
+            <div>
               <h3 className="font-semibold text-gray-800 mb-1">Test data</h3>
               <p className="text-sm text-gray-500 mb-3">
                 Insert 12 pre-written test submissions covering all scenarios: high-priority, H&amp;S, quick wins,
@@ -1054,25 +1073,6 @@ export default function AdminPage() {
                   </table>
                 </div>
               )}
-            </div>
-
-            <hr className="border-gray-200" />
-
-            <div>
-              <h3 className="font-semibold text-gray-800 mb-1">Clear all submissions</h3>
-              <p className="text-sm text-gray-500 mb-3">
-                Soft-deletes every submission to give a clean slate for production. Export a backup first.
-                Only available to <strong>Super Admin</strong>.
-              </p>
-              <button
-                onClick={clearAllData}
-                disabled={clearingAll}
-                className="bramley-btn px-6 py-2.5 text-sm"
-                style={{ width: 'auto', background: '#7b241c' }}
-              >
-                {clearingAll ? <><span className="spinner" /> Clearing…</> : '⚠ Clear all submissions'}
-              </button>
-              {clearAllStatus && <p className="text-sm mt-2 text-gray-700">{clearAllStatus}</p>}
             </div>
 
             <hr className="border-gray-200" />

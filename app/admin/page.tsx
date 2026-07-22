@@ -85,6 +85,7 @@ export default function AdminPage() {
   const [exportingFull, setExportingFull] = useState(false)
   const [importStatus, setImportStatus] = useState('')
   const [importingCsv, setImportingCsv] = useState(false)
+  const [importingJson, setImportingJson] = useState(false)
   const [seedStatus, setSeedStatus] = useState('')
   const [seedingData, setSeedingData] = useState(false)
   const [clearingData, setClearingData] = useState(false)
@@ -321,6 +322,28 @@ export default function AdminPage() {
     const json = await res.json().catch(() => ({}))
     setImportStatus(res.ok ? `✓ ${json.upserted} records restored` : `✗ Error: ${json.error ?? 'check logs'}`)
     setImportingCsv(false)
+    e.target.value = ''
+  }
+
+  async function importJson(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!confirm(`Restore from ${file.name}?\n\nThis will upsert all submissions, clusters and audit log from the backup. Existing records will be overwritten; deleted records will be restored.\n\nContinue?`)) {
+      e.target.value = ''
+      return
+    }
+    setImportingJson(true)
+    setImportStatus('Restoring from JSON…')
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/admin/import-json', { method: 'POST', body: form })
+    const json = await res.json().catch(() => ({}))
+    setImportStatus(
+      res.ok
+        ? `✓ Restored: ${json.submissionsRestored} submissions, ${json.clustersRestored} clusters, ${json.logsRestored} audit entries`
+        : `✗ Error: ${json.error ?? 'check logs'}`
+    )
+    setImportingJson(false)
     e.target.value = ''
   }
 
@@ -992,6 +1015,10 @@ export default function AdminPage() {
                 <label className={`bramley-btn px-6 py-2.5 text-sm text-center cursor-pointer ${importingCsv ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ width: 'auto', background: '#2471a3' }}>
                   {importingCsv ? 'Restoring…' : '⬆ Restore from CSV'}
                   <input type="file" accept=".csv" className="hidden" onChange={importCsv} disabled={importingCsv} />
+                </label>
+                <label className={`bramley-btn px-6 py-2.5 text-sm text-center cursor-pointer ${importingJson ? 'opacity-50 cursor-not-allowed' : ''}`} style={{ width: 'auto', background: '#1a5276' }}>
+                  {importingJson ? 'Restoring…' : '⬆ Restore from JSON'}
+                  <input type="file" accept=".json" className="hidden" onChange={importJson} disabled={importingJson} />
                 </label>
               </div>
               {importStatus && <p className="text-sm mt-2 text-gray-700">{importStatus}</p>}

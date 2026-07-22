@@ -62,8 +62,12 @@ export default function SubmitPage() {
   const [message, setMessage] = useState('')
   const [memberMsg, setMemberMsg] = useState<string | null>(null)
 
+  const submittingRef = useRef(false)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (submittingRef.current) return
+    submittingRef.current = true
     setStep('submitting')
     try {
       const res = await fetch('/api/submit', {
@@ -266,7 +270,7 @@ export default function SubmitPage() {
           </div>
 
           <div className="pt-2 space-y-3">
-            <button type="submit" disabled={step === 'submitting' || description.length > DESC_MAX || benefit.length > BENEFIT_MAX} className="bramley-btn">
+            <button type="submit" disabled={description.length > DESC_MAX || benefit.length > BENEFIT_MAX} className="bramley-btn">
               Submit improvement
             </button>
             {sessionType === 'director'

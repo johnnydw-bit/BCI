@@ -274,11 +274,16 @@ export default function TriagePage() {
 
   async function updateField(id: number, field: 'score_override' | 'status' | 'category' | 'suggested_owner', value: string, extra?: Record<string, string>) {
     setUpdating(id)
-    await fetch('/api/triage', {
+    const res = await fetch('/api/triage', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, [field]: value, ...extra }),
+      body: JSON.stringify({ id, [field]: value, ...extra, return_email_draft: field === 'status' }),
     })
+    const json = await res.json()
+    if (json.emailDraft) {
+      setEmailDraftModal({ ...json.emailDraft, submissionId: id })
+      setEmailDraftBody(json.emailDraft.body)
+    }
     setData((prev) => prev ? {
       ...prev,
       submissions: prev.submissions.map((s) => s.id === id ? {

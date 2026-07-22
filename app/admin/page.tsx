@@ -34,9 +34,9 @@ const CONFIG_GROUPS = [
     keys: ['CLUSTER_BONUS_2', 'CLUSTER_BONUS_3', 'CLUSTER_BONUS_4', 'CLUSTER_BONUS_5', 'COST_THRESHOLD_QUICKWIN', 'COST_THRESHOLD_COMMITTEE', 'IMPL_QUICKWIN_WEEKS'],
   },
   {
-    title: 'Director Spend Signoff Limits (£)',
-    note: 'Max cost each authority level can finalise. 999999 = unlimited.',
-    keys: ['SPEND_LIMIT_DIRECTOR', 'SPEND_LIMIT_OPERATIONS_MANAGER', 'SPEND_LIMIT_CLUB_MANAGER', 'SPEND_LIMIT_CHAIRMAN'],
+    title: 'Spend Signoff Limits (£)',
+    note: 'Max cost each authority level can finalise without escalation. 999999 = unlimited.',
+    keys: ['SPEND_LIMIT_OPERATIONS_MANAGER', 'SPEND_LIMIT_CLUB_MANAGER', 'SPEND_LIMIT_CHAIRMAN'],
   },
 ]
 

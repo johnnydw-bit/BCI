@@ -108,7 +108,7 @@ export default function AdminPage() {
   async function loadEmailLog(offset = 0) {
     setEmailLogLoading(true)
     const res = await fetch(`/api/admin/email-log?limit=${EMAIL_LOG_PAGE}&offset=${offset}`).then(r => r.json()).catch(() => null)
-    if (res) { setEmailLog(res.logs); setEmailLogTotal(res.total); setEmailLogOffset(offset) }
+    if (res) { setEmailLog(res.logs ?? []); setEmailLogTotal(res.total ?? 0); setEmailLogOffset(offset) }
     setEmailLogLoading(false)
   }
 

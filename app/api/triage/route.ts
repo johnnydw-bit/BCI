@@ -112,6 +112,16 @@ export async function PATCH(req: NextRequest) {
   const myAuthority = roleToAuthority(session.role)
   const hasDecisionAccess = canOverrideAuthority(session.role, currentAuthority)
 
+  // Area directors no longer make decisions — Operations Manager is the first decision-maker
+  if (myAuthority === 'director' &&
+      (status !== undefined || confirmed_cost !== undefined ||
+       confirmed_target_date !== undefined || category !== undefined ||
+       suggested_owner !== undefined || notes !== undefined || ratify_only)) {
+    return NextResponse.json({
+      error: 'Decisions are made by the Operations Manager or above. Use the comment feature to share your input.',
+    }, { status: 403 })
+  }
+
   // Load spend limits from config
   const spendLimits = await loadSpendLimits()
 

@@ -65,6 +65,14 @@ interface AuditEntry {
   changed_at: string
 }
 
+interface DirectorComment {
+  id: number
+  director_name: string
+  director_role: string
+  comment: string
+  created_at: string
+}
+
 interface TrackedImprovement {
   id: number
   description: string
@@ -159,6 +167,21 @@ export default function TriagePage() {
     setAuditLog((prev) => ({ ...prev, [id]: data.log ?? [] }))
   }
 
+  async function fetchComments(id: number) {
+    const res = await fetch(`/api/triage/comments?id=${id}`)
+    const d = await res.json()
+    setDirectorComments((prev) => ({ ...prev, [id]: d.comments ?? [] }))
+  }
+
+  async function addComment(id: number, comment: string) {
+    await fetch('/api/triage/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ submissionId: id, comment }),
+    })
+    await fetchComments(id)
+  }
+
   function refreshTracking() {
     fetch('/api/tracking').then((r) => r.json()).then((d) => setTracked(d.improvements ?? []))
   }
@@ -212,6 +235,7 @@ export default function TriagePage() {
 
   const [sidePanelId, setSidePanelId] = useState<number | null>(null)
   const [auditLog, setAuditLog] = useState<Record<number, AuditEntry[]>>({})
+  const [directorComments, setDirectorComments] = useState<Record<number, DirectorComment[]>>({})
   const [sessionWarning, setSessionWarning] = useState(false)
 
   async function deleteImprovement(id: number) {
@@ -854,7 +878,9 @@ export default function TriagePage() {
                 saved={savedId === s.id}
                 deleting={deleting === s.id}
                 auditLog={auditLog[s.id] ?? []}
-                onOpen={() => fetchAuditLog(s.id)}
+                directorComments={directorComments[s.id] ?? []}
+                onOpen={() => { fetchAuditLog(s.id); fetchComments(s.id) }}
+                onAddComment={addComment}
                 spendLimits={data.spendLimits ?? DEFAULT_SPEND_LIMITS}
                 allSubmissions={data.submissions}
                 onShowPrior={(id) => {
@@ -1251,7 +1277,7 @@ function Saved({ show }: { show: boolean }) {
 }
 
 function SpreadsheetDetailPanel({
-  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, onOpen, spendLimits, allSubmissions, onShowPrior, directorName, onRatify,
+  s, isManager, myRole, onUpdate, onSave, onDelete, onClose, updating, saved, deleting, auditLog, directorComments, onOpen, onAddComment, spendLimits, allSubmissions, onShowPrior, directorName, onRatify,
 }: {
   s: Submission
   isManager: boolean
@@ -1264,7 +1290,9 @@ function SpreadsheetDetailPanel({
   saved: boolean
   deleting: boolean
   auditLog: AuditEntry[]
+  directorComments: DirectorComment[]
   onOpen: () => void
+  onAddComment: (id: number, comment: string) => Promise<void>
   spendLimits: Record<string, number>
   allSubmissions: Submission[]
   onShowPrior: (id: number) => void
@@ -1384,8 +1412,6 @@ function SpreadsheetDetailPanel({
     let label: string
     if (requiresClubManagerSignoff) {
       label = 'Approve & refer to Club Manager'
-    } else if (isDirectorLevel) {
-      label = 'Flag for ratification'
     } else if (isPending && myDecisionWillFinalise) {
       label = 'Ratify & finalise'
     } else if (isPending) {
@@ -1560,138 +1586,184 @@ function SpreadsheetDetailPanel({
           </div>
         )}
 
-        {/* Board Decision — visible to all directors, locked by ratification hierarchy */}
-        <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-3 text-xs">
-          <div className="flex items-center justify-between">
-            <p className="font-bold text-amber-700 uppercase tracking-wider">📋 Board Decision</p>
-            {isPending && !isDirectorLevel && (
-              <span className="text-xs font-semibold text-orange-600 bg-orange-100 border border-orange-200 rounded px-2 py-0.5">⏳ Pending ratification</span>
-            )}
-            {isPending && isDirectorLevel && (
-              <span className="text-xs font-semibold text-orange-600 bg-orange-100 border border-orange-200 rounded px-2 py-0.5">⏳ Awaiting ratification</span>
-            )}
-            {s.decision_authority && !isPending && s.decision_by && (
-              <span className="text-xs font-semibold text-green-700 bg-green-100 border border-green-200 rounded px-2 py-0.5">
-                ✓ {AUTHORITY_LABELS[s.decision_authority] ?? s.decision_authority}
-              </span>
-            )}
-          </div>
-
-          {/* Spend limit advisory — shown when cost is set and exceeds current actor's limit */}
-          {!isLocked && costExceedsMyLimit && (
-            <p className="text-xs text-amber-700 bg-amber-100 border border-amber-200 rounded px-2 py-1.5">
-              💰 Confirmed cost £{effectiveCost!.toLocaleString('en-GB')} exceeds your signoff limit of £{mySpendLimit.toLocaleString('en-GB')} — this decision will require ratification from {
-                myAuthority === 'director' ? 'Operations Manager' :
-                myAuthority === 'operations_manager' ? 'Club Manager' :
-                'Chair of the Board'
-              }.
-            </p>
-          )}
-
-          {isLocked && (
-            <p className="text-xs text-gray-500 italic">
-              Decision set by {s.decision_by} ({AUTHORITY_LABELS[s.decision_authority ?? ''] ?? s.decision_authority}). Higher authority required to change.
-            </p>
-          )}
-
-          <div>
-            <label className="text-gray-500 block mb-1">Status</label>
-            <select className="bramley-input text-xs py-1 w-full" value={draft.status} onChange={(e) => setDraft(d => ({ ...d, status: e.target.value }))} disabled={updating || isLocked}>
-              {Object.entries(STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-gray-500 block mb-1">Owner</label>
-            <select className="bramley-input text-xs py-1 w-full" value={draft.suggested_owner} onChange={(e) => setDraft(d => ({ ...d, suggested_owner: e.target.value }))} disabled={updating || isLocked}>
-              <option value="">— Unassigned —</option>
-              {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-gray-500 block mb-1">Area</label>
-            <select className="bramley-input text-xs py-1 w-full" value={draft.category} onChange={(e) => setDraft(d => ({ ...d, category: e.target.value }))} disabled={updating || isLocked}>
-              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs text-gray-600 block mb-1">
-              Target date
-              {draft.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
-            </label>
-            <div className="flex gap-1 items-center flex-wrap">
-              {myRole === 'Chair of the Board' || myRole === 'Super Admin' || myRole === 'Club Manager' ? (
-                <>
-                  <input type="date" className="bramley-input text-sm py-1.5 w-36" value={draft.confirmed_target_date} onChange={(e) => setDraft(d => ({ ...d, confirmed_target_date: e.target.value }))} disabled={updating || isLocked} />
-                  {draft.confirmed_target_date && !isLocked && <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
-                </>
-              ) : (
-                <span className="text-sm text-gray-500">
-                  {draft.confirmed_target_date
-                    ? new Date(draft.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : <span className="text-gray-400 italic text-xs">Set by Club Manager or Chair</span>}
+        {/* Board Decision */}
+        {isDirectorLevel ? (
+          /* Area directors see a read-only status summary — decisions are made by the Operations Manager */
+          <div className="rounded-[8px] border border-gray-200 bg-gray-50 p-3 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-gray-600 uppercase tracking-wider">📋 Current Status</p>
+              {s.decision_authority && s.decision_by && (
+                <span className="text-xs font-semibold text-green-700 bg-green-100 border border-green-200 rounded px-2 py-0.5">
+                  ✓ {AUTHORITY_LABELS[s.decision_authority] ?? s.decision_authority}
                 </span>
               )}
             </div>
-            {aiDate && !draft.confirmed_target_date && (myRole === 'Chair of the Board' || myRole === 'Super Admin' || myRole === 'Club Manager') && !isLocked && (
-              <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: aiDate }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
-                Use AI estimate ({new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
-              </button>
+            <p><span className="text-gray-500">Status: </span><span className="font-semibold">{STATUS_LABELS[s.status] ?? s.status}</span></p>
+            {s.suggested_owner && <p><span className="text-gray-500">Owner: </span>{s.suggested_owner}</p>}
+            {s.confirmed_target_date && (
+              <p><span className="text-gray-500">Target: </span>{new Date(s.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
             )}
-            {aiDate && !draft.confirmed_target_date && myRole !== 'Chair of the Board' && myRole !== 'Super Admin' && (
-              <p className="text-xs text-gray-400 mt-1">AI estimate: {new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} (for reference)</p>
+            {s.confirmed_cost != null && (
+              <p><span className="text-gray-500">Budget: </span>£{Number(s.confirmed_cost).toLocaleString('en-GB')}</p>
+            )}
+            {s.notes && <p><span className="text-gray-500">Board notes: </span><span className="text-gray-700">{s.notes}</span></p>}
+            {s.decision_by && (
+              <p className="text-gray-400 italic text-xs">Decision by {s.decision_by} ({AUTHORITY_LABELS[s.decision_authority ?? ''] ?? s.decision_authority})</p>
             )}
           </div>
-
-          <div>
-            <label className="text-xs text-gray-600 block mb-1">
-              Cost target (£)
-              {draft.confirmed_cost && <span className="ml-1 text-green-600">✓ confirmed</span>}
-            </label>
-            <div className="flex gap-1 items-center flex-wrap">
-              <input type="number" min="0" step="1" className="bramley-input text-sm py-1.5 w-32" placeholder="e.g. 2500" value={draft.confirmed_cost} onChange={(e) => setDraft(d => ({ ...d, confirmed_cost: e.target.value }))} disabled={updating || isLocked} />
-              {draft.confirmed_cost && !isLocked && <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
+        ) : (
+          /* Managers: full editable Board Decision panel */
+          <div className="rounded-[8px] border border-amber-200 bg-amber-50 p-3 space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-amber-700 uppercase tracking-wider">📋 Board Decision</p>
+              {isPending && (
+                <span className="text-xs font-semibold text-orange-600 bg-orange-100 border border-orange-200 rounded px-2 py-0.5">⏳ Pending ratification</span>
+              )}
+              {s.decision_authority && !isPending && s.decision_by && (
+                <span className="text-xs font-semibold text-green-700 bg-green-100 border border-green-200 rounded px-2 py-0.5">
+                  ✓ {AUTHORITY_LABELS[s.decision_authority] ?? s.decision_authority}
+                </span>
+              )}
             </div>
-            {aiMid != null && !draft.confirmed_cost && !isLocked && (
-              <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: String(aiMid) }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
-                Use AI midpoint (£{aiMid.toLocaleString()})
-              </button>
-            )}
-          </div>
 
-          <div>
-            <label className="text-xs text-gray-600 block mb-1">Board notes</label>
-            <textarea rows={3} className="bramley-input text-xs py-1 w-full resize-none" placeholder="Notes visible to all directors…" value={draft.notes} onChange={(e) => setDraft(d => ({ ...d, notes: e.target.value }))} disabled={updating || isLocked} />
-          </div>
-
-          {canRatify && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-xs space-y-2">
-              <p className="font-semibold text-green-800">✓ Ready to ratify</p>
-              <p className="text-green-700">
-                This decision was made by {s.decision_by}. As the next authority in the chain, you can ratify it to {existingRequiresCMSignoff ? 'confirm the approval' : 'pass it up for final sign-off'}.
+            {!isLocked && costExceedsMyLimit && (
+              <p className="text-xs text-amber-700 bg-amber-100 border border-amber-200 rounded px-2 py-1.5">
+                💰 Confirmed cost £{effectiveCost!.toLocaleString('en-GB')} exceeds your signoff limit of £{mySpendLimit.toLocaleString('en-GB')} — this decision will require ratification from {
+                  myAuthority === 'operations_manager' ? 'Club Manager' : 'Chair of the Board'
+                }.
               </p>
-              <button
-                onClick={() => onRatify(s.id)}
-                disabled={!!updating}
-                className="bramley-btn py-1.5 px-4 text-xs"
-                style={{ background: '#1e8449', width: 'auto' }}
-              >
-                {updating ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Ratify this decision'}
-              </button>
-            </div>
-          )}
+            )}
 
-          <div className="flex items-center justify-between pt-1">
-            <SaveBtn />
-            {isManager && (
-              <button onClick={() => onDelete(s.id)} disabled={deleting} className="text-red-500 hover:text-red-700 text-xs font-semibold">
-                {deleting ? 'Removing…' : '✕ Remove'}
-              </button>
+            {isLocked && (
+              <p className="text-xs text-gray-500 italic">
+                Decision set by {s.decision_by} ({AUTHORITY_LABELS[s.decision_authority ?? ''] ?? s.decision_authority}). Higher authority required to change.
+              </p>
+            )}
+
+            <div>
+              <label className="text-gray-500 block mb-1">Status</label>
+              <select className="bramley-input text-xs py-1 w-full" value={draft.status} onChange={(e) => setDraft(d => ({ ...d, status: e.target.value }))} disabled={updating || isLocked}>
+                {Object.entries(STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-gray-500 block mb-1">Owner</label>
+              <select className="bramley-input text-xs py-1 w-full" value={draft.suggested_owner} onChange={(e) => setDraft(d => ({ ...d, suggested_owner: e.target.value }))} disabled={updating || isLocked}>
+                <option value="">— Unassigned —</option>
+                {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-gray-500 block mb-1">Area</label>
+              <select className="bramley-input text-xs py-1 w-full" value={draft.category} onChange={(e) => setDraft(d => ({ ...d, category: e.target.value }))} disabled={updating || isLocked}>
+                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">
+                Target date
+                {draft.confirmed_target_date && <span className="ml-1 text-green-600">✓ confirmed</span>}
+              </label>
+              <div className="flex gap-1 items-center flex-wrap">
+                {myRole === 'Chair of the Board' || myRole === 'Super Admin' || myRole === 'Club Manager' ? (
+                  <>
+                    <input type="date" className="bramley-input text-sm py-1.5 w-36" value={draft.confirmed_target_date} onChange={(e) => setDraft(d => ({ ...d, confirmed_target_date: e.target.value }))} disabled={updating || isLocked} />
+                    {draft.confirmed_target_date && !isLocked && <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
+                  </>
+                ) : (
+                  <span className="text-sm text-gray-500">
+                    {draft.confirmed_target_date
+                      ? new Date(draft.confirmed_target_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : <span className="text-gray-400 italic text-xs">Set by Club Manager or Chair</span>}
+                  </span>
+                )}
+              </div>
+              {aiDate && !draft.confirmed_target_date && (myRole === 'Chair of the Board' || myRole === 'Super Admin' || myRole === 'Club Manager') && !isLocked && (
+                <button onClick={() => setDraft(d => ({ ...d, confirmed_target_date: aiDate }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
+                  Use AI estimate ({new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})
+                </button>
+              )}
+              {aiDate && !draft.confirmed_target_date && myRole !== 'Chair of the Board' && myRole !== 'Super Admin' && (
+                <p className="text-xs text-gray-400 mt-1">AI estimate: {new Date(aiDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} (for reference)</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">
+                Cost target (£)
+                {draft.confirmed_cost && <span className="ml-1 text-green-600">✓ confirmed</span>}
+              </label>
+              <div className="flex gap-1 items-center flex-wrap">
+                <input type="number" min="0" step="1" className="bramley-input text-sm py-1.5 w-32" placeholder="e.g. 2500" value={draft.confirmed_cost} onChange={(e) => setDraft(d => ({ ...d, confirmed_cost: e.target.value }))} disabled={updating || isLocked} />
+                {draft.confirmed_cost && !isLocked && <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: '' }))} className="text-xs text-gray-400 hover:text-red-500" title="Clear">✕</button>}
+              </div>
+              {aiMid != null && !draft.confirmed_cost && !isLocked && (
+                <button onClick={() => setDraft(d => ({ ...d, confirmed_cost: String(aiMid) }))} className="text-xs text-blue-500 hover:text-blue-700 mt-1">
+                  Use AI midpoint (£{aiMid.toLocaleString()})
+                </button>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">Board notes</label>
+              <textarea rows={3} className="bramley-input text-xs py-1 w-full resize-none" placeholder="Notes visible to all directors…" value={draft.notes} onChange={(e) => setDraft(d => ({ ...d, notes: e.target.value }))} disabled={updating || isLocked} />
+            </div>
+
+            {canRatify && (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-xs space-y-2">
+                <p className="font-semibold text-green-800">✓ Ready to ratify</p>
+                <p className="text-green-700">
+                  This decision was made by {s.decision_by}. As the next authority in the chain, you can ratify it to {existingRequiresCMSignoff ? 'confirm the approval' : 'pass it up for final sign-off'}.
+                </p>
+                <button
+                  onClick={() => onRatify(s.id)}
+                  disabled={!!updating}
+                  className="bramley-btn py-1.5 px-4 text-xs"
+                  style={{ background: '#1e8449', width: 'auto' }}
+                >
+                  {updating ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Ratify this decision'}
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-1">
+              <SaveBtn />
+              {isManager && (
+                <button onClick={() => onDelete(s.id)} disabled={deleting} className="text-red-500 hover:text-red-700 text-xs font-semibold">
+                  {deleting ? 'Removing…' : '✕ Remove'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Director Feedback — area directors can comment; managers see comments for context */}
+        {(isDirectorLevel || directorComments.length > 0) && (
+          <div className="rounded-[8px] border border-blue-200 bg-blue-50 p-3 space-y-3 text-xs">
+            <p className="font-bold text-blue-700 uppercase tracking-wider">💬 Director Feedback</p>
+            {directorComments.length > 0 ? (
+              <div className="space-y-2">
+                {directorComments.map((c) => (
+                  <div key={c.id} className="bg-white rounded-[6px] border border-blue-100 p-2.5 space-y-1">
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-semibold text-gray-700">{c.director_name}</span>
+                      <span className="text-gray-400">{new Date(c.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                    <p className="text-gray-600 leading-relaxed">{c.comment}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-blue-400 italic">No director comments yet.</p>
+            )}
+            {isDirectorLevel && (
+              <DirectorCommentForm submissionId={s.id} onAdd={onAddComment} updating={updating} />
             )}
           </div>
-        </div>
+        )}
 
         {isManager && (
           <ScoreOverridePanel s={s} onUpdate={onUpdate} updating={updating} />
@@ -1722,6 +1794,45 @@ function SpreadsheetDetailPanel({
 }
 
 // ── Shared sub-components ───────────────────────────────────────────────────
+
+function DirectorCommentForm({ submissionId, onAdd, updating }: {
+  submissionId: number
+  onAdd: (id: number, comment: string) => Promise<void>
+  updating: boolean
+}) {
+  const [text, setText] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function submit() {
+    if (!text.trim()) return
+    setSaving(true)
+    await onAdd(submissionId, text.trim())
+    setText('')
+    setSaving(false)
+  }
+
+  return (
+    <div className="space-y-2 pt-1 border-t border-blue-100">
+      <label className="font-semibold text-blue-700">Add your comment</label>
+      <textarea
+        rows={3}
+        className="bramley-input text-xs py-1 w-full resize-none"
+        placeholder="Share your knowledge of this area or flag any considerations for the Operations Manager…"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        disabled={saving || updating}
+      />
+      <button
+        onClick={submit}
+        disabled={saving || !text.trim() || updating}
+        className="bramley-btn py-1.5 text-xs px-4"
+        style={{ width: 'auto', opacity: text.trim() ? 1 : 0.4 }}
+      >
+        {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Post comment'}
+      </button>
+    </div>
+  )
+}
 
 function ScoreOverridePanel({ s, onUpdate, updating }: {
   s: Submission

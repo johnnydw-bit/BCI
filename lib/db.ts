@@ -297,6 +297,18 @@ export async function initDb() {
   `
   await sql`CREATE INDEX IF NOT EXISTS notification_log_submission ON notification_log (submission_id)`
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS director_comments (
+      id            SERIAL PRIMARY KEY,
+      submission_id INTEGER NOT NULL REFERENCES submissions(id),
+      director_name TEXT NOT NULL,
+      director_role TEXT NOT NULL,
+      comment       TEXT NOT NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+  await sql`CREATE INDEX IF NOT EXISTS director_comments_submission ON director_comments (submission_id)`
+
   // Communication tone config
   const commsDefaults: [string, string, string][] = [
     ['COMMS_TONE',    'friendly', 'Member communication tone: friendly | formal'],

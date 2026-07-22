@@ -39,9 +39,10 @@ The Continuous Improvement Programme (CIP) collects, scores, and prioritises mem
 2. **Automated moderation** checks the submission for appropriateness
 3. **Immediate AI assessment** — an initial narrative (pros, considerations, commercial factors) is generated and shown to the member straight away, along with a confirmation email
 4. **Overnight scoring** — every night, unscored submissions are fully evaluated: scored across six weighted dimensions, grouped into clusters with similar ideas, and assigned to an owner. Score bonuses are applied for clustered themes
-5. **Triage dashboard** presents scored submissions to directors for decision
-6. **Directors act** — use the sidebar to set status, assign owners, set target dates, and add notes, then save all changes at once
-7. **Members are notified** by AI-generated email when the status of their idea changes
+5. **Triage dashboard** presents scored submissions to directors and the Operations Manager
+6. **Area directors comment** — directors with category responsibility add context and flag considerations for the Operations Manager using the Director Feedback panel in the sidebar
+7. **Operations Manager decides** — sets status, assigns owners, sets target dates, and adds notes, then saves all changes at once
+8. **Members are notified** by AI-generated email when the status of their idea changes
 
 The system is designed to ensure every submission is treated fairly and consistently, reducing the administrative burden on the Board while maintaining full accountability.
 
@@ -49,18 +50,18 @@ The system is designed to ensure every submission is treated fairly and consiste
 
 ## 2. Roles and access levels
 
-| Role | Sees in triage | Can change status / assign owner | Admin panel |
-|---|---|---|---|
-| **Golf Director** | Course, Competitions & Matches | No | No |
-| **Estate Director** | Clubhouse, Grounds, On-course Refreshments | No | No |
-| **F&B Director** | Restaurant, Bar, On-course Refreshments | No | No |
-| **Commercial Director** | Pro Shop | No | No |
-| **Operations Manager** | All categories | Yes | No |
-| **Chair of the Board** | All categories | Yes (final authority) | No |
-| **Club Manager** | All categories | **Yes** | **Yes** |
-| **Super Admin** | All categories | **Yes** | **Yes** (full access) |
+| Role | Sees in triage | Can decide (set status) | Can comment | Admin panel |
+|---|---|---|---|---|
+| **Golf Director** | Course, Competitions & Matches | No | Yes | No |
+| **Estate Director** | Clubhouse, Grounds, On-course Refreshments | No | Yes | No |
+| **F&B Director** | Restaurant, Bar, On-course Refreshments | No | Yes | No |
+| **Commercial Director** | Pro Shop | No | Yes | No |
+| **Operations Manager** | All categories | **Yes** (first decision-maker) | — | No |
+| **Chair of the Board** | All categories | Yes (final authority) | — | No |
+| **Club Manager** | All categories | **Yes** | — | **Yes** |
+| **Super Admin** | All categories | **Yes** | — | **Yes** (full access) |
 
-> **Note:** All directors can recommend decisions on submissions in their categories. Decisions move through a ratification chain: Director → Operations Manager → Club Manager → Chair of the Board. The Chair of the Board has final authority and their decisions cannot be overridden. Only Club Manager and Super Admin can access the Admin panel or delete submissions.
+> **Note:** Decisions on all submissions are made by the **Operations Manager** or above — area directors no longer set status. Area directors contribute by commenting on submissions in their categories via the Director Feedback panel. The ratification chain is: Operations Manager → Club Manager → Chair of the Board. Only Club Manager and Super Admin can access the Admin panel or delete submissions.
 
 ---
 
@@ -245,14 +246,25 @@ Three sort options available via toggle buttons:
 
 ## 8. Managing submissions — the sidebar
 
-All directors can access the Board Decision section in the sidebar for submissions in their categories. Decisions move through a ratification chain before becoming final.
+### For area directors (Golf, Estate, F&B, Commercial)
+
+When you open a submission in your category, the sidebar shows:
+
+- The full AI assessment (scores, costs, implementation estimate, AI narrative)
+- The **Current Status** panel — read-only display of the current decision, owner, and board notes
+- The **Director Feedback** panel — where you add comments for the Operations Manager
+
+Use the Director Feedback panel to share local knowledge, flag operational constraints, or highlight considerations the Operations Manager should weigh. Your comments are visible to all directors and managers.
+
+### For the Operations Manager and above
+
+The full **Board Decision** panel is available. Decisions move through a ratification chain before becoming final.
 
 ### Decision authority hierarchy
 
 | Role | Can act | Effect |
 |---|---|---|
-| **Director** | Recommend | Pending ratification by Operations Manager |
-| **Operations Manager** | Ratify or override | Confirmed at ops level; routed to Club Manager |
+| **Operations Manager** | First decision | Confirmed at ops level; routed to Club Manager for approval |
 | **Club Manager** | Ratify or override | Confirmed at manager level |
 | **Chair of the Board** | Final decision | Cannot be overridden |
 
@@ -262,21 +274,19 @@ Once a higher authority has acted, lower roles cannot change the decision. The s
 
 Each authority level has a **spend limit** — the maximum confirmed cost they can finalise without escalation. If the confirmed cost exceeds your limit, the decision is passed up the chain regardless of your role.
 
-When a Director or Operations Manager approves a submission and the cost is **within their spend limit**, the approval is still routed to the **Club Manager** for final sign-off before being considered fully approved. The ratification email explains this clearly.
-
-If the cost **exceeds** your limit, the decision follows the standard escalation chain (Director → Operations Manager → Club Manager → Chair).
+When the Operations Manager approves a submission and the cost is **within their spend limit**, the approval is still routed to the **Club Manager** for final sign-off before being considered fully approved. The ratification email explains this clearly.
 
 Spend limits are configured in the Admin panel under **Scoring Config → Director Spend Signoff Limits**.
 
 ### Ratification notifications
 
-When anyone in the chain acts, the **next person in the chain** receives a direct email (To), and directors below them in the chain are copied (CC). The email includes:
+When anyone in the chain acts, the **next person in the chain** receives a direct email (To), and area directors for that category are copied (CC). The email includes:
 - The improvement and the decision made
 - Who made the change and their role
 - What action is expected (ratify, review, or FYI only)
-- Whether the lower-level spend limit has been satisfied
+- Whether the spend limit has been satisfied
 
-This ensures the right person knows they need to act, without creating confusion about who is responsible.
+This ensures the right person knows they need to act, and area directors are kept informed of decisions in their area.
 
 ### Ratifying a decision
 

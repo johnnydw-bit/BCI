@@ -1649,7 +1649,7 @@ function SpreadsheetDetailPanel({
 
             <div>
               <label className="text-gray-500 block mb-1">Owner</label>
-              <select className="bramley-input text-xs py-1 w-full" value={draft.suggested_owner} onChange={(e) => setDraft(d => ({ ...d, suggested_owner: e.target.value }))} disabled={updating || isLocked}>
+              <select className="bramley-input text-xs py-1 w-full" value={draft.suggested_owner} onChange={(e) => setDraft(d => ({ ...d, suggested_owner: e.target.value }))} disabled={updating || isLocked || !isManager}>
                 <option value="">— Unassigned —</option>
                 {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
@@ -1999,10 +1999,7 @@ function NotificationLog({ submissionId }: { submissionId: number }) {
 }
 
 const OWNER_OPTIONS = [
-  'Golf Director',
-  'Estate Director',
-  'F&B Director',
-  'Commercial Director',
+  'Operations Manager',
   'Club Manager',
   'Chair of the Board',
   'Super Admin',

@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   }
 
   const inserted = await sql`
-    INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, member_email, email_opt_out)
+    INSERT INTO submissions (member_id, member_name, description, benefit, category, impact, recognition, member_email, email_opt_out, suggested_owner)
     VALUES (
       ${submitterId},
       ${submitterName},
@@ -86,7 +86,8 @@ export async function POST(req: NextRequest) {
       ${Number(impact)},
       ${recognition},
       ${submitterEmail ?? null},
-      ${emailOptOut ? true : false}
+      ${emailOptOut ? true : false},
+      'Operations Manager'
     )
     RETURNING id
   `
@@ -123,7 +124,6 @@ export async function POST(req: NextRequest) {
           impl_weeks_high         = ${result.implWeeksHigh},
           impl_complexity         = ${result.implComplexity},
           strategic_note          = ${result.strategicNote},
-          suggested_owner         = ${result.suggestedOwner},
           needs_external_approval = ${result.needsExternalApproval},
           approval_body           = ${result.approvalBody},
           seasonal_window         = ${result.seasonalWindow},

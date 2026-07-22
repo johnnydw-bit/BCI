@@ -268,7 +268,6 @@ async function _runTriage(): Promise<{ scored: number; runId: number }> {
         cost_threshold_flag     = ${costThresholdFlag},
         quick_win_flag          = ${quickWinFlag},
         strategic_note          = ${r.strategicNote},
-        suggested_owner         = ${r.suggestedOwner},
         needs_external_approval = ${r.needsExternalApproval},
         approval_body           = ${r.approvalBody},
         recurring_flag          = ${recurringFlag},

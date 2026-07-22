@@ -63,10 +63,9 @@ export async function GET() {
       COALESCE(s.related_submission_ids, '{}') AS related_submission_ids,
       s.budget_request_id,
       c.theme AS cluster_theme, c.size AS cluster_size,
-      (d.email IS NOT NULL) AS from_board
+      EXISTS(SELECT 1 FROM director_roles WHERE email = s.member_email AND active = TRUE) AS from_board
     FROM submissions s
     LEFT JOIN clusters c ON c.id = s.cluster_id
-    LEFT JOIN director_roles d ON d.email = s.member_email AND d.active = TRUE
     WHERE (s.category = ANY(${allowedCategories}) OR s.member_name = ${session.directorName})
       AND s.deleted_at IS NULL
       AND s.withdrawn_at IS NULL

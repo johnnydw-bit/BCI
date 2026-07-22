@@ -276,7 +276,7 @@ Each authority level has a **spend limit** — the maximum confirmed cost they c
 
 When the Operations Manager approves a submission and the cost is **within their spend limit**, the approval is still routed to the **Club Manager** for final sign-off before being considered fully approved. The ratification email explains this clearly.
 
-Spend limits are configured in the Admin panel under **Scoring Config → Director Spend Signoff Limits**.
+Spend limits are configured in the Admin panel under **Setup → Spend Signoff Limits**.
 
 ### Ratification notifications
 
@@ -554,8 +554,8 @@ Controls all parameters that influence the AI scoring process. Changes take effe
 - Quick win cost threshold (£) — below this cost, the quick_win flag may be set
 - Quick win implementation weeks — at or below this, the quick_win flag may be set
 
-**Director spend signoff limits (£)**
-The maximum confirmed cost each authority level can finalise without escalation. Set to `999999` for unlimited. If a submission's confirmed cost exceeds an authority's limit, the decision is automatically escalated to the next level in the chain.
+**Spend signoff limits (£)**
+The maximum confirmed cost each decision-making role can finalise without escalation. Set to `999999` for unlimited. If a submission's confirmed cost exceeds the acting role's limit, the decision is automatically escalated to the next level in the chain.
 
 | Authority | Default limit |
 |---|---|

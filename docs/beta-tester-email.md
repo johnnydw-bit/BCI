@@ -25,8 +25,8 @@ The CIP Member Guide explains how to install CIP as an app on your phone or desk
 
 1. **Members submit ideas** via the CIP submission form — a description, the area it affects, and how many members they think it impacts.
 2. **Overnight, CIP scores and groups submissions** by theme. You won't see new submissions in the dashboard until the morning after they're submitted.
-3. **Directors triage submissions** from the CIP board dashboard — setting status (In Plan, Approved, Rejected etc.), adding notes, and confirming costs.
-4. **A ratification chain enforces spend authority.** Director decisions on higher-cost items are automatically referred to the Operations Manager, then Club Manager, then Chair. Each level receives an email notification.
+3. **Area directors receive a notification email** and can view submissions in their category, but status decisions are made by the Operations Manager and above.
+4. **The Operations Manager reviews and decides** — setting status (In Plan, Approved, Rejected etc.), adding notes, and confirming costs. Higher-cost decisions are automatically escalated to the Club Manager, then Chair of the Board. Each level receives an email notification.
 5. **Members receive an email** when their submission status changes, written in plain English by CIP's AI.
 
 ---

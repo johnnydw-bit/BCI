@@ -95,13 +95,14 @@ These thresholds affect how a submission is automatically flagged during scoring
 
 ---
 
-## 7. Director Spend Signoff Limits
+## 7. Spend Signoff Limits
 
-These limits control at which point in the ratification chain a decision is considered **final**. When a director saves a decision with a confirmed cost, the system checks whether that cost falls within the deciding authority's spend limit. If it does, the decision is finalised immediately and the ratification chain stops. If not, it continues up the chain.
+These limits control at which point in the ratification chain a decision is considered **final**. When a decision-maker saves a decision with a confirmed cost, the system checks whether that cost falls within their spend limit. If it does, the decision is finalised immediately and the ratification chain stops. If not, it continues up the chain.
+
+Directors (Golf, Estate, F&B, Commercial) do not make status decisions and therefore have no spend limit.
 
 | Config Key | Default | Authority level |
 |---|---|---|
-| `SPEND_LIMIT_DIRECTOR` | £0 | Director (Golf, Estate, F&B, Commercial, Captains, Finance). Default of £0 means all director decisions are referred up. |
 | `SPEND_LIMIT_OPERATIONS_MANAGER` | £2,500 | Operations Manager. Can finalise decisions up to £2,500. |
 | `SPEND_LIMIT_CLUB_MANAGER` | £10,000 | Club Manager. Can finalise decisions up to £10,000. |
 | `SPEND_LIMIT_CHAIRMAN` | £999,999 | Chair of the Board. Effectively unlimited — all decisions finalise here. |

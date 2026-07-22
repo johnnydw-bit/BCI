@@ -122,6 +122,7 @@ export async function initDb() {
       updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `
+  await sql`ALTER TABLE clusters ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`
 
   await sql`
     CREATE TABLE IF NOT EXISTS triage_runs (

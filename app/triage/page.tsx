@@ -288,6 +288,7 @@ export default function TriagePage() {
       ...prev,
       submissions: prev.submissions.map((s) => s.id === id ? {
         ...s,
+        status: field === 'status' ? value : s.status,
         score_override: field === 'score_override' ? (value !== '' ? Number(value) : null) : s.score_override,
         score_override_reason: extra?.score_override_reason ?? s.score_override_reason ?? null,
         score_override_by: extra?.score_override_by ?? s.score_override_by ?? null,

@@ -54,7 +54,7 @@ interface Director { id: number; role: string; name: string; email: string; acti
 
 export default function AdminPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<'config' | 'comms' | 'directors' | 'dashboard' | 'setup'>('config')
+  const [tab, setTab] = useState<'config' | 'comms' | 'directors' | 'dashboard' | 'setup' | 'emaillog'>('config')
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -96,6 +96,21 @@ export default function AdminPage() {
   const [moderationResults, setModerationResults] = useState<Array<{ description: string; expected: string; actual: string; passed: boolean }> | null>(null)
   const [directorName, setDirectorName] = useState('')
   const [directorRole, setDirectorRole] = useState('')
+
+  // Email log tab state
+  interface EmailLogRow { id: number; type: string; recipient: string; submission_id: number | null; resend_id: string | null; sent_at: string }
+  const [emailLog, setEmailLog] = useState<EmailLogRow[]>([])
+  const [emailLogTotal, setEmailLogTotal] = useState(0)
+  const [emailLogOffset, setEmailLogOffset] = useState(0)
+  const [emailLogLoading, setEmailLogLoading] = useState(false)
+  const EMAIL_LOG_PAGE = 50
+
+  async function loadEmailLog(offset = 0) {
+    setEmailLogLoading(true)
+    const res = await fetch(`/api/admin/email-log?limit=${EMAIL_LOG_PAGE}&offset=${offset}`).then(r => r.json()).catch(() => null)
+    if (res) { setEmailLog(res.logs); setEmailLogTotal(res.total); setEmailLogOffset(offset) }
+    setEmailLogLoading(false)
+  }
 
   // Budget tab state
   interface BudgetAllocation { category: string; percentage: number }
@@ -460,11 +475,12 @@ export default function AdminPage() {
               ['comms', 'Communications'],
               ['directors', 'Directors'],
               ['dashboard', 'Dashboard'],
+              ['emaillog', 'Email Log'],
               ['setup', 'Application Management'],
             ] as const).map(([t, label]) => (
               <button
                 key={t}
-                onClick={() => { setTab(t); if (t === 'dashboard' && !dashboard) loadDashboard(); if (t === 'config' && !budgetData) loadBudget() }}
+                onClick={() => { setTab(t); if (t === 'dashboard' && !dashboard) loadDashboard(); if (t === 'config' && !budgetData) loadBudget(); if (t === 'emaillog') loadEmailLog(0) }}
                 className={`px-4 py-2 rounded-t-[8px] text-sm font-semibold transition-all ${tab === t ? 'text-white' : 'text-gray-500 hover:text-gray-700'}`}
                 style={tab === t ? { background: 'var(--bramley-navy)' } : {}}
               >
@@ -955,6 +971,59 @@ export default function AdminPage() {
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Email Log tab */}
+      {tab === 'emaillog' && (
+        <div className="bramley-card overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200" style={{ background: 'var(--bramley-primary)' }}>
+            <p className="text-sm font-semibold text-white">Email log — {emailLogTotal} total sends</p>
+            <button onClick={() => loadEmailLog(emailLogOffset)} className="text-xs text-white/70 hover:text-white">↺ Refresh</button>
+          </div>
+          {emailLogLoading ? (
+            <div className="flex justify-center py-8"><span className="spinner" style={{ borderColor: 'var(--bramley-navy)', borderTopColor: 'transparent' }} /></div>
+          ) : emailLog.length === 0 ? (
+            <p className="text-sm text-gray-400 px-4 py-6">No emails logged yet.</p>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left px-4 py-2 font-semibold text-gray-500">Sent</th>
+                      <th className="text-left px-4 py-2 font-semibold text-gray-500">Type</th>
+                      <th className="text-left px-4 py-2 font-semibold text-gray-500">Recipient</th>
+                      <th className="text-right px-4 py-2 font-semibold text-gray-500 w-20">Sub #</th>
+                      <th className="text-left px-4 py-2 font-semibold text-gray-500 hidden lg:table-cell">Resend ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {emailLog.map((row, i) => (
+                      <tr key={row.id} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                        <td className="px-4 py-1.5 text-gray-500 whitespace-nowrap">
+                          {new Date(row.sent_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-4 py-1.5 text-gray-700 whitespace-nowrap">{row.type.replace(/_/g, ' ')}</td>
+                        <td className="px-4 py-1.5 text-gray-600 max-w-xs truncate">{row.recipient}</td>
+                        <td className="px-4 py-1.5 text-right text-gray-500">{row.submission_id ?? '—'}</td>
+                        <td className="px-4 py-1.5 text-gray-400 font-mono hidden lg:table-cell">{row.resend_id ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {emailLogTotal > EMAIL_LOG_PAGE && (
+                <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 text-xs text-gray-500">
+                  <span>Showing {emailLogOffset + 1}–{Math.min(emailLogOffset + EMAIL_LOG_PAGE, emailLogTotal)} of {emailLogTotal}</span>
+                  <div className="flex gap-2">
+                    <button onClick={() => loadEmailLog(emailLogOffset - EMAIL_LOG_PAGE)} disabled={emailLogOffset === 0} className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50">← Prev</button>
+                    <button onClick={() => loadEmailLog(emailLogOffset + EMAIL_LOG_PAGE)} disabled={emailLogOffset + EMAIL_LOG_PAGE >= emailLogTotal} className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50">Next →</button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 

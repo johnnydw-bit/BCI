@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { sql } from './db'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 const FROM = process.env.EMAIL_FROM ?? 'noreply@bramleygolfclub.co.uk'
@@ -26,7 +27,10 @@ function resolveRecipient(to: string | string[]): string | string[] {
   return to
 }
 
-async function send(payload: { from: string; to: string | string[]; cc?: string[]; subject: string; html: string; attachments?: Array<{ filename: string; content: Buffer }> }) {
+async function send(
+  payload: { from: string; to: string | string[]; cc?: string[]; subject: string; html: string; attachments?: Array<{ filename: string; content: Buffer }> },
+  meta?: { type: string; submissionId?: number | null }
+) {
   const resolvedTo = resolveRecipient(payload.to)
   console.log(`[email] Sending "${payload.subject}" from ${payload.from} to ${JSON.stringify(resolvedTo)}`)
   const result = await resend.emails.send({ ...payload, to: resolvedTo as string | string[] })
@@ -34,6 +38,13 @@ async function send(payload: { from: string; to: string | string[]; cc?: string[
     console.error(`[email] Resend error:`, JSON.stringify(result.error))
   } else {
     console.log(`[email] Sent OK — id: ${result.data?.id}`)
+    if (meta) {
+      const recipient = Array.isArray(payload.to) ? payload.to.join(', ') : payload.to
+      await sql`
+        INSERT INTO email_log (type, recipient, submission_id, resend_id)
+        VALUES (${meta.type}, ${recipient}, ${meta.submissionId ?? null}, ${result.data?.id ?? null})
+      `.catch((e) => console.error('[email] Log write failed:', e))
+    }
   }
   return result.data?.id ?? null
 }
@@ -94,7 +105,7 @@ export async function sendHAndSAlert(submission: {
         </div>
       </div>
     `,
-  })
+  }, { type: 'hs_alert', submissionId: submission.id })
 }
 
 export async function sendSubmitterUpdate(to: string, submission: {
@@ -157,7 +168,7 @@ export async function sendSubmitterUpdate(to: string, submission: {
         </div>
       </div>
     `,
-  })
+  }, { type: 'submitter_update', submissionId: submission.id })
 }
 
 export async function sendSubmissionConfirmation(to: string, description: string, memberName?: string | null, submissionId?: number, memberMsg?: string | null) {
@@ -197,7 +208,7 @@ export async function sendSubmissionConfirmation(to: string, description: string
         </div>
       </div>
     `,
-  })
+  }, { type: 'confirmation', submissionId: submissionId ?? null })
 }
 
 export async function sendBackupEmail(to: string, filename: string, csvContent: string) {
@@ -255,7 +266,7 @@ export async function sendStatusChangeEmail(to: string, opts: {
         </div>
       </div>
     `,
-  })
+  }, { type: 'status_change', submissionId: opts.submissionId ?? null })
 }
 
 /** Email sent to a member when their submission is moderation-rejected. */
@@ -282,7 +293,7 @@ export async function sendModerationRejectionEmail(to: string, opts: {
         </div>
       </div>
     `,
-  })
+  }, { type: 'moderation_rejection' })
 }
 
 /** Notification to a director when a high-scoring (≥9) submission is found during triage. */
@@ -314,7 +325,7 @@ export async function sendHighScoreAlert(to: string, submission: {
         </div>
       </div>
     `,
-  })
+  }, { type: 'high_score_alert', submissionId: submission.id })
 }
 
 /** Confirmation email to a member who withdraws a submission. */
@@ -339,7 +350,7 @@ export async function sendWithdrawalConfirmationEmail(to: string, description: s
         </div>
       </div>
     `,
-  })
+  }, { type: 'withdrawal_confirmation', submissionId: submissionId ?? null })
 }
 
 /** Notification to relevant director when a member withdraws a scored submission. */
@@ -370,7 +381,7 @@ export async function sendWithdrawalDirectorNotification(to: string, opts: {
         </div>
       </div>
     `,
-  })
+  }, { type: 'withdrawal_director', submissionId: opts.submissionId })
 }
 
 /** Notification to the chain of command when a decision is made or recommended. Returns Resend email ID. */
@@ -449,7 +460,7 @@ export async function sendRatificationNotification(to: string[], opts: {
         </div>
       </div>
     `,
-  })
+  }, { type: 'ratification', submissionId: opts.submissionId })
 }
 
 /** Notification to a director when a submission is assigned to their role. */
@@ -479,7 +490,7 @@ export async function sendOwnerAssignmentNotification(to: string[], opts: {
         </div>
       </div>
     `,
-  })
+  }, { type: 'owner_assignment', submissionId: opts.submissionId })
 }
 
 export async function sendBudgetRequestEmail(

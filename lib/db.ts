@@ -137,6 +137,17 @@ export async function initDb() {
   `
 
   await sql`
+    CREATE TABLE IF NOT EXISTS email_log (
+      id            SERIAL PRIMARY KEY,
+      type          TEXT NOT NULL,
+      recipient     TEXT NOT NULL,
+      submission_id INTEGER,
+      resend_id     TEXT,
+      sent_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+
+  await sql`
     CREATE TABLE IF NOT EXISTS status_log (
       id            SERIAL PRIMARY KEY,
       submission_id INTEGER NOT NULL REFERENCES submissions(id),

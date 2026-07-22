@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
     SELECT description FROM submissions
     WHERE member_id = ${submitterId}
       AND deleted_at IS NULL
+      AND withdrawn_at IS NULL
+      AND status != 'rejected'
     ORDER BY created_at DESC
     LIMIT 10
   `

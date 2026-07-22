@@ -140,7 +140,7 @@ Key client-side state:
 
 ### `/admin` — Admin panel
 
-Gated to `isManager` roles. Five tabs: Scoring Config, Communications, Directors, Dashboard, Setup.
+Gated to `isManager` roles. Five tabs: Setup, Communications, Directors, Dashboard, Application Management.
 
 ---
 
@@ -475,24 +475,92 @@ All AI calls are in `lib/ai.ts`. Two Claude models are used:
 - Cluster detection
 - Strategic notes
 
+### Scoring formula
+
+Each submission receives a single score between 0.0 and 10.0. The calculation has four stages.
+
+#### Stage 1 — Six dimension scores (0–10 each)
+
+The model scores each submission on six dimensions. Descriptions below are the actual instructions given to the model:
+
+| Dimension | Config weight key | Description |
+|---|---|---|
+| `member_impact` | `WEIGHT_MEMBER_IMPACT` | Start from the member's self-assessed impact score, capped at the category ceiling. The model may adjust ±2 points: down for vague/directional suggestions that cannot be acted on without further data; up for ideas with clear benefit the member may have underestimated. |
+| `strategic_alignment` | `WEIGHT_STRATEGIC` | How well does it align with typical golf club strategic priorities. |
+| `feasibility` | `WEIGHT_FEASIBILITY` | Realistic for a private members golf club to implement. Score HIGH (8–10) for ideas requiring no capital spend, no external approval, and achievable within days by existing staff. Score LOW for planning permission, major procurement, or operationally impractical ideas. |
+| `cost_benefit` | `WEIGHT_COST_BENEFIT` | Likely cost band vs benefit delivered. A zero-cost quick-win scores 9–10. |
+| `novelty` | `WEIGHT_NOVELTY` | Not an obvious standard practice already in place. |
+| `experience_delta` | `WEIGHT_EXPERIENCE_DELTA` | Material improvement to day-to-day member experience. |
+
+**Category ceilings** — the `member_impact` dimension is capped at a per-category maximum before the model applies its ±2 adjustment. Ceilings are stored in `config` under `CEILING_<CATEGORY>` keys (e.g. `CEILING_COURSE`, `CEILING_RESTAURANT`). Submissions in high-impact categories (course, restaurant) have higher ceilings than lower-priority categories.
+
+**Vague submissions** — if a suggestion is directional rather than specific (e.g. "reduce competitions" without a concrete proposal), the model reduces `member_impact` by 1–2 points and notes this in `ai_narrative`. The Board cannot act on direction alone.
+
+#### Stage 2 — Weighted composite score
+
+```
+weighted_score = Σ (dimension_score × dimension_weight)
+```
+
+Weights are read at runtime from the `config` table. They should sum to 1.0 (enforced by the Admin → Setup panel validation). Default weights are:
+
+| Dimension | Default weight |
+|---|---|
+| member_impact | 30% |
+| strategic_alignment | 20% |
+| feasibility | 15% |
+| cost_benefit | 15% |
+| novelty | 10% |
+| experience_delta | 10% |
+
+#### Stage 3 — Multipliers (applied sequentially, capped at 10.0)
+
+After weighting, three multipliers may be applied. Each is read from `config`:
+
+| Condition | Config key | Default | Rule |
+|---|---|---|---|
+| H&S flag | `MULT_HS` | 1.5× | Set only for genuine active safety risks (trip hazards, structural/electrical safety, fire safety, food hygiene violations, immediate danger). Not set for suggestions that merely mention "safety" or represent good practice without an existing risk. |
+| Budget year alignment | `MULT_BUDGET_YEAR` | 1.1× | Implementable within the current financial year. |
+| Spans multiple categories | `MULT_MULTI_CATEGORY` | 1.05× | The submission touches more than one category area. |
+
+Multipliers stack multiplicatively: e.g. a submission with H&S flag and budget-year alignment scores `weighted_score × 1.5 × 1.1`. The result is capped at 10.0.
+
+#### Stage 4 — Cluster bonus (additive, post-cap)
+
+When two or more submissions describe the same specific problem or improvement area, they are assigned a shared `cluster_theme`. The cluster bonus is added to each member's score after the 10.0 cap:
+
+| Cluster size | Config key | Default bonus |
+|---|---|---|
+| 2 submissions | `CLUSTER_BONUS_2` | +0.3 |
+| 3 submissions | `CLUSTER_BONUS_3` | +0.5 |
+| 4 submissions | `CLUSTER_BONUS_4` | +0.7 |
+| 5+ submissions | `CLUSTER_BONUS_5` | +1.0 |
+
+Clustering requires the same *specific* problem — not merely the same broad theme. "Two suggestions about shower facilities in the changing rooms" clusters; "a shower request and a locker request" does not, even though both are facilities.
+
+The final `score` stored in `submissions` is the post-bonus value, still capped at 10.0.
+
+### Band assignment
+
+The final score maps to a `score_band` using thresholds from the `config` table:
+
+| Band | Config key | Default threshold |
+|---|---|---|
+| `priority` | `BAND_PRIORITY` | ≥ 8.0 |
+| `active` | `BAND_ACTIVE` | ≥ 6.0 |
+| `holding` | `BAND_HOLDING` | ≥ 4.0 |
+| `low` | `BAND_LOW` | ≥ 2.0 |
+| `not_progressed` | — | < 2.0 (or below BAND_LOW) |
+
+Band thresholds are configurable. A score override (`score_override`) replaces the AI score for band assignment but the original AI score is preserved in the `score` column.
+
 ### Scoring prompt inputs
 
 The scoring prompt receives:
 - Submission description and benefit text
-- Member-assessed impact level
-- Category context (what this area covers)
-- Current config weights, ceilings, and multipliers (fetched from `config` table)
-- All existing submissions in the same category (for cluster detection and novelty scoring)
-
-The model returns a structured JSON response parsed to extract:
-- Dimension scores (0–10 each)
-- Weighted composite score
-- H&S flag
-- Cost estimate range and confidence
-- Implementation weeks range and complexity
-- Suggested owner
-- Cluster theme (if matching an existing or new cluster)
-- Flags: quick win, needs external approval, seasonal, revenue opportunity
+- Member-assessed impact level and category ceiling
+- Current config weights and multipliers (fetched from `config` table at run time)
+- Previously not-progressed submissions in the same category (for novelty scoring and prior-rejection detection)
 
 ### Scoring is idempotent within a run
 
@@ -552,6 +620,7 @@ Defined in `vercel.json`:
 |---|---|---|
 | Triage | Monday 07:00 UTC | Score unscored submissions, send reports |
 | Backup | Sunday 06:00 UTC | Email CSV backup to Club Manager |
+| Owner nudge | Monday 08:00 UTC | Email directors who have had an assigned submission with no status change for 14+ days |
 
 Both endpoints verify the Vercel `CRON_SECRET` before executing. They can also be triggered manually from Admin → Setup.
 
@@ -559,7 +628,7 @@ Both endpoints verify the Vercel `CRON_SECRET` before executing. They can also b
 
 ## 13. Configuration system
 
-All tunable parameters are stored in the `config` table as key-value pairs. The Admin panel's Scoring Config tab reads and writes these values. Default values are seeded by `initDb()` and are never overwritten on subsequent runs (`ON CONFLICT DO NOTHING`).
+All tunable parameters are stored in the `config` table as key-value pairs. The Admin panel's Setup tab reads and writes these values. Default values are seeded by `initDb()` and are never overwritten on subsequent runs (`ON CONFLICT DO NOTHING`).
 
 Key groups:
 

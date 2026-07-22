@@ -88,6 +88,8 @@ export default function AdminPage() {
   const [seedStatus, setSeedStatus] = useState('')
   const [seedingData, setSeedingData] = useState(false)
   const [clearingData, setClearingData] = useState(false)
+  const [clearingAll, setClearingAll] = useState(false)
+  const [clearAllStatus, setClearAllStatus] = useState('')
   const [resettingScores, setResettingScores] = useState(false)
   const [resetStatus, setResetStatus] = useState('')
   const [moderationResults, setModerationResults] = useState<Array<{ description: string; expected: string; actual: string; passed: boolean }> | null>(null)
@@ -341,6 +343,16 @@ export default function AdminPage() {
     const json = await res.json().catch(() => ({}))
     setSeedStatus(res.ok ? `✓ ${json.deleted} test submissions removed` : `✗ Error: ${json.error ?? 'check logs'}`)
     setClearingData(false)
+  }
+
+  async function clearAllData() {
+    if (!confirm('This will soft-delete ALL submissions and give a clean slate. Make sure you have exported a backup first.\n\nContinue?')) return
+    setClearingAll(true)
+    setClearAllStatus('Clearing all submissions…')
+    const res = await fetch('/api/admin/clear-all-data', { method: 'DELETE' })
+    const json = await res.json().catch(() => ({}))
+    setClearAllStatus(res.ok ? `✓ ${json.deleted} submissions cleared — system is ready for production` : `✗ Error: ${json.error ?? 'check logs'}`)
+    setClearingAll(false)
   }
 
   async function resetScores(scope: 'test' | 'all') {
@@ -1042,6 +1054,25 @@ export default function AdminPage() {
                   </table>
                 </div>
               )}
+            </div>
+
+            <hr className="border-gray-200" />
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-1">Clear all submissions</h3>
+              <p className="text-sm text-gray-500 mb-3">
+                Soft-deletes every submission to give a clean slate for production. Export a backup first.
+                Only available to <strong>Super Admin</strong>.
+              </p>
+              <button
+                onClick={clearAllData}
+                disabled={clearingAll}
+                className="bramley-btn px-6 py-2.5 text-sm"
+                style={{ width: 'auto', background: '#7b241c' }}
+              >
+                {clearingAll ? <><span className="spinner" /> Clearing…</> : '⚠ Clear all submissions'}
+              </button>
+              {clearAllStatus && <p className="text-sm mt-2 text-gray-700">{clearAllStatus}</p>}
             </div>
 
             <hr className="border-gray-200" />

@@ -78,7 +78,8 @@ export const AUTHORITY_LEVELS: Record<string, number> = {
 /** Map a director role to its decision authority key */
 export function roleToAuthority(role: string): string {
   if (role === 'Operations Manager') return 'operations_manager'
-  if (role === 'Club Manager' || role === 'Super Admin') return 'club_manager'
+  if (role === 'Club Manager') return 'club_manager'
+  if (role === 'Super Admin') return 'chairman'
   if (role === 'Chair of the Board') return 'chairman'
   return 'director'
 }

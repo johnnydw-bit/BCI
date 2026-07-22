@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     }
     // Send rejection email if they have an email
     if (submitterEmail && !emailOptOut) {
-      void sendModerationRejectionEmail(submitterEmail, {
+      await sendModerationRejectionEmail(submitterEmail, {
         description: description.trim(),
         message: moderation.message,
         memberName: submitterName,

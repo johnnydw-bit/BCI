@@ -4,7 +4,8 @@ import { verifySession } from '@/lib/auth'
 import { sql } from '@/lib/db'
 
 export async function GET(req: Request) {
-  const token = (await cookies()).get('session')?.value
+  const cookieStore = await cookies()
+  const token = cookieStore.get('bci_director_session')?.value
   const session = token ? await verifySession(token) : null
   if (!session || session.type !== 'director') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 

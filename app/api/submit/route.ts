@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Fetch member's existing submissions for duplicate check
-  const existing = await sql`
+  const existing = session.type === 'director' ? [] : await sql`
     SELECT description FROM submissions
     WHERE member_id = ${submitterId}
       AND deleted_at IS NULL
@@ -51,7 +51,9 @@ export async function POST(req: NextRequest) {
   `
   const existingDescriptions = (existing as Array<{ description: string }>).map((r) => r.description)
 
-  const moderation = await moderateSubmission(description.trim(), benefit.trim(), existingDescriptions)
+  const moderation = session.type === 'director'
+    ? { pass: true, silentReject: false, message: '', reason: null }
+    : await moderateSubmission(description.trim(), benefit.trim(), existingDescriptions)
 
   if (!moderation.pass) {
     // Log silent rejects to DB so Manager can review them
